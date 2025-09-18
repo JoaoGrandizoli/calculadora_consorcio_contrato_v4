@@ -87,36 +87,54 @@ class SimuladorConsorcio:
         return self.params.valor_carta * (1 + self.params.taxa_admin + self.params.fundo_reserva)
     
     def gerar_fluxos_lance_livre(self) -> Dict:
-        """Gera fluxos de caixa com metodologia corrigida - contemplação imediata."""
+        """Gera fluxos de caixa simplificados - metodologia similar ao site de referência."""
         try:
             # Base de cálculo
             base_contrato = self.calcular_base_lance()
             valor_lance_livre = base_contrato * self.params.lance_livre_perc
             
-            # Parcela base (sem considerar a contemplação ainda)
+            # Parcela base mensal (valor fixo antes dos reajustes)
             parcela_base_mensal = base_contrato / self.params.prazo_meses
             
             fluxos = [0]  # t=0
             detalhamento = []
+            primeira_parcela = 0
+            ultima_parcela = 0
+            primeira_parcela_pos_contemplacao = 0
             
             for mes in range(1, self.params.prazo_meses + 1):
-                # Correção anual (como na simulação)
+                # Correção anual
                 ano_atual = (mes - 1) // 12 + 1
                 fator_correcao = (1 + self.params.taxa_reajuste_anual) ** (ano_atual - 1)
                 
                 # Valores corrigidos
                 valor_carta_corrigido = self.params.valor_carta * fator_correcao
+                parcela_corrigida = parcela_base_mensal * fator_correcao
                 
                 if mes == self.params.mes_contemplacao:
                     # CONTEMPLAÇÃO: RECEBE carta - PAGA parcela - PAGA lance livre
-                    parcela_corrigida = parcela_base_mensal * fator_correcao
+                    # Fluxo líquido positivo (recebe mais do que paga)
                     fluxo = valor_carta_corrigido - parcela_corrigida - valor_lance_livre
                     lance_mes = valor_lance_livre
+                    
+                    # Guardar primeira parcela
+                    if primeira_parcela == 0:
+                        primeira_parcela = parcela_corrigida
                 else:
-                    # DEMAIS MESES: apenas PAGA parcela (valor padrão)
-                    parcela_corrigida = parcela_base_mensal * fator_correcao
+                    # DEMAIS MESES: Fluxo é simplesmente a parcela negativa
                     fluxo = -parcela_corrigida
                     lance_mes = 0
+                    
+                    # Guardar primeira parcela pós-contemplação
+                    if mes == self.params.mes_contemplacao + 1:
+                        primeira_parcela_pos_contemplacao = parcela_corrigida
+                
+                # Guardar primeira e última parcela para o resumo
+                if mes == 1 and primeira_parcela == 0:
+                    primeira_parcela = parcela_corrigida
+                    
+                if mes == self.params.prazo_meses:
+                    ultima_parcela = parcela_corrigida
                 
                 fluxos.append(fluxo)
                 
@@ -125,13 +143,13 @@ class SimuladorConsorcio:
                     'ano': ano_atual,
                     'fator_correcao': fator_correcao,
                     'valor_carta_corrigido': valor_carta_corrigido,
-                    'parcela_corrigida': abs(parcela_corrigida),  # Sempre positivo para exibição
+                    'parcela_corrigida': parcela_corrigida,
                     'lance_livre': lance_mes,
                     'fluxo_liquido': fluxo,
                     'eh_contemplacao': mes == self.params.mes_contemplacao
                 })
             
-            # Calcular valor da carta na contemplação (com correção)
+            # Calcular valor da carta na contemplação
             mes_contemplacao = self.params.mes_contemplacao
             ano_contemplacao = (mes_contemplacao - 1) // 12 + 1
             fator_correcao_contemplacao = (1 + self.params.taxa_reajuste_anual) ** (ano_contemplacao - 1)
@@ -145,7 +163,10 @@ class SimuladorConsorcio:
                     'valor_lance_livre': valor_lance_livre,
                     'valor_carta_contemplacao': valor_carta_contemplacao,
                     'total_parcelas': sum(d['parcela_corrigida'] for d in detalhamento if not d['eh_contemplacao']),
-                    'fluxo_contemplacao': fluxos[self.params.mes_contemplacao]
+                    'fluxo_contemplacao': fluxos[self.params.mes_contemplacao],
+                    'primeira_parcela': primeira_parcela,
+                    'primeira_parcela_pos_contemplacao': primeira_parcela_pos_contemplacao if primeira_parcela_pos_contemplacao > 0 else primeira_parcela,
+                    'ultima_parcela': ultima_parcela
                 }
             }
             
