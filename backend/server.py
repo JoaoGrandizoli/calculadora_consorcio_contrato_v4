@@ -87,7 +87,7 @@ class SimuladorConsorcio:
         return self.params.valor_carta * (1 + self.params.taxa_admin + self.params.fundo_reserva)
     
     def gerar_fluxos_lance_livre(self) -> Dict:
-        """Gera fluxos de caixa com metodologia corrigida."""
+        """Gera fluxos de caixa com metodologia corrigida - contemplação imediata."""
         try:
             # Base de cálculo
             base_contrato = self.calcular_base_lance()
@@ -107,11 +107,20 @@ class SimuladorConsorcio:
                 parcela_corrigida = (parcela_base_anual / 12) * fator_correcao
                 
                 if mes == self.params.mes_contemplacao:
-                    # Contemplação: RECEBE carta - PAGA parcela - PAGA lance livre
+                    # CONTEMPLAÇÃO: RECEBE carta - PAGA parcela - PAGA lance livre
                     fluxo = valor_carta_corrigido - parcela_corrigida - valor_lance_livre
+                    lance_mes = valor_lance_livre
                 else:
-                    # Demais meses: apenas PAGA parcela
+                    # DEMAIS MESES: apenas PAGA parcela
+                    # IMPORTANTE: Se já foi contemplado, a parcela é menor (sem taxa de administração sobre o valor já recebido)
+                    if mes > self.params.mes_contemplacao:
+                        # Após contemplação: parcela sobre valor restante (valor_carta já foi recebido)
+                        valor_restante = base_contrato - valor_carta_corrigido
+                        parcela_pos_contemplacao = valor_restante / (self.params.prazo_meses - self.params.mes_contemplacao)
+                        parcela_corrigida = parcela_pos_contemplacao * fator_correcao
+                    
                     fluxo = -parcela_corrigida
+                    lance_mes = 0
                 
                 fluxos.append(fluxo)
                 
@@ -121,10 +130,16 @@ class SimuladorConsorcio:
                     'fator_correcao': fator_correcao,
                     'valor_carta_corrigido': valor_carta_corrigido,
                     'parcela_corrigida': parcela_corrigida,
-                    'lance_livre': valor_lance_livre if mes == self.params.mes_contemplacao else 0,
+                    'lance_livre': lance_mes,
                     'fluxo_liquido': fluxo,
                     'eh_contemplacao': mes == self.params.mes_contemplacao
                 })
+            
+            # Calcular valor da carta na contemplação (com correção)
+            mes_contemplacao = self.params.mes_contemplacao
+            ano_contemplacao = (mes_contemplacao - 1) // 12 + 1
+            fator_correcao_contemplacao = (1 + self.params.taxa_reajuste_anual) ** (ano_contemplacao - 1)
+            valor_carta_contemplacao = self.params.valor_carta * fator_correcao_contemplacao
             
             return {
                 'fluxos': fluxos,
@@ -132,11 +147,15 @@ class SimuladorConsorcio:
                 'resumo': {
                     'base_contrato': base_contrato,
                     'valor_lance_livre': valor_lance_livre,
-                    'valor_carta_contemplacao': self.params.valor_carta * ((1 + self.params.taxa_reajuste_anual) ** ((self.params.mes_contemplacao - 1) // 12)),
-                    'total_parcelas': sum(d['parcela_corrigida'] for d in detalhamento),
+                    'valor_carta_contemplacao': valor_carta_contemplacao,
+                    'total_parcelas': sum(abs(d['parcela_corrigida']) for d in detalhamento if not d['eh_contemplacao']),
                     'fluxo_contemplacao': fluxos[self.params.mes_contemplacao]
                 }
             }
+            
+        except Exception as e:
+            logger.error(f"Erro na geração de fluxos: {e}")
+            return {'fluxos': [], 'detalhamento': [], 'resumo': {}}
             
         except Exception as e:
             logger.error(f"Erro na geração de fluxos: {e}")
