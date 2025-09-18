@@ -268,6 +268,239 @@ async def get_parametros_padrao():
     """Retorna os parâmetros padrão para simulação."""
     return ParametrosConsorcio()
 
+def criar_grafico_fluxo_caixa(detalhamento: List[Dict], mes_contemplacao: int, temp_dir: str) -> str:
+    """Cria gráfico de fluxo de caixa e salva como imagem."""
+    try:
+        meses = [item['mes'] for item in detalhamento]
+        fluxos = [item['fluxo_liquido'] for item in detalhamento]
+        
+        plt.figure(figsize=(12, 6))
+        colors_list = ['green' if item['eh_contemplacao'] else 'red' for item in detalhamento]
+        
+        plt.bar(meses, fluxos, color=colors_list, alpha=0.7)
+        plt.axhline(y=0, color='black', linestyle='-', alpha=0.3)
+        plt.title('Fluxo de Caixa por Mês', fontsize=14, fontweight='bold')
+        plt.xlabel('Mês')
+        plt.ylabel('Fluxo de Caixa (R$)')
+        plt.grid(True, alpha=0.3)
+        
+        # Destacar contemplação
+        for i, item in enumerate(detalhamento):
+            if item['eh_contemplacao']:
+                plt.annotate('Contemplação', xy=(item['mes'], item['fluxo_liquido']), 
+                           xytext=(item['mes'], item['fluxo_liquido'] + max(fluxos) * 0.1),
+                           arrowprops=dict(arrowstyle='->', color='green'),
+                           fontweight='bold', color='green')
+        
+        plt.tight_layout()
+        grafico_path = os.path.join(temp_dir, 'grafico_fluxo.png')
+        plt.savefig(grafico_path, dpi=300, bbox_inches='tight')
+        plt.close()
+        
+        return grafico_path
+    except Exception as e:
+        logger.error(f"Erro ao criar gráfico: {e}")
+        return None
+
+def gerar_relatorio_pdf(dados_simulacao: Dict, temp_dir: str) -> str:
+    """Gera relatório PDF da simulação de consórcio."""
+    try:
+        # Criar arquivo PDF temporário
+        pdf_path = os.path.join(temp_dir, f'relatorio_consorcio_{datetime.now().strftime("%Y%m%d_%H%M%S")}.pdf')
+        
+        # Configurar documento
+        doc = SimpleDocTemplate(pdf_path, pagesize=A4, rightMargin=30, leftMargin=30, topMargin=30, bottomMargin=30)
+        story = []
+        
+        # Estilos
+        styles = getSampleStyleSheet()
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=18,
+            spaceAfter=30,
+            alignment=TA_CENTER,
+            textColor=colors.HexColor('#26282A')
+        )
+        
+        heading_style = ParagraphStyle(
+            'CustomHeading',
+            parent=styles['Heading2'],
+            fontSize=14,
+            spaceBefore=20,
+            spaceAfter=10,
+            textColor=colors.HexColor('#26282A')
+        )
+        
+        # Título
+        story.append(Paragraph("Relatório de Simulação de Consórcio", title_style))
+        story.append(Paragraph(f"Gerado em: {datetime.now().strftime('%d/%m/%Y às %H:%M')}", styles['Normal']))
+        story.append(Spacer(1, 20))
+        
+        # Parâmetros da Simulação
+        story.append(Paragraph("Parâmetros da Simulação", heading_style))
+        
+        parametros_data = [
+            ['Parâmetro', 'Valor'],
+            ['Valor da Carta', f"R$ {dados_simulacao['parametros']['valor_carta']:,.2f}"],
+            ['Prazo', f"{dados_simulacao['parametros']['prazo_meses']} meses"],
+            ['Taxa de Administração', f"{dados_simulacao['parametros']['taxa_admin'] * 100:.1f}%"],
+            ['Fundo de Reserva', f"{dados_simulacao['parametros']['fundo_reserva'] * 100:.1f}%"],
+            ['Mês de Contemplação', f"{dados_simulacao['parametros']['mes_contemplacao']}º mês"],
+            ['Lance Livre', f"{dados_simulacao['parametros']['lance_livre_perc'] * 100:.1f}%"],
+            ['Taxa de Reajuste Anual', f"{dados_simulacao['parametros']['taxa_reajuste_anual'] * 100:.1f}%"]
+        ]
+        
+        parametros_table = Table(parametros_data, colWidths=[3*inch, 2*inch])
+        parametros_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#C1AFA2')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 12),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black)
+        ]))
+        
+        story.append(parametros_table)
+        story.append(Spacer(1, 20))
+        
+        # Resultados Principais
+        story.append(Paragraph("Resultados Principais", heading_style))
+        
+        if dados_simulacao['resultados']['convergiu']:
+            cet_anual = dados_simulacao['resultados']['cet_anual'] * 100
+            cet_mensal = dados_simulacao['resultados']['cet_mensal'] * 100
+        else:
+            cet_anual = "Erro no cálculo"
+            cet_mensal = "Erro no cálculo"
+        
+        resultados_data = [
+            ['Indicador', 'Valor'],
+            ['CET Anual', f"{cet_anual:.2f}%" if isinstance(cet_anual, float) else cet_anual],
+            ['CET Mensal', f"{cet_mensal:.3f}%" if isinstance(cet_mensal, float) else cet_mensal],
+            ['Lance Livre', f"R$ {dados_simulacao['resumo_financeiro']['valor_lance_livre']:,.2f}"],
+            ['Base do Contrato', f"R$ {dados_simulacao['resumo_financeiro']['base_contrato']:,.2f}"],
+            ['Carta na Contemplação', f"R$ {dados_simulacao['resumo_financeiro']['valor_carta_contemplacao']:,.2f}"],
+            ['Fluxo na Contemplação', f"R$ {dados_simulacao['resumo_financeiro']['fluxo_contemplacao']:,.2f}"],
+            ['Total em Parcelas', f"R$ {dados_simulacao['resumo_financeiro']['total_parcelas']:,.2f}"]
+        ]
+        
+        resultados_table = Table(resultados_data, colWidths=[3*inch, 2*inch])
+        resultados_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#BC8159')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 12),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black)
+        ]))
+        
+        story.append(resultados_table)
+        story.append(Spacer(1, 20))
+        
+        # Adicionar gráfico se conseguir gerar
+        grafico_path = criar_grafico_fluxo_caixa(dados_simulacao['detalhamento'], 
+                                                dados_simulacao['parametros']['mes_contemplacao'], 
+                                                temp_dir)
+        
+        if grafico_path and os.path.exists(grafico_path):
+            from reportlab.platypus import Image
+            story.append(Paragraph("Gráfico de Fluxo de Caixa", heading_style))
+            story.append(Image(grafico_path, width=6*inch, height=3*inch))
+            story.append(Spacer(1, 20))
+        
+        # Tabela de Amortização (primeiros 36 meses para não ficar muito grande)
+        story.append(Paragraph("Tabela de Amortização (Primeiros 36 Meses)", heading_style))
+        
+        tabela_data = [['Mês', 'Parcela (R$)', 'Lance (R$)', 'Fluxo (R$)', 'Status']]
+        
+        for item in dados_simulacao['detalhamento'][:36]:
+            mes = str(item['mes'])
+            parcela = f"R$ {item['parcela_corrigida']:,.2f}"
+            lance = f"R$ {item['lance_livre']:,.2f}" if item['lance_livre'] > 0 else "-"
+            fluxo = f"R$ {item['fluxo_liquido']:,.2f}"
+            status = "Contemplação" if item['eh_contemplacao'] else "-"
+            
+            tabela_data.append([mes, parcela, lance, fluxo, status])
+        
+        tabela_amortizacao = Table(tabela_data, colWidths=[0.8*inch, 1.2*inch, 1.2*inch, 1.2*inch, 1.2*inch])
+        tabela_amortizacao.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#8D4C23')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 10),
+            ('FONTSIZE', (0, 1), (-1, -1), 8),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE')
+        ]))
+        
+        # Destacar linha de contemplação
+        for i, item in enumerate(dados_simulacao['detalhamento'][:36]):
+            if item['eh_contemplacao']:
+                tabela_amortizacao.setStyle(TableStyle([
+                    ('BACKGROUND', (0, i+1), (-1, i+1), colors.HexColor('#E8F5E8'))
+                ]))
+        
+        story.append(tabela_amortizacao)
+        
+        # Rodapé
+        story.append(Spacer(1, 30))
+        story.append(Paragraph("Relatório gerado pelo Simulador de Consórcio", 
+                             ParagraphStyle('Footer', parent=styles['Normal'], 
+                                          fontSize=8, alignment=TA_CENTER, 
+                                          textColor=colors.grey)))
+        
+        # Gerar PDF
+        doc.build(story)
+        return pdf_path
+        
+    except Exception as e:
+        logger.error(f"Erro ao gerar PDF: {e}")
+        raise HTTPException(status_code=500, detail=f"Erro ao gerar relatório PDF: {str(e)}")
+
+@api_router.post("/gerar-relatorio-pdf")
+async def gerar_relatorio_pdf_endpoint(parametros: ParametrosConsorcio):
+    """Gera e retorna relatório PDF da simulação."""
+    try:
+        # Executar simulação
+        simulador = SimuladorConsorcio(parametros)
+        resultado = simulador.simular_cenario_completo()
+        
+        if resultado['erro']:
+            raise HTTPException(status_code=400, detail=resultado.get('mensagem', 'Erro na simulação'))
+        
+        # Criar diretório temporário
+        temp_dir = tempfile.mkdtemp()
+        
+        # Gerar PDF
+        pdf_path = gerar_relatorio_pdf(resultado, temp_dir)
+        
+        if not os.path.exists(pdf_path):
+            raise HTTPException(status_code=500, detail="Erro ao gerar arquivo PDF")
+        
+        # Retornar arquivo
+        filename = f"relatorio_consorcio_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+        
+        return FileResponse(
+            path=pdf_path,
+            filename=filename,
+            media_type='application/pdf',
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Erro no endpoint de PDF: {e}")
+        raise HTTPException(status_code=500, detail=f"Erro interno: {str(e)}")
+
 # Include the router in the main app
 app.include_router(api_router)
 
