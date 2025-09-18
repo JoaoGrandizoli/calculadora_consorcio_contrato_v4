@@ -370,6 +370,28 @@ function App() {
                       </TabsList>
                       
                       <TabsContent value="resumo" className="space-y-4">
+                        {/* Resumo da Contemplação */}
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                          <h4 className="text-green-800 font-semibold mb-3">💰 Resumo da Contemplação (Mês {parametros.mes_contemplacao})</h4>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+                            <div className="text-center">
+                              <p className="text-green-600 font-mono text-lg">+{formatarMoeda(resultados.resumo_financeiro.valor_carta_contemplacao)}</p>
+                              <p className="text-green-700">Recebe a Carta</p>
+                            </div>
+                            <div className="text-center">
+                              <p className="text-red-600 font-mono text-lg">-{formatarMoeda(resultados.resumo_financeiro.primeira_parcela)}</p>
+                              <p className="text-red-700">Paga Parcela</p>
+                            </div>
+                            <div className="text-center">
+                              <p className="text-red-600 font-mono text-lg">-{formatarMoeda(resultados.resumo_financeiro.valor_lance_livre)}</p>
+                              <p className="text-red-700">Paga Lance Livre</p>
+                            </div>
+                          </div>
+                          <div className="text-center mt-3 pt-3 border-t border-green-300">
+                            <p className="text-green-800 font-semibold">Fluxo Líquido: <span className="font-mono text-lg text-green-600">{formatarMoeda(resultados.resumo_financeiro.fluxo_contemplacao)}</span></p>
+                          </div>
+                        </div>
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="space-y-3">
                             <div className="flex justify-between items-center">
