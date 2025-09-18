@@ -98,7 +98,7 @@ class SimuladorConsorcio:
         return self.params.valor_carta * (1 + self.params.taxa_admin + self.params.fundo_reserva)
     
     def gerar_fluxos_lance_livre(self) -> Dict:
-        """Gera fluxos de caixa idênticos ao site de referência."""
+        """Gera fluxos de caixa corretos - parcela só diminui com lance embutido."""
         try:
             # Base de cálculo
             base_contrato = self.calcular_base_lance()
@@ -110,7 +110,7 @@ class SimuladorConsorcio:
             lance_embutido = base_contrato * 0.08  # Aproximadamente 8% (baseado no documento)
             credito_liquido = self.params.valor_carta - (taxas + valor_lance_livre + lance_embutido - base_contrato)
             
-            # Parcela base mensal
+            # Parcela base mensal - SEMPRE A MESMA (não diminui com lance livre)
             parcela_base_mensal = base_contrato / self.params.prazo_meses
             
             fluxos = [0]  # t=0
@@ -119,7 +119,9 @@ class SimuladorConsorcio:
             primeira_parcela_pos_contemplacao = 0
             parcela_intermediaria = 0
             ultima_parcela = 0
-            saldo_devedor = base_contrato
+            
+            # O saldo devedor do consórcio (o que o grupo todo deve)
+            saldo_devedor_grupo = base_contrato
             
             # Meses em português
             meses_pt = ['', 'jan', 'fev', 'mar', 'abr', 'mai', 'jun', 
@@ -137,33 +139,34 @@ class SimuladorConsorcio:
                 
                 # Valores corrigidos
                 valor_carta_corrigido = self.params.valor_carta * fator_correcao
+                
+                # CORREÇÃO: Parcela sempre igual (só muda com correção anual)
                 parcela_corrigida = parcela_base_mensal * fator_correcao
                 
                 if mes == self.params.mes_contemplacao:
-                    # CONTEMPLAÇÃO: Fluxo como no documento de referência
-                    # No mês 1: Fluxo = Valor da Carta - Parcela - Lance Livre
+                    # CONTEMPLAÇÃO: Recebe carta, paga parcela e lance livre
                     fluxo = valor_carta_corrigido - parcela_corrigida - valor_lance_livre
                     lance_mes = valor_lance_livre
-                    
-                    # Atualizar saldo devedor após contemplação
-                    saldo_devedor = base_contrato - valor_carta_corrigido
-                    
                     primeira_parcela = parcela_corrigida
-                else:
-                    # DEMAIS MESES: Parcela reduzida após contemplação
-                    if mes > self.params.mes_contemplacao:
-                        # Após contemplação: parcela menor (baseada no saldo restante)
-                        meses_restantes = self.params.prazo_meses - self.params.mes_contemplacao
-                        parcela_corrigida = (saldo_devedor / meses_restantes) * fator_correcao
-                        
-                        if primeira_parcela_pos_contemplacao == 0:
-                            primeira_parcela_pos_contemplacao = parcela_corrigida
                     
+                    # Saldo devedor individual: o que ESTA PESSOA ainda deve
+                    # (Base do contrato menos o valor da carta que ela recebeu)
+                    saldo_devedor_individual = base_contrato - valor_carta_corrigido
+                else:
+                    # DEMAIS MESES: Só paga parcela (valor sempre igual)
                     fluxo = -parcela_corrigida
                     lance_mes = 0
                     
-                    # Atualizar saldo devedor
-                    saldo_devedor -= parcela_corrigida
+                    # Guardar primeira parcela pós-contemplação (igual à anterior)
+                    if mes == self.params.mes_contemplacao + 1:
+                        primeira_parcela_pos_contemplacao = parcela_corrigida
+                    
+                    # Atualizar saldo devedor individual
+                    if mes > self.params.mes_contemplacao:
+                        saldo_devedor_individual -= parcela_corrigida
+                    else:
+                        # Antes da contemplação, saldo é do grupo todo
+                        saldo_devedor_individual = saldo_devedor_grupo - (parcela_base_mensal * mes)
                 
                 # Guardar parcela intermediária (meio do prazo)
                 if mes == self.params.prazo_meses // 2:
@@ -184,7 +187,7 @@ class SimuladorConsorcio:
                     'parcela_corrigida': parcela_corrigida,
                     'lance_livre': lance_mes,
                     'fluxo_liquido': fluxo,
-                    'saldo_devedor': max(0, saldo_devedor),  # Não pode ser negativo
+                    'saldo_devedor': max(0, saldo_devedor_individual),
                     'eh_contemplacao': mes == self.params.mes_contemplacao
                 })
             
@@ -193,6 +196,10 @@ class SimuladorConsorcio:
             ano_contemplacao = (mes_contemplacao - 1) // 12 + 1
             fator_correcao_contemplacao = (1 + self.params.taxa_reajuste_anual) ** (ano_contemplacao - 1)
             valor_carta_contemplacao = self.params.valor_carta * fator_correcao_contemplacao
+            
+            # Se não temos parcela pós-contemplação, é igual à primeira
+            if primeira_parcela_pos_contemplacao == 0:
+                primeira_parcela_pos_contemplacao = primeira_parcela
             
             # Se não temos parcela intermediária definida, usar uma estimativa
             if parcela_intermediaria == 0:
