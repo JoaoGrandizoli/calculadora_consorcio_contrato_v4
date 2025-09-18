@@ -81,6 +81,36 @@ function App() {
     return (valor * 100).toFixed(2) + '%';
   };
 
+  const downloadRelatorioPdf = async () => {
+    setLoadingPdf(true);
+    
+    try {
+      const response = await axios.post(`${API}/gerar-relatorio-pdf`, parametros, {
+        responseType: 'blob'
+      });
+      
+      // Criar URL do blob e fazer download
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      
+      // Nome do arquivo com timestamp
+      const timestamp = new Date().toISOString().slice(0, 16).replace(/[:-]/g, '');
+      link.setAttribute('download', `relatorio_consorcio_${timestamp}.pdf`);
+      
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      
+    } catch (error) {
+      console.error('Erro ao baixar relatório:', error);
+      setErro('Erro ao gerar relatório PDF. Tente novamente.');
+    } finally {
+      setLoadingPdf(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-light">
       {/* Header */}
