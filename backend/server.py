@@ -120,8 +120,8 @@ class SimuladorConsorcio:
             parcela_intermediaria = 0
             ultima_parcela = 0
             
-            # O saldo devedor do consórcio (o que o grupo todo deve)
-            saldo_devedor_grupo = base_contrato
+            # O saldo devedor inicial é a base do contrato
+            saldo_devedor_atual = base_contrato
             
             # Meses em português
             meses_pt = ['', 'jan', 'fev', 'mar', 'abr', 'mai', 'jun', 
@@ -149,9 +149,8 @@ class SimuladorConsorcio:
                     lance_mes = valor_lance_livre
                     primeira_parcela = parcela_corrigida
                     
-                    # Saldo devedor individual: o que ESTA PESSOA ainda deve
-                    # (Base do contrato menos o valor da carta que ela recebeu)
-                    saldo_devedor_individual = base_contrato - valor_carta_corrigido
+                    # CORREÇÃO DO SALDO DEVEDOR: Após contemplação, subtrai o valor da carta
+                    saldo_devedor_atual = saldo_devedor_atual - valor_carta_corrigido - parcela_corrigida
                 else:
                     # DEMAIS MESES: Só paga parcela (valor sempre igual)
                     fluxo = -parcela_corrigida
@@ -161,12 +160,8 @@ class SimuladorConsorcio:
                     if mes == self.params.mes_contemplacao + 1:
                         primeira_parcela_pos_contemplacao = parcela_corrigida
                     
-                    # Atualizar saldo devedor individual
-                    if mes > self.params.mes_contemplacao:
-                        saldo_devedor_individual -= parcela_corrigida
-                    else:
-                        # Antes da contemplação, saldo é do grupo todo
-                        saldo_devedor_individual = saldo_devedor_grupo - (parcela_base_mensal * mes)
+                    # CORREÇÃO: Subtrai apenas a parcela do saldo devedor
+                    saldo_devedor_atual -= parcela_corrigida
                 
                 # Guardar parcela intermediária (meio do prazo)
                 if mes == self.params.prazo_meses // 2:
@@ -187,7 +182,7 @@ class SimuladorConsorcio:
                     'parcela_corrigida': parcela_corrigida,
                     'lance_livre': lance_mes,
                     'fluxo_liquido': fluxo,
-                    'saldo_devedor': max(0, saldo_devedor_individual),
+                    'saldo_devedor': max(0, saldo_devedor_atual),
                     'eh_contemplacao': mes == self.params.mes_contemplacao
                 })
             
