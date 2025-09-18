@@ -126,21 +126,21 @@ function App() {
         </div>
       </div>
 
-      <div className="container mx-auto px-6 py-8">
-        <div className="grid lg:grid-cols-5 gap-8">
+      <div className="container mx-auto px-4 md:px-6 py-4 md:py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 md:gap-8">
           {/* Painel de Parâmetros */}
           <div className="lg:col-span-2">
             <Card className="border-moonstone shadow-sm">
               <CardHeader className="bg-neutral-light border-b border-moonstone">
-                <CardTitle className="text-primary-accent flex items-center gap-2">
+                <CardTitle className="text-primary-accent flex items-center gap-2 text-lg md:text-xl">
                   <TrendingUp className="h-5 w-5" />
                   Parâmetros da Simulação
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-6 space-y-6">
+              <CardContent className="p-4 md:p-6 space-y-4 md:space-y-6">
                 {/* Valor da Carta */}
                 <div className="space-y-2">
-                  <Label htmlFor="valor_carta" className="text-primary-accent font-medium">
+                  <Label htmlFor="valor_carta" className="text-primary-accent font-medium text-sm md:text-base">
                     Valor da Carta (R$)
                   </Label>
                   <Input
@@ -148,13 +148,13 @@ function App() {
                     type="number"
                     value={parametros.valor_carta}
                     onChange={(e) => handleInputChange('valor_carta', parseFloat(e.target.value))}
-                    className="border-moonstone focus:border-accent-warm"
+                    className="border-moonstone focus:border-accent-warm text-base"
                   />
                 </div>
 
                 {/* Prazo */}
                 <div className="space-y-2">
-                  <Label htmlFor="prazo_meses" className="text-primary-accent font-medium">
+                  <Label htmlFor="prazo_meses" className="text-primary-accent font-medium text-sm md:text-base">
                     Prazo (meses)
                   </Label>
                   <Input
@@ -162,13 +162,13 @@ function App() {
                     type="number"
                     value={parametros.prazo_meses}
                     onChange={(e) => handleInputChange('prazo_meses', parseInt(e.target.value))}
-                    className="border-moonstone focus:border-accent-warm"
+                    className="border-moonstone focus:border-accent-warm text-base"
                   />
                 </div>
 
                 {/* Taxa Admin */}
                 <div className="space-y-2">
-                  <Label htmlFor="taxa_admin" className="text-primary-accent font-medium">
+                  <Label htmlFor="taxa_admin" className="text-primary-accent font-medium text-sm md:text-base">
                     Taxa de Administração (%)
                   </Label>
                   <Input
@@ -177,13 +177,13 @@ function App() {
                     step="0.01"
                     value={parametros.taxa_admin * 100}
                     onChange={(e) => handleInputChange('taxa_admin', parseFloat(e.target.value) / 100)}
-                    className="border-moonstone focus:border-accent-warm"
+                    className="border-moonstone focus:border-accent-warm text-base"
                   />
                 </div>
 
                 {/* Fundo de Reserva */}
                 <div className="space-y-2">
-                  <Label htmlFor="fundo_reserva" className="text-primary-accent font-medium">
+                  <Label htmlFor="fundo_reserva" className="text-primary-accent font-medium text-sm md:text-base">
                     Fundo de Reserva (%)
                   </Label>
                   <Input
@@ -192,13 +192,13 @@ function App() {
                     step="0.01"
                     value={parametros.fundo_reserva * 100}
                     onChange={(e) => handleInputChange('fundo_reserva', parseFloat(e.target.value) / 100)}
-                    className="border-moonstone focus:border-accent-warm"
+                    className="border-moonstone focus:border-accent-warm text-base"
                   />
                 </div>
 
                 {/* Mês de Contemplação */}
                 <div className="space-y-2">
-                  <Label htmlFor="mes_contemplacao" className="text-primary-accent font-medium">
+                  <Label htmlFor="mes_contemplacao" className="text-primary-accent font-medium text-sm md:text-base">
                     Mês de Contemplação
                   </Label>
                   <Input
@@ -206,13 +206,13 @@ function App() {
                     type="number"
                     value={parametros.mes_contemplacao}
                     onChange={(e) => handleInputChange('mes_contemplacao', parseInt(e.target.value))}
-                    className="border-moonstone focus:border-accent-warm"
+                    className="border-moonstone focus:border-accent-warm text-base"
                   />
                 </div>
 
                 {/* Lance Livre */}
                 <div className="space-y-2">
-                  <Label htmlFor="lance_livre_perc" className="text-primary-accent font-medium">
+                  <Label htmlFor="lance_livre_perc" className="text-primary-accent font-medium text-sm md:text-base">
                     Lance Livre (%)
                   </Label>
                   <Input
@@ -221,13 +221,13 @@ function App() {
                     step="0.01"
                     value={parametros.lance_livre_perc * 100}
                     onChange={(e) => handleInputChange('lance_livre_perc', parseFloat(e.target.value) / 100)}
-                    className="border-moonstone focus:border-accent-warm"
+                    className="border-moonstone focus:border-accent-warm text-base"
                   />
                 </div>
 
                 {/* Taxa de Reajuste */}
                 <div className="space-y-2">
-                  <Label htmlFor="taxa_reajuste_anual" className="text-primary-accent font-medium">
+                  <Label htmlFor="taxa_reajuste_anual" className="text-primary-accent font-medium text-sm md:text-base">
                     Taxa de Reajuste Anual (%)
                   </Label>
                   <Input
@@ -236,19 +236,33 @@ function App() {
                     step="0.01"
                     value={parametros.taxa_reajuste_anual * 100}
                     onChange={(e) => handleInputChange('taxa_reajuste_anual', parseFloat(e.target.value) / 100)}
-                    className="border-moonstone focus:border-accent-warm"
+                    className="border-moonstone focus:border-accent-warm text-base"
                   />
                 </div>
 
                 <Separator className="bg-moonstone" />
 
-                <Button 
-                  onClick={simularConsorcio}
-                  disabled={loading}
-                  className="w-full bg-accent-warm hover:bg-accent-dark text-light font-medium py-3"
-                >
-                  {loading ? 'Simulando...' : 'Simular Consórcio'}
-                </Button>
+                <div className="space-y-3">
+                  <Button 
+                    onClick={simularConsorcio}
+                    disabled={loading}
+                    className="w-full bg-accent-warm hover:bg-accent-dark text-light font-medium py-3 text-base"
+                  >
+                    {loading ? 'Simulando...' : 'Simular Consórcio'}
+                  </Button>
+                  
+                  {resultados && !resultados.erro && (
+                    <Button 
+                      onClick={downloadRelatorioPdf}
+                      disabled={loadingPdf}
+                      variant="outline"
+                      className="w-full border-accent-warm text-accent-dark hover:bg-accent-warm hover:text-light font-medium py-3 text-base"
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      {loadingPdf ? 'Gerando PDF...' : 'Baixar Relatório PDF'}
+                    </Button>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </div>
