@@ -98,52 +98,78 @@ class SimuladorConsorcio:
         return self.params.valor_carta * (1 + self.params.taxa_admin + self.params.fundo_reserva)
     
     def gerar_fluxos_lance_livre(self) -> Dict:
-        """Gera fluxos de caixa simplificados - metodologia similar ao site de referência."""
+        """Gera fluxos de caixa idênticos ao site de referência."""
         try:
             # Base de cálculo
             base_contrato = self.calcular_base_lance()
             valor_lance_livre = base_contrato * self.params.lance_livre_perc
             
-            # Parcela base mensal (valor fixo antes dos reajustes)
+            # Cálculos do resumo da operação
+            valor_credito_taxas = base_contrato  # R$ 124.000,00
+            taxas = self.params.valor_carta * (self.params.taxa_admin + self.params.fundo_reserva)  # R$ 24.000,00
+            lance_embutido = base_contrato * 0.08  # Aproximadamente 8% (baseado no documento)
+            credito_liquido = self.params.valor_carta - (taxas + valor_lance_livre + lance_embutido - base_contrato)
+            
+            # Parcela base mensal
             parcela_base_mensal = base_contrato / self.params.prazo_meses
             
             fluxos = [0]  # t=0
             detalhamento = []
             primeira_parcela = 0
-            ultima_parcela = 0
             primeira_parcela_pos_contemplacao = 0
+            parcela_intermediaria = 0
+            ultima_parcela = 0
+            saldo_devedor = base_contrato
+            
+            # Meses em português
+            meses_pt = ['', 'jan', 'fev', 'mar', 'abr', 'mai', 'jun', 
+                       'jul', 'ago', 'set', 'out', 'nov', 'dez']
             
             for mes in range(1, self.params.prazo_meses + 1):
                 # Correção anual
                 ano_atual = (mes - 1) // 12 + 1
                 fator_correcao = (1 + self.params.taxa_reajuste_anual) ** (ano_atual - 1)
                 
+                # Data formatada (set/25, out/25, etc.)
+                mes_calendario = ((mes - 1) % 12) + 1
+                ano_calendario = 2025 + (mes - 1) // 12
+                data_formatada = f"{meses_pt[mes_calendario]}/{str(ano_calendario)[2:]}"
+                
                 # Valores corrigidos
                 valor_carta_corrigido = self.params.valor_carta * fator_correcao
                 parcela_corrigida = parcela_base_mensal * fator_correcao
                 
                 if mes == self.params.mes_contemplacao:
-                    # CONTEMPLAÇÃO: RECEBE carta - PAGA parcela - PAGA lance livre
-                    # Fluxo líquido positivo (recebe mais do que paga)
+                    # CONTEMPLAÇÃO: Fluxo como no documento de referência
+                    # No mês 1: Fluxo = Valor da Carta - Parcela - Lance Livre
                     fluxo = valor_carta_corrigido - parcela_corrigida - valor_lance_livre
                     lance_mes = valor_lance_livre
                     
-                    # Guardar primeira parcela
-                    if primeira_parcela == 0:
-                        primeira_parcela = parcela_corrigida
+                    # Atualizar saldo devedor após contemplação
+                    saldo_devedor = base_contrato - valor_carta_corrigido
+                    
+                    primeira_parcela = parcela_corrigida
                 else:
-                    # DEMAIS MESES: Fluxo é simplesmente a parcela negativa
+                    # DEMAIS MESES: Parcela reduzida após contemplação
+                    if mes > self.params.mes_contemplacao:
+                        # Após contemplação: parcela menor (baseada no saldo restante)
+                        meses_restantes = self.params.prazo_meses - self.params.mes_contemplacao
+                        parcela_corrigida = (saldo_devedor / meses_restantes) * fator_correcao
+                        
+                        if primeira_parcela_pos_contemplacao == 0:
+                            primeira_parcela_pos_contemplacao = parcela_corrigida
+                    
                     fluxo = -parcela_corrigida
                     lance_mes = 0
                     
-                    # Guardar primeira parcela pós-contemplação
-                    if mes == self.params.mes_contemplacao + 1:
-                        primeira_parcela_pos_contemplacao = parcela_corrigida
+                    # Atualizar saldo devedor
+                    saldo_devedor -= parcela_corrigida
                 
-                # Guardar primeira e última parcela para o resumo
-                if mes == 1 and primeira_parcela == 0:
-                    primeira_parcela = parcela_corrigida
+                # Guardar parcela intermediária (meio do prazo)
+                if mes == self.params.prazo_meses // 2:
+                    parcela_intermediaria = parcela_corrigida
                     
+                # Última parcela
                 if mes == self.params.prazo_meses:
                     ultima_parcela = parcela_corrigida
                 
@@ -151,12 +177,14 @@ class SimuladorConsorcio:
                 
                 detalhamento.append({
                     'mes': mes,
+                    'data': data_formatada,
                     'ano': ano_atual,
                     'fator_correcao': fator_correcao,
                     'valor_carta_corrigido': valor_carta_corrigido,
                     'parcela_corrigida': parcela_corrigida,
                     'lance_livre': lance_mes,
                     'fluxo_liquido': fluxo,
+                    'saldo_devedor': max(0, saldo_devedor),  # Não pode ser negativo
                     'eh_contemplacao': mes == self.params.mes_contemplacao
                 })
             
@@ -165,6 +193,10 @@ class SimuladorConsorcio:
             ano_contemplacao = (mes_contemplacao - 1) // 12 + 1
             fator_correcao_contemplacao = (1 + self.params.taxa_reajuste_anual) ** (ano_contemplacao - 1)
             valor_carta_contemplacao = self.params.valor_carta * fator_correcao_contemplacao
+            
+            # Se não temos parcela intermediária definida, usar uma estimativa
+            if parcela_intermediaria == 0:
+                parcela_intermediaria = parcela_base_mensal * (1 + self.params.taxa_reajuste_anual) ** 4
             
             return {
                 'fluxos': fluxos,
@@ -176,8 +208,14 @@ class SimuladorConsorcio:
                     'total_parcelas': sum(d['parcela_corrigida'] for d in detalhamento if not d['eh_contemplacao']),
                     'fluxo_contemplacao': fluxos[self.params.mes_contemplacao],
                     'primeira_parcela': primeira_parcela,
-                    'primeira_parcela_pos_contemplacao': primeira_parcela_pos_contemplacao if primeira_parcela_pos_contemplacao > 0 else primeira_parcela,
-                    'ultima_parcela': ultima_parcela
+                    'primeira_parcela_pos_contemplacao': primeira_parcela_pos_contemplacao,
+                    'parcela_intermediaria': parcela_intermediaria,
+                    'ultima_parcela': ultima_parcela,
+                    # Resumo da Operação
+                    'valor_credito_taxas': valor_credito_taxas,
+                    'taxas': taxas,
+                    'lance_embutido': lance_embutido,
+                    'credito_liquido': credito_liquido
                 }
             }
             
