@@ -270,29 +270,29 @@ function App() {
           {/* Painel de Resultados */}
           <div className="lg:col-span-3">
             {erro && (
-              <Card className="border-red-200 bg-red-50 mb-6">
+              <Card className="border-red-200 bg-red-50 mb-4 md:mb-6">
                 <CardContent className="p-4">
                   <div className="flex items-center gap-2 text-red-700">
                     <AlertCircle className="h-5 w-5" />
-                    <span className="font-medium">Erro: {erro}</span>
+                    <span className="font-medium text-sm md:text-base">Erro: {erro}</span>
                   </div>
                 </CardContent>
               </Card>
             )}
 
             {resultados && !resultados.erro && (
-              <div className="space-y-6">
+              <div className="space-y-4 md:space-y-6">
                 {/* Cards de Resumo */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                   <Card className="border-moonstone">
-                    <CardContent className="p-6">
+                    <CardContent className="p-4 md:p-6">
                       <div className="flex items-center gap-3">
-                        <div className="p-3 bg-accent-warm rounded-lg">
-                          <PieChart className="h-6 w-6 text-light" />
+                        <div className="p-2 md:p-3 bg-accent-warm rounded-lg">
+                          <PieChart className="h-4 w-4 md:h-6 md:w-6 text-light" />
                         </div>
                         <div>
-                          <p className="text-sm text-neutral-mid">CET Anual</p>
-                          <p className="text-2xl font-bold text-primary-accent">
+                          <p className="text-xs md:text-sm text-neutral-mid">CET Anual</p>
+                          <p className="text-lg md:text-2xl font-bold text-primary-accent">
                             {resultados.resultados.convergiu ? 
                               formatarPorcentagem(resultados.resultados.cet_anual) : 
                               'Erro no cálculo'
@@ -304,14 +304,14 @@ function App() {
                   </Card>
 
                   <Card className="border-moonstone">
-                    <CardContent className="p-6">
+                    <CardContent className="p-4 md:p-6">
                       <div className="flex items-center gap-3">
-                        <div className="p-3 bg-accent-medium rounded-lg">
-                          <TrendingUp className="h-6 w-6 text-light" />
+                        <div className="p-2 md:p-3 bg-accent-medium rounded-lg">
+                          <TrendingUp className="h-4 w-4 md:h-6 md:w-6 text-light" />
                         </div>
                         <div>
-                          <p className="text-sm text-neutral-mid">Lance Livre</p>
-                          <p className="text-2xl font-bold text-primary-accent">
+                          <p className="text-xs md:text-sm text-neutral-mid">Lance Livre</p>
+                          <p className="text-lg md:text-2xl font-bold text-primary-accent">
                             {formatarMoeda(resultados.resumo_financeiro.valor_lance_livre)}
                           </p>
                         </div>
@@ -320,14 +320,14 @@ function App() {
                   </Card>
 
                   <Card className="border-moonstone">
-                    <CardContent className="p-6">
+                    <CardContent className="p-4 md:p-6">
                       <div className="flex items-center gap-3">
-                        <div className="p-3 bg-accent-dark rounded-lg">
-                          <Calculator className="h-6 w-6 text-light" />
+                        <div className="p-2 md:p-3 bg-accent-dark rounded-lg">
+                          <Calculator className="h-4 w-4 md:h-6 md:w-6 text-light" />
                         </div>
                         <div>
-                          <p className="text-sm text-neutral-mid">Fluxo Contemplação</p>
-                          <p className="text-2xl font-bold text-primary-accent">
+                          <p className="text-xs md:text-sm text-neutral-mid">Fluxo Contemplação</p>
+                          <p className="text-lg md:text-2xl font-bold text-primary-accent">
                             {formatarMoeda(resultados.resumo_financeiro.fluxo_contemplacao)}
                           </p>
                         </div>
@@ -336,14 +336,14 @@ function App() {
                   </Card>
 
                   <Card className="border-moonstone">
-                    <CardContent className="p-6">
+                    <CardContent className="p-4 md:p-6">
                       <div className="flex items-center gap-3">
-                        <div className="p-3 bg-accent-light rounded-lg">
-                          <FileText className="h-6 w-6 text-light" />
+                        <div className="p-2 md:p-3 bg-accent-light rounded-lg">
+                          <FileText className="h-4 w-4 md:h-6 md:w-6 text-light" />
                         </div>
                         <div>
-                          <p className="text-sm text-neutral-mid">Total Parcelas</p>
-                          <p className="text-2xl font-bold text-primary-accent">
+                          <p className="text-xs md:text-sm text-neutral-mid">Total Parcelas</p>
+                          <p className="text-lg md:text-2xl font-bold text-primary-accent">
                             {formatarMoeda(resultados.resumo_financeiro.total_parcelas)}
                           </p>
                         </div>
@@ -355,15 +355,15 @@ function App() {
                 {/* Detalhamento */}
                 <Card className="border-moonstone">
                   <CardHeader className="bg-neutral-light border-b border-moonstone">
-                    <CardTitle className="text-primary-accent">Detalhamento da Simulação</CardTitle>
+                    <CardTitle className="text-primary-accent text-lg md:text-xl">Detalhamento da Simulação</CardTitle>
                   </CardHeader>
-                  <CardContent className="p-6">
+                  <CardContent className="p-4 md:p-6">
                     <Tabs defaultValue="resumo" className="w-full">
                       <TabsList className="grid w-full grid-cols-2 bg-neutral-light">
-                        <TabsTrigger value="resumo" className="data-[state=active]:bg-accent-warm data-[state=active]:text-light">
+                        <TabsTrigger value="resumo" className="data-[state=active]:bg-accent-warm data-[state=active]:text-light text-sm md:text-base">
                           Resumo Financeiro
                         </TabsTrigger>
-                        <TabsTrigger value="detalhes" className="data-[state=active]:bg-accent-warm data-[state=active]:text-light">
+                        <TabsTrigger value="detalhes" className="data-[state=active]:bg-accent-warm data-[state=active]:text-light text-sm md:text-base">
                           Primeiros 24 Meses
                         </TabsTrigger>
                       </TabsList>
@@ -372,14 +372,14 @@ function App() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="space-y-3">
                             <div className="flex justify-between items-center">
-                              <span className="text-neutral-mid">Base do Contrato:</span>
-                              <Badge variant="outline" className="font-mono">
+                              <span className="text-neutral-mid text-sm md:text-base">Base do Contrato:</span>
+                              <Badge variant="outline" className="font-mono text-xs md:text-sm">
                                 {formatarMoeda(resultados.resumo_financeiro.base_contrato)}
                               </Badge>
                             </div>
                             <div className="flex justify-between items-center">
-                              <span className="text-neutral-mid">Carta na Contemplação:</span>
-                              <Badge variant="outline" className="font-mono">
+                              <span className="text-neutral-mid text-sm md:text-base">Carta na Contemplação:</span>
+                              <Badge variant="outline" className="font-mono text-xs md:text-sm">
                                 {formatarMoeda(resultados.resumo_financeiro.valor_carta_contemplacao)}
                               </Badge>
                             </div>
@@ -388,14 +388,14 @@ function App() {
                             {resultados.resultados.convergiu && (
                               <>
                                 <div className="flex justify-between items-center">
-                                  <span className="text-neutral-mid">CET Mensal:</span>
-                                  <Badge variant="outline" className="font-mono">
+                                  <span className="text-neutral-mid text-sm md:text-base">CET Mensal:</span>
+                                  <Badge variant="outline" className="font-mono text-xs md:text-sm">
                                     {formatarPorcentagem(resultados.resultados.cet_mensal)}
                                   </Badge>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                  <span className="text-neutral-mid">Status:</span>
-                                  <Badge className="bg-green-100 text-green-800 border-green-200">
+                                  <span className="text-neutral-mid text-sm md:text-base">Status:</span>
+                                  <Badge className="bg-green-100 text-green-800 border-green-200 text-xs md:text-sm">
                                     Cálculo OK
                                   </Badge>
                                 </div>
@@ -410,27 +410,27 @@ function App() {
                           <table className="w-full text-sm">
                             <thead>
                               <tr className="border-b border-moonstone bg-neutral-light">
-                                <th className="p-3 text-left text-primary-accent">Mês</th>
-                                <th className="p-3 text-right text-primary-accent">Parcela</th>
-                                <th className="p-3 text-right text-primary-accent">Lance</th>
-                                <th className="p-3 text-right text-primary-accent">Fluxo</th>
-                                <th className="p-3 text-center text-primary-accent">Status</th>
+                                <th className="p-2 md:p-3 text-left text-primary-accent text-xs md:text-sm">Mês</th>
+                                <th className="p-2 md:p-3 text-right text-primary-accent text-xs md:text-sm">Parcela</th>
+                                <th className="p-2 md:p-3 text-right text-primary-accent text-xs md:text-sm">Lance</th>
+                                <th className="p-2 md:p-3 text-right text-primary-accent text-xs md:text-sm">Fluxo</th>
+                                <th className="p-2 md:p-3 text-center text-primary-accent text-xs md:text-sm">Status</th>
                               </tr>
                             </thead>
                             <tbody>
                               {resultados.detalhamento.slice(0, 24).map((item, index) => (
                                 <tr key={index} className={`border-b border-gray-100 ${item.eh_contemplacao ? 'bg-green-50' : ''}`}>
-                                  <td className="p-3 text-primary-accent font-medium">{item.mes}</td>
-                                  <td className="p-3 text-right font-mono text-neutral-dark">
+                                  <td className="p-2 md:p-3 text-primary-accent font-medium text-xs md:text-sm">{item.mes}</td>
+                                  <td className="p-2 md:p-3 text-right font-mono text-neutral-dark text-xs md:text-sm">
                                     {formatarMoeda(item.parcela_corrigida)}
                                   </td>
-                                  <td className="p-3 text-right font-mono text-neutral-dark">
+                                  <td className="p-2 md:p-3 text-right font-mono text-neutral-dark text-xs md:text-sm">
                                     {item.lance_livre > 0 ? formatarMoeda(item.lance_livre) : '-'}
                                   </td>
-                                  <td className={`p-3 text-right font-mono ${item.fluxo_liquido > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                  <td className={`p-2 md:p-3 text-right font-mono text-xs md:text-sm ${item.fluxo_liquido > 0 ? 'text-green-600' : 'text-red-600'}`}>
                                     {formatarMoeda(item.fluxo_liquido)}
                                   </td>
-                                  <td className="p-3 text-center">
+                                  <td className="p-2 md:p-3 text-center">
                                     {item.eh_contemplacao && (
                                       <Badge className="bg-green-100 text-green-800 border-green-200 text-xs">
                                         Contemplação
@@ -451,12 +451,12 @@ function App() {
 
             {!resultados && !erro && !loading && (
               <Card className="border-moonstone">
-                <CardContent className="p-12 text-center">
-                  <Calculator className="h-16 w-16 text-neutral-mid mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold text-primary-accent mb-2">
+                <CardContent className="p-8 md:p-12 text-center">
+                  <Calculator className="h-12 w-12 md:h-16 md:w-16 text-neutral-mid mx-auto mb-4" />
+                  <h3 className="text-lg md:text-xl font-semibold text-primary-accent mb-2">
                     Pronto para simular
                   </h3>
-                  <p className="text-neutral-mid">
+                  <p className="text-neutral-mid text-sm md:text-base">
                     Configure os parâmetros à esquerda e clique em "Simular Consórcio" para ver os resultados.
                   </p>
                 </CardContent>
