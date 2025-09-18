@@ -12,7 +12,7 @@ from scipy.optimize import fsolve
 import warnings
 warnings.filterwarnings('ignore')
 import tempfile
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter, A4
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
