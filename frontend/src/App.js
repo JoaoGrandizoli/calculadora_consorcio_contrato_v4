@@ -326,9 +326,9 @@ function App() {
                           <Calculator className="h-4 w-4 md:h-6 md:w-6 text-light" />
                         </div>
                         <div>
-                          <p className="text-xs md:text-sm text-neutral-mid">Fluxo Contemplação</p>
+                          <p className="text-xs md:text-sm text-neutral-mid">Valor da Carta</p>
                           <p className="text-lg md:text-2xl font-bold text-primary-accent">
-                            {formatarMoeda(resultados.resumo_financeiro.fluxo_contemplacao)}
+                            {formatarMoeda(resultados.resumo_financeiro.valor_carta_contemplacao)}
                           </p>
                         </div>
                       </div>
@@ -342,10 +342,11 @@ function App() {
                           <FileText className="h-4 w-4 md:h-6 md:w-6 text-light" />
                         </div>
                         <div>
-                          <p className="text-xs md:text-sm text-neutral-mid">Total Parcelas</p>
-                          <p className="text-lg md:text-2xl font-bold text-primary-accent">
-                            {formatarMoeda(resultados.resumo_financeiro.total_parcelas)}
+                          <p className="text-xs md:text-sm text-neutral-mid">Fluxo Líquido Contemplação</p>
+                          <p className="text-lg md:text-2xl font-bold text-green-600">
+                            {formatarMoeda(resultados.resumo_financeiro.fluxo_contemplacao)}
                           </p>
+                          <p className="text-xs text-neutral-mid">Carta - Parcela - Lance</p>
                         </div>
                       </div>
                     </CardContent>
