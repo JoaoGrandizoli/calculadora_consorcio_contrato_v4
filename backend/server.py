@@ -62,7 +62,13 @@ class ResumoFinanceiro(BaseModel):
     fluxo_contemplacao: float
     primeira_parcela: float
     primeira_parcela_pos_contemplacao: float
+    parcela_intermediaria: float
     ultima_parcela: float
+    # Resumo da Operação (como no site de referência)
+    valor_credito_taxas: float
+    taxas: float
+    lance_embutido: float
+    credito_liquido: float
 
 class ResultadosSimulacao(BaseModel):
     cet_anual: Optional[float]
