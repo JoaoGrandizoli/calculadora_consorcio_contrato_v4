@@ -124,6 +124,54 @@ button:hover {
   .container {
     padding: 0 1rem;
   }
+  
+  /* Mobile-first improvements */
+  .mobile-card-compact {
+    padding: 0.75rem !important;
+  }
+  
+  .mobile-text-small {
+    font-size: 0.875rem !important;
+  }
+  
+  .mobile-grid-single {
+    grid-template-columns: 1fr !important;
+  }
+  
+  /* Touch-friendly buttons on mobile */
+  button {
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+  
+  /* Better input fields on mobile */
+  input {
+    font-size: 16px; /* Prevents zoom on iOS */
+    min-height: 44px;
+  }
+  
+  /* Mobile table improvements */
+  .table-responsive {
+    font-size: 0.75rem;
+  }
+  
+  .table-responsive th,
+  .table-responsive td {
+    padding: 0.5rem !important;
+  }
+  
+  /* Header adjustments for mobile */
+  .mobile-header {
+    padding: 1rem 1rem 1.5rem 1rem;
+  }
+  
+  .mobile-header h1 {
+    font-size: 1.5rem;
+  }
+  
+  .mobile-header p {
+    font-size: 0.875rem;
+  }
 }
 
 /* Animações de entrada */
