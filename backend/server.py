@@ -44,12 +44,14 @@ class ParametrosConsorcio(BaseModel):
 
 class DetalhamentoMes(BaseModel):
     mes: int
+    data: str  # Data formatada (set/25, out/25, etc.)
     ano: int
     fator_correcao: float
     valor_carta_corrigido: float
     parcela_corrigida: float
     lance_livre: float
     fluxo_liquido: float
+    saldo_devedor: float
     eh_contemplacao: bool
 
 class ResumoFinanceiro(BaseModel):
