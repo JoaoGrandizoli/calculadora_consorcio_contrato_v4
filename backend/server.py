@@ -91,8 +91,10 @@ class SimuladorConsorcio:
         try:
             # Base de cálculo
             base_contrato = self.calcular_base_lance()
-            parcela_base_anual = base_contrato / (self.params.prazo_meses / 12)
             valor_lance_livre = base_contrato * self.params.lance_livre_perc
+            
+            # Parcela base (sem considerar a contemplação ainda)
+            parcela_base_mensal = base_contrato / self.params.prazo_meses
             
             fluxos = [0]  # t=0
             detalhamento = []
@@ -104,25 +106,15 @@ class SimuladorConsorcio:
                 
                 # Valores corrigidos
                 valor_carta_corrigido = self.params.valor_carta * fator_correcao
-                parcela_corrigida = (parcela_base_anual / 12) * fator_correcao
                 
                 if mes == self.params.mes_contemplacao:
                     # CONTEMPLAÇÃO: RECEBE carta - PAGA parcela - PAGA lance livre
+                    parcela_corrigida = parcela_base_mensal * fator_correcao
                     fluxo = valor_carta_corrigido - parcela_corrigida - valor_lance_livre
                     lance_mes = valor_lance_livre
                 else:
-                    # DEMAIS MESES: apenas PAGA parcela
-                    # IMPORTANTE: Se já foi contemplado, a parcela é menor (sem taxa de administração sobre o valor já recebido)
-                    if mes > self.params.mes_contemplacao:
-                        # Após contemplação: parcela sobre valor restante (valor_carta já foi recebido)
-                        meses_restantes = self.params.prazo_meses - self.params.mes_contemplacao
-                        if meses_restantes > 0:
-                            valor_restante = base_contrato - valor_carta_corrigido
-                            parcela_pos_contemplacao = valor_restante / meses_restantes
-                            parcela_corrigida = parcela_pos_contemplacao * fator_correcao
-                        else:
-                            parcela_corrigida = 0
-                    
+                    # DEMAIS MESES: apenas PAGA parcela (valor padrão)
+                    parcela_corrigida = parcela_base_mensal * fator_correcao
                     fluxo = -parcela_corrigida
                     lance_mes = 0
                 
@@ -133,7 +125,7 @@ class SimuladorConsorcio:
                     'ano': ano_atual,
                     'fator_correcao': fator_correcao,
                     'valor_carta_corrigido': valor_carta_corrigido,
-                    'parcela_corrigida': parcela_corrigida,
+                    'parcela_corrigida': abs(parcela_corrigida),  # Sempre positivo para exibição
                     'lance_livre': lance_mes,
                     'fluxo_liquido': fluxo,
                     'eh_contemplacao': mes == self.params.mes_contemplacao
@@ -152,7 +144,7 @@ class SimuladorConsorcio:
                     'base_contrato': base_contrato,
                     'valor_lance_livre': valor_lance_livre,
                     'valor_carta_contemplacao': valor_carta_contemplacao,
-                    'total_parcelas': sum(abs(d['parcela_corrigida']) for d in detalhamento if not d['eh_contemplacao']),
+                    'total_parcelas': sum(d['parcela_corrigida'] for d in detalhamento if not d['eh_contemplacao']),
                     'fluxo_contemplacao': fluxos[self.params.mes_contemplacao]
                 }
             }
