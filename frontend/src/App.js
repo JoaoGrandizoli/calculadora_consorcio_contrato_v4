@@ -383,6 +383,12 @@ function App() {
                                 {formatarMoeda(resultados.resumo_financeiro.valor_carta_contemplacao)}
                               </Badge>
                             </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-neutral-mid text-sm md:text-base">1ª Parcela (Início):</span>
+                              <Badge variant="outline" className="font-mono text-xs md:text-sm">
+                                {formatarMoeda(resultados.resumo_financeiro.primeira_parcela)}
+                              </Badge>
+                            </div>
                           </div>
                           <div className="space-y-3">
                             {resultados.resultados.convergiu && (
@@ -394,13 +400,25 @@ function App() {
                                   </Badge>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                  <span className="text-neutral-mid text-sm md:text-base">Status:</span>
-                                  <Badge className="bg-green-100 text-green-800 border-green-200 text-xs md:text-sm">
-                                    Cálculo OK
+                                  <span className="text-neutral-mid text-sm md:text-base">1ª Parcela Pós-Contemplação:</span>
+                                  <Badge variant="outline" className="font-mono text-xs md:text-sm">
+                                    {formatarMoeda(resultados.resumo_financeiro.primeira_parcela_pos_contemplacao)}
+                                  </Badge>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-neutral-mid text-sm md:text-base">Última Parcela:</span>
+                                  <Badge variant="outline" className="font-mono text-xs md:text-sm">
+                                    {formatarMoeda(resultados.resumo_financeiro.ultima_parcela)}
                                   </Badge>
                                 </div>
                               </>
                             )}
+                            <div className="flex justify-between items-center">
+                              <span className="text-neutral-mid text-sm md:text-base">Status:</span>
+                              <Badge className="bg-green-100 text-green-800 border-green-200 text-xs md:text-sm">
+                                Cálculo OK
+                              </Badge>
+                            </div>
                           </div>
                         </div>
                       </TabsContent>
