@@ -58,6 +58,9 @@ class ResumoFinanceiro(BaseModel):
     valor_carta_contemplacao: float
     total_parcelas: float
     fluxo_contemplacao: float
+    primeira_parcela: float
+    primeira_parcela_pos_contemplacao: float
+    ultima_parcela: float
 
 class ResultadosSimulacao(BaseModel):
     cet_anual: Optional[float]
