@@ -127,6 +127,10 @@ class SimuladorConsorcio:
             meses_pt = ['', 'jan', 'fev', 'mar', 'abr', 'mai', 'jun', 
                        'jul', 'ago', 'set', 'out', 'nov', 'dez']
             
+            # Meses em português
+            meses_pt = ['', 'jan', 'fev', 'mar', 'abr', 'mai', 'jun', 
+                       'jul', 'ago', 'set', 'out', 'nov', 'dez']
+            
             for mes in range(1, self.params.prazo_meses + 1):
                 # Correção anual
                 ano_atual = (mes - 1) // 12 + 1
