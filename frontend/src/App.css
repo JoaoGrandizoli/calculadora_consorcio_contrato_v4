@@ -1,34 +1,237 @@
-.App-logo {
-    height: 40vmin;
-    pointer-events: none;
+/* Paleta de Cores Personalizada */
+:root {
+  /* Cores principais da paleta fornecida */
+  --moonstone: #D0D2D7;
+  --light: #ECEDFI;
+  --neutral-light: #98A5B0;
+  --neutral-mid: #485665;
+  --primary-accent: #26282A;
+  --accent-dark: #18181B;
+  --background-dark: #0A0A0A;
+  
+  /* Acentos terrosos */
+  --accent-warm: #C1AFA2;
+  --accent-medium: #CDB59F;
+  --accent-light: #BC8159;
+  --accent-darker: #8D4C23;
+  --accent-darkest: #89361B;
+  
+  /* Cores derivadas */
+  --neutral-dark: #2A2A2A;
+  --border-color: var(--moonstone);
+  --background-primary: var(--light);
 }
 
-@media (prefers-reduced-motion: no-preference) {
-    .App-logo {
-        animation: App-logo-spin infinite 20s linear;
-    }
+/* Reset e base */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-.App-header {
-    background-color: #0f0f10;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    font-size: calc(10px + 2vmin);
-    color: white;
+html {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  line-height: 1.6;
+  color: var(--primary-accent);
 }
 
-.App-link {
-    color: #61dafb;
+body {
+  background-color: var(--background-primary);
+  color: var(--primary-accent);
+  font-size: 14px;
 }
 
-@keyframes App-logo-spin {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
-    }
+/* Utilitários de cor */
+.bg-light { background-color: var(--light); }
+.bg-moonstone { background-color: var(--moonstone); }
+.bg-neutral-light { background-color: var(--neutral-light); }
+.bg-primary-accent { background-color: var(--primary-accent); }
+.bg-accent-warm { background-color: var(--accent-warm); }
+.bg-accent-medium { background-color: var(--accent-medium); }
+.bg-accent-light { background-color: var(--accent-light); }
+.bg-accent-dark { background-color: var(--accent-darker); }
+.bg-accent-darkest { background-color: var(--accent-darkest); }
+
+.text-light { color: var(--light); }
+.text-moonstone { color: var(--moonstone); }
+.text-neutral-light { color: var(--neutral-light); }
+.text-neutral-mid { color: var(--neutral-mid); }
+.text-neutral-dark { color: var(--neutral-dark); }
+.text-primary-accent { color: var(--primary-accent); }
+.text-accent-warm { color: var(--accent-warm); }
+
+.border-moonstone { border-color: var(--moonstone); }
+.border-accent-warm { border-color: var(--accent-warm); }
+
+/* Componentes personalizados */
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Animações suaves */
+.transition-all {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Input focus styles */
+input:focus {
+  outline: none;
+  border-color: var(--accent-warm);
+  box-shadow: 0 0 0 3px rgba(193, 175, 162, 0.1);
+}
+
+/* Button hover effects */
+button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Card shadows */
+.card-shadow {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.card-shadow:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+/* Scrollbar personalizada */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--light);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--moonstone);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--neutral-light);
+}
+
+/* Responsive typography */
+@media (max-width: 768px) {
+  html {
+    font-size: 14px;
+  }
+  
+  .container {
+    padding: 0 1rem;
+  }
+}
+
+/* Animações de entrada */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.6s ease-out;
+}
+
+/* Estados de loading */
+.loading {
+  position: relative;
+  overflow: hidden;
+}
+
+.loading::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(193, 175, 162, 0.2),
+    transparent
+  );
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+/* Badge personalizada */
+.badge-success {
+  background-color: #f0f9f0;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.badge-warning {
+  background-color: #fefce8;
+  color: #ca8a04;
+  border: 1px solid #fde047;
+}
+
+.badge-error {
+  background-color: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+/* Tabela responsiva */
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-responsive table {
+  min-width: 600px;
+}
+
+/* Gradientes sutis (seguindo as diretrizes) */
+.gradient-warm {
+  background: linear-gradient(135deg, var(--accent-medium), var(--accent-light));
+}
+
+.gradient-neutral {
+  background: linear-gradient(135deg, var(--neutral-light), var(--moonstone));
+}
+
+/* Estados de hover para cards */
+.card-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* Focus states para acessibilidade */
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--accent-warm);
+  outline-offset: 2px;
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  .print-friendly {
+    background: white !important;
+    color: black !important;
+  }
 }

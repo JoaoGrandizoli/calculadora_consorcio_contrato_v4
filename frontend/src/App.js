@@ -1,52 +1,425 @@
-import { useEffect } from "react";
-import "./App.css";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import axios from "axios";
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { Card, CardHeader, CardTitle, CardContent } from './components/ui/card';
+import { Button } from './components/ui/button';
+import { Input } from './components/ui/input';
+import { Label } from './components/ui/label';
+import { Separator } from './components/ui/separator';
+import { Badge } from './components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
+import { AlertCircle, Calculator, TrendingUp, FileText, PieChart } from 'lucide-react';
+import './App.css';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
-const Home = () => {
-  const helloWorldApi = async () => {
+function App() {
+  const [parametros, setParametros] = useState({
+    valor_carta: 100000,
+    prazo_meses: 120,
+    taxa_admin: 0.21,
+    fundo_reserva: 0.03,
+    mes_contemplacao: 1,
+    lance_livre_perc: 0.10,
+    taxa_reajuste_anual: 0.05
+  });
+
+  const [resultados, setResultados] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [erro, setErro] = useState(null);
+
+  // Carregar parâmetros padrão ao inicializar
+  useEffect(() => {
+    const carregarParametrosPadrao = async () => {
+      try {
+        const response = await axios.get(`${API}/parametros-padrao`);
+        setParametros(response.data);
+      } catch (error) {
+        console.error('Erro ao carregar parâmetros padrão:', error);
+      }
+    };
+    carregarParametrosPadrao();
+  }, []);
+
+  const handleInputChange = (field, value) => {
+    setParametros(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const simularConsorcio = async () => {
+    setLoading(true);
+    setErro(null);
+    
     try {
-      const response = await axios.get(`${API}/`);
-      console.log(response.data.message);
-    } catch (e) {
-      console.error(e, `errored out requesting / api`);
+      const response = await axios.post(`${API}/simular`, parametros);
+      
+      if (response.data.erro) {
+        setErro(response.data.mensagem);
+        setResultados(null);
+      } else {
+        setResultados(response.data);
+      }
+    } catch (error) {
+      setErro(error.response?.data?.detail || 'Erro ao simular consórcio');
+      setResultados(null);
+    } finally {
+      setLoading(false);
     }
   };
 
-  useEffect(() => {
-    helloWorldApi();
-  }, []);
+  const formatarMoeda = (valor) => {
+    return valor.toLocaleString('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    });
+  };
+
+  const formatarPorcentagem = (valor) => {
+    return (valor * 100).toFixed(2) + '%';
+  };
 
   return (
-    <div>
-      <header className="App-header">
-        <a
-          className="App-link"
-          href="https://emergent.sh"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <img src="https://avatars.githubusercontent.com/in/1201222?s=120&u=2686cf91179bbafbc7a71bfbc43004cf9ae1acea&v=4" />
-        </a>
-        <p className="mt-5">Building something incredible ~!</p>
-      </header>
-    </div>
-  );
-};
+    <div className="min-h-screen bg-light">
+      {/* Header */}
+      <div className="bg-primary-accent text-light border-b border-moonstone">
+        <div className="container mx-auto px-6 py-6">
+          <div className="flex items-center gap-3">
+            <Calculator className="h-8 w-8 text-accent-warm" />
+            <div>
+              <h1 className="text-2xl font-bold">Simulador de Consórcio</h1>
+              <p className="text-neutral-light opacity-90">Análise completa de lance livre e fluxos de caixa</p>
+            </div>
+          </div>
+        </div>
+      </div>
 
-function App() {
-  return (
-    <div className="App">
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Home />}>
-            <Route index element={<Home />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
+      <div className="container mx-auto px-6 py-8">
+        <div className="grid lg:grid-cols-5 gap-8">
+          {/* Painel de Parâmetros */}
+          <div className="lg:col-span-2">
+            <Card className="border-moonstone shadow-sm">
+              <CardHeader className="bg-neutral-light border-b border-moonstone">
+                <CardTitle className="text-primary-accent flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5" />
+                  Parâmetros da Simulação
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6 space-y-6">
+                {/* Valor da Carta */}
+                <div className="space-y-2">
+                  <Label htmlFor="valor_carta" className="text-primary-accent font-medium">
+                    Valor da Carta (R$)
+                  </Label>
+                  <Input
+                    id="valor_carta"
+                    type="number"
+                    value={parametros.valor_carta}
+                    onChange={(e) => handleInputChange('valor_carta', parseFloat(e.target.value))}
+                    className="border-moonstone focus:border-accent-warm"
+                  />
+                </div>
+
+                {/* Prazo */}
+                <div className="space-y-2">
+                  <Label htmlFor="prazo_meses" className="text-primary-accent font-medium">
+                    Prazo (meses)
+                  </Label>
+                  <Input
+                    id="prazo_meses"
+                    type="number"
+                    value={parametros.prazo_meses}
+                    onChange={(e) => handleInputChange('prazo_meses', parseInt(e.target.value))}
+                    className="border-moonstone focus:border-accent-warm"
+                  />
+                </div>
+
+                {/* Taxa Admin */}
+                <div className="space-y-2">
+                  <Label htmlFor="taxa_admin" className="text-primary-accent font-medium">
+                    Taxa de Administração (%)
+                  </Label>
+                  <Input
+                    id="taxa_admin"
+                    type="number"
+                    step="0.01"
+                    value={parametros.taxa_admin * 100}
+                    onChange={(e) => handleInputChange('taxa_admin', parseFloat(e.target.value) / 100)}
+                    className="border-moonstone focus:border-accent-warm"
+                  />
+                </div>
+
+                {/* Fundo de Reserva */}
+                <div className="space-y-2">
+                  <Label htmlFor="fundo_reserva" className="text-primary-accent font-medium">
+                    Fundo de Reserva (%)
+                  </Label>
+                  <Input
+                    id="fundo_reserva"
+                    type="number"
+                    step="0.01"
+                    value={parametros.fundo_reserva * 100}
+                    onChange={(e) => handleInputChange('fundo_reserva', parseFloat(e.target.value) / 100)}
+                    className="border-moonstone focus:border-accent-warm"
+                  />
+                </div>
+
+                {/* Mês de Contemplação */}
+                <div className="space-y-2">
+                  <Label htmlFor="mes_contemplacao" className="text-primary-accent font-medium">
+                    Mês de Contemplação
+                  </Label>
+                  <Input
+                    id="mes_contemplacao"
+                    type="number"
+                    value={parametros.mes_contemplacao}
+                    onChange={(e) => handleInputChange('mes_contemplacao', parseInt(e.target.value))}
+                    className="border-moonstone focus:border-accent-warm"
+                  />
+                </div>
+
+                {/* Lance Livre */}
+                <div className="space-y-2">
+                  <Label htmlFor="lance_livre_perc" className="text-primary-accent font-medium">
+                    Lance Livre (%)
+                  </Label>
+                  <Input
+                    id="lance_livre_perc"
+                    type="number"
+                    step="0.01"
+                    value={parametros.lance_livre_perc * 100}
+                    onChange={(e) => handleInputChange('lance_livre_perc', parseFloat(e.target.value) / 100)}
+                    className="border-moonstone focus:border-accent-warm"
+                  />
+                </div>
+
+                {/* Taxa de Reajuste */}
+                <div className="space-y-2">
+                  <Label htmlFor="taxa_reajuste_anual" className="text-primary-accent font-medium">
+                    Taxa de Reajuste Anual (%)
+                  </Label>
+                  <Input
+                    id="taxa_reajuste_anual"
+                    type="number"
+                    step="0.01"
+                    value={parametros.taxa_reajuste_anual * 100}
+                    onChange={(e) => handleInputChange('taxa_reajuste_anual', parseFloat(e.target.value) / 100)}
+                    className="border-moonstone focus:border-accent-warm"
+                  />
+                </div>
+
+                <Separator className="bg-moonstone" />
+
+                <Button 
+                  onClick={simularConsorcio}
+                  disabled={loading}
+                  className="w-full bg-accent-warm hover:bg-accent-dark text-light font-medium py-3"
+                >
+                  {loading ? 'Simulando...' : 'Simular Consórcio'}
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Painel de Resultados */}
+          <div className="lg:col-span-3">
+            {erro && (
+              <Card className="border-red-200 bg-red-50 mb-6">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 text-red-700">
+                    <AlertCircle className="h-5 w-5" />
+                    <span className="font-medium">Erro: {erro}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {resultados && !resultados.erro && (
+              <div className="space-y-6">
+                {/* Cards de Resumo */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Card className="border-moonstone">
+                    <CardContent className="p-6">
+                      <div className="flex items-center gap-3">
+                        <div className="p-3 bg-accent-warm rounded-lg">
+                          <PieChart className="h-6 w-6 text-light" />
+                        </div>
+                        <div>
+                          <p className="text-sm text-neutral-mid">CET Anual</p>
+                          <p className="text-2xl font-bold text-primary-accent">
+                            {resultados.resultados.convergiu ? 
+                              formatarPorcentagem(resultados.resultados.cet_anual) : 
+                              'Erro no cálculo'
+                            }
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="border-moonstone">
+                    <CardContent className="p-6">
+                      <div className="flex items-center gap-3">
+                        <div className="p-3 bg-accent-medium rounded-lg">
+                          <TrendingUp className="h-6 w-6 text-light" />
+                        </div>
+                        <div>
+                          <p className="text-sm text-neutral-mid">Lance Livre</p>
+                          <p className="text-2xl font-bold text-primary-accent">
+                            {formatarMoeda(resultados.resumo_financeiro.valor_lance_livre)}
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="border-moonstone">
+                    <CardContent className="p-6">
+                      <div className="flex items-center gap-3">
+                        <div className="p-3 bg-accent-dark rounded-lg">
+                          <Calculator className="h-6 w-6 text-light" />
+                        </div>
+                        <div>
+                          <p className="text-sm text-neutral-mid">Fluxo Contemplação</p>
+                          <p className="text-2xl font-bold text-primary-accent">
+                            {formatarMoeda(resultados.resumo_financeiro.fluxo_contemplacao)}
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="border-moonstone">
+                    <CardContent className="p-6">
+                      <div className="flex items-center gap-3">
+                        <div className="p-3 bg-accent-light rounded-lg">
+                          <FileText className="h-6 w-6 text-light" />
+                        </div>
+                        <div>
+                          <p className="text-sm text-neutral-mid">Total Parcelas</p>
+                          <p className="text-2xl font-bold text-primary-accent">
+                            {formatarMoeda(resultados.resumo_financeiro.total_parcelas)}
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Detalhamento */}
+                <Card className="border-moonstone">
+                  <CardHeader className="bg-neutral-light border-b border-moonstone">
+                    <CardTitle className="text-primary-accent">Detalhamento da Simulação</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    <Tabs defaultValue="resumo" className="w-full">
+                      <TabsList className="grid w-full grid-cols-2 bg-neutral-light">
+                        <TabsTrigger value="resumo" className="data-[state=active]:bg-accent-warm data-[state=active]:text-light">
+                          Resumo Financeiro
+                        </TabsTrigger>
+                        <TabsTrigger value="detalhes" className="data-[state=active]:bg-accent-warm data-[state=active]:text-light">
+                          Primeiros 24 Meses
+                        </TabsTrigger>
+                      </TabsList>
+                      
+                      <TabsContent value="resumo" className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-3">
+                            <div className="flex justify-between items-center">
+                              <span className="text-neutral-mid">Base do Contrato:</span>
+                              <Badge variant="outline" className="font-mono">
+                                {formatarMoeda(resultados.resumo_financeiro.base_contrato)}
+                              </Badge>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-neutral-mid">Carta na Contemplação:</span>
+                              <Badge variant="outline" className="font-mono">
+                                {formatarMoeda(resultados.resumo_financeiro.valor_carta_contemplacao)}
+                              </Badge>
+                            </div>
+                          </div>
+                          <div className="space-y-3">
+                            {resultados.resultados.convergiu && (
+                              <>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-neutral-mid">CET Mensal:</span>
+                                  <Badge variant="outline" className="font-mono">
+                                    {formatarPorcentagem(resultados.resultados.cet_mensal)}
+                                  </Badge>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-neutral-mid">Status:</span>
+                                  <Badge className="bg-green-100 text-green-800 border-green-200">
+                                    Cálculo OK
+                                  </Badge>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </TabsContent>
+
+                      <TabsContent value="detalhes">
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-sm">
+                            <thead>
+                              <tr className="border-b border-moonstone bg-neutral-light">
+                                <th className="p-3 text-left text-primary-accent">Mês</th>
+                                <th className="p-3 text-right text-primary-accent">Parcela</th>
+                                <th className="p-3 text-right text-primary-accent">Lance</th>
+                                <th className="p-3 text-right text-primary-accent">Fluxo</th>
+                                <th className="p-3 text-center text-primary-accent">Status</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {resultados.detalhamento.slice(0, 24).map((item, index) => (
+                                <tr key={index} className={`border-b border-gray-100 ${item.eh_contemplacao ? 'bg-green-50' : ''}`}>
+                                  <td className="p-3 text-primary-accent font-medium">{item.mes}</td>
+                                  <td className="p-3 text-right font-mono text-neutral-dark">
+                                    {formatarMoeda(item.parcela_corrigida)}
+                                  </td>
+                                  <td className="p-3 text-right font-mono text-neutral-dark">
+                                    {item.lance_livre > 0 ? formatarMoeda(item.lance_livre) : '-'}
+                                  </td>
+                                  <td className={`p-3 text-right font-mono ${item.fluxo_liquido > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                    {formatarMoeda(item.fluxo_liquido)}
+                                  </td>
+                                  <td className="p-3 text-center">
+                                    {item.eh_contemplacao && (
+                                      <Badge className="bg-green-100 text-green-800 border-green-200 text-xs">
+                                        Contemplação
+                                      </Badge>
+                                    )}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </TabsContent>
+                    </Tabs>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {!resultados && !erro && !loading && (
+              <Card className="border-moonstone">
+                <CardContent className="p-12 text-center">
+                  <Calculator className="h-16 w-16 text-neutral-mid mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-primary-accent mb-2">
+                    Pronto para simular
+                  </h3>
+                  <p className="text-neutral-mid">
+                    Configure os parâmetros à esquerda e clique em "Simular Consórcio" para ver os resultados.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
