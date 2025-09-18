@@ -7,7 +7,7 @@ import { Label } from './components/ui/label';
 import { Separator } from './components/ui/separator';
 import { Badge } from './components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
-import { AlertCircle, Calculator, TrendingUp, FileText, PieChart } from 'lucide-react';
+import { AlertCircle, Calculator, TrendingUp, FileText, PieChart, Download } from 'lucide-react';
 import './App.css';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -26,6 +26,7 @@ function App() {
 
   const [resultados, setResultados] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [loadingPdf, setLoadingPdf] = useState(false);
   const [erro, setErro] = useState(null);
 
   // Carregar parâmetros padrão ao inicializar
