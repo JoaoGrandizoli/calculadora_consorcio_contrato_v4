@@ -418,8 +418,12 @@ def gerar_relatorio_pdf(dados_simulacao: Dict, temp_dir: str) -> str:
         )
         
         # Título
+        # Horário de Brasília (UTC-3)
+        brasilia_tz = timezone(timedelta(hours=-3))
+        agora_brasilia = datetime.now(brasilia_tz)
+        
         story.append(Paragraph("Relatório de Simulação de Consórcio", title_style))
-        story.append(Paragraph(f"Gerado em: {datetime.now().strftime('%d/%m/%Y às %H:%M')}", styles['Normal']))
+        story.append(Paragraph(f"Gerado em: {agora_brasilia.strftime('%d/%m/%Y às %H:%M')}", styles['Normal']))
         story.append(Spacer(1, 20))
         
         # Parâmetros da Simulação
