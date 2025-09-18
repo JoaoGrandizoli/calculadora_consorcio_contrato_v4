@@ -1,4 +1,5 @@
 from fastapi import FastAPI, APIRouter, HTTPException
+from fastapi.responses import FileResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 import os
@@ -10,6 +11,17 @@ import numpy as np
 from scipy.optimize import fsolve
 import warnings
 warnings.filterwarnings('ignore')
+import tempfile
+from datetime import datetime
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter, A4
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
+import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('Agg')  # Use non-interactive backend
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
