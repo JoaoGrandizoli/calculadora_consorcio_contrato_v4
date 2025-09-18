@@ -429,9 +429,11 @@ function App() {
                             <thead>
                               <tr className="border-b border-moonstone bg-neutral-light">
                                 <th className="p-2 md:p-3 text-left text-primary-accent text-xs md:text-sm">Mês</th>
+                                <th className="p-2 md:p-3 text-left text-primary-accent text-xs md:text-sm">Data</th>
                                 <th className="p-2 md:p-3 text-right text-primary-accent text-xs md:text-sm">Parcela</th>
-                                <th className="p-2 md:p-3 text-right text-primary-accent text-xs md:text-sm">Lance</th>
-                                <th className="p-2 md:p-3 text-right text-primary-accent text-xs md:text-sm">Fluxo</th>
+                                <th className="p-2 md:p-3 text-right text-primary-accent text-xs md:text-sm">Valor da Carta</th>
+                                <th className="p-2 md:p-3 text-right text-primary-accent text-xs md:text-sm">Fluxo de Caixa</th>
+                                <th className="p-2 md:p-3 text-right text-primary-accent text-xs md:text-sm">Saldo Devedor</th>
                                 <th className="p-2 md:p-3 text-center text-primary-accent text-xs md:text-sm">Status</th>
                               </tr>
                             </thead>
@@ -439,14 +441,18 @@ function App() {
                               {resultados.detalhamento.slice(0, 24).map((item, index) => (
                                 <tr key={index} className={`border-b border-gray-100 ${item.eh_contemplacao ? 'bg-green-50' : ''}`}>
                                   <td className="p-2 md:p-3 text-primary-accent font-medium text-xs md:text-sm">{item.mes}</td>
+                                  <td className="p-2 md:p-3 text-primary-accent text-xs md:text-sm">{item.data}</td>
                                   <td className="p-2 md:p-3 text-right font-mono text-neutral-dark text-xs md:text-sm">
                                     {formatarMoeda(item.parcela_corrigida)}
                                   </td>
                                   <td className="p-2 md:p-3 text-right font-mono text-neutral-dark text-xs md:text-sm">
-                                    {item.lance_livre > 0 ? formatarMoeda(item.lance_livre) : '-'}
+                                    {formatarMoeda(item.valor_carta_corrigido)}
                                   </td>
                                   <td className={`p-2 md:p-3 text-right font-mono text-xs md:text-sm ${item.fluxo_liquido > 0 ? 'text-green-600' : 'text-red-600'}`}>
                                     {formatarMoeda(item.fluxo_liquido)}
+                                  </td>
+                                  <td className="p-2 md:p-3 text-right font-mono text-neutral-dark text-xs md:text-sm">
+                                    {formatarMoeda(item.saldo_devedor)}
                                   </td>
                                   <td className="p-2 md:p-3 text-center">
                                     {item.eh_contemplacao && (
