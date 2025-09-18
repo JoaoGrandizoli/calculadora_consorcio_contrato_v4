@@ -505,25 +505,26 @@ def gerar_relatorio_pdf(dados_simulacao: Dict, temp_dir: str) -> str:
         # Tabela de Amortização (primeiros 36 meses para não ficar muito grande)
         story.append(Paragraph("Tabela de Amortização (Primeiros 36 Meses)", heading_style))
         
-        tabela_data = [['Mês', 'Parcela (R$)', 'Lance (R$)', 'Fluxo (R$)', 'Status']]
+        tabela_data = [['Mês', 'Data', 'Parcela (R$)', 'Valor da Carta (R$)', 'Fluxo de Caixa (R$)', 'Saldo Devedor (R$)']]
         
         for item in dados_simulacao['detalhamento'][:36]:
             mes = str(item['mes'])
+            data = item['data']
             parcela = f"R$ {item['parcela_corrigida']:,.2f}"
-            lance = f"R$ {item['lance_livre']:,.2f}" if item['lance_livre'] > 0 else "-"
+            valor_carta = f"R$ {item['valor_carta_corrigido']:,.2f}"
             fluxo = f"R$ {item['fluxo_liquido']:,.2f}"
-            status = "Contemplação" if item['eh_contemplacao'] else "-"
+            saldo = f"R$ {item['saldo_devedor']:,.2f}"
             
-            tabela_data.append([mes, parcela, lance, fluxo, status])
+            tabela_data.append([mes, data, parcela, valor_carta, fluxo, saldo])
         
-        tabela_amortizacao = Table(tabela_data, colWidths=[0.8*inch, 1.2*inch, 1.2*inch, 1.2*inch, 1.2*inch])
+        tabela_amortizacao = Table(tabela_data, colWidths=[0.6*inch, 0.8*inch, 1.0*inch, 1.2*inch, 1.2*inch, 1.2*inch])
         tabela_amortizacao.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#8D4C23')),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, 0), 10),
-            ('FONTSIZE', (0, 1), (-1, -1), 8),
+            ('FONTSIZE', (0, 0), (-1, 0), 9),
+            ('FONTSIZE', (0, 1), (-1, -1), 7),
             ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
             ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
             ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
