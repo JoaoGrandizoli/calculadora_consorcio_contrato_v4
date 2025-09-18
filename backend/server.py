@@ -115,9 +115,13 @@ class SimuladorConsorcio:
                     # IMPORTANTE: Se já foi contemplado, a parcela é menor (sem taxa de administração sobre o valor já recebido)
                     if mes > self.params.mes_contemplacao:
                         # Após contemplação: parcela sobre valor restante (valor_carta já foi recebido)
-                        valor_restante = base_contrato - valor_carta_corrigido
-                        parcela_pos_contemplacao = valor_restante / (self.params.prazo_meses - self.params.mes_contemplacao)
-                        parcela_corrigida = parcela_pos_contemplacao * fator_correcao
+                        meses_restantes = self.params.prazo_meses - self.params.mes_contemplacao
+                        if meses_restantes > 0:
+                            valor_restante = base_contrato - valor_carta_corrigido
+                            parcela_pos_contemplacao = valor_restante / meses_restantes
+                            parcela_corrigida = parcela_pos_contemplacao * fator_correcao
+                        else:
+                            parcela_corrigida = 0
                     
                     fluxo = -parcela_corrigida
                     lance_mes = 0
