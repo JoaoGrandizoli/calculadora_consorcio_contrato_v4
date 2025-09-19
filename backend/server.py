@@ -85,6 +85,27 @@ class RespostaSimulacao(BaseModel):
     detalhamento: List[DetalhamentoMes] = []
     resumo_financeiro: Optional[ResumoFinanceiro] = None
 
+class ParametrosProbabilidade(BaseModel):
+    num_participantes: int = 100
+    contemplados_por_mes: int = 2
+
+class CurvasProbabilidade(BaseModel):
+    meses: List[int]
+    hazard: List[float]
+    probabilidade_acumulada: List[float]
+    probabilidade_mes: List[float]
+    esperanca_meses: float
+    mediana_mes: Optional[int]
+    p10_mes: Optional[int]
+    p90_mes: Optional[int]
+
+class RespostaProbabilidades(BaseModel):
+    erro: bool
+    mensagem: Optional[str] = None
+    sem_lance: Optional[CurvasProbabilidade] = None
+    com_lance: Optional[CurvasProbabilidade] = None
+    parametros: Optional[Dict] = None
+
 class SimuladorConsorcio:
     """Simulador de consórcio baseado na metodologia fornecida."""
     
