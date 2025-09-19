@@ -520,6 +520,103 @@ function App() {
                           </table>
                         </div>
                       </TabsContent>
+
+                      <TabsContent value="probabilidades" className="space-y-4">
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                          <h4 className="text-blue-800 font-semibold mb-3">🎲 Configurar Análise de Probabilidades</h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <Label className="text-sm font-medium text-blue-700">Participantes do Grupo</Label>
+                              <Input
+                                type="number"
+                                value={parametrosProb.num_participantes}
+                                onChange={(e) => setParametrosProb(prev => ({...prev, num_participantes: parseInt(e.target.value)}))}
+                                className="mt-1"
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-sm font-medium text-blue-700">Contemplados por Mês</Label>
+                              <Input
+                                type="number"
+                                value={parametrosProb.contemplados_por_mes}
+                                onChange={(e) => setParametrosProb(prev => ({...prev, contemplados_por_mes: parseInt(e.target.value)}))}
+                                className="mt-1"
+                              />
+                            </div>
+                          </div>
+                          <Button 
+                            onClick={calcularProbabilidades}
+                            disabled={loadingProb}
+                            className="mt-3 bg-blue-600 hover:bg-blue-700 text-white"
+                          >
+                            {loadingProb ? 'Calculando...' : 'Calcular Probabilidades'}
+                          </Button>
+                        </div>
+
+                        {probabilidades && !probabilidades.erro && (
+                          <div className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                              <Card className="border-blue-200">
+                                <CardContent className="p-4 text-center">
+                                  <p className="text-sm text-blue-600">Tempo Esperado</p>
+                                  <p className="text-2xl font-bold text-blue-800">
+                                    {probabilidades.com_lance.esperanca_meses.toFixed(1)} meses
+                                  </p>
+                                </CardContent>
+                              </Card>
+                              <Card className="border-blue-200">
+                                <CardContent className="p-4 text-center">
+                                  <p className="text-sm text-blue-600">Mediana</p>
+                                  <p className="text-2xl font-bold text-blue-800">
+                                    {probabilidades.com_lance.mediana_mes} meses
+                                  </p>
+                                </CardContent>
+                              </Card>
+                              <Card className="border-blue-200">
+                                <CardContent className="p-4 text-center">
+                                  <p className="text-sm text-blue-600">Intervalo 80%</p>
+                                  <p className="text-lg font-bold text-blue-800">
+                                    {probabilidades.com_lance.p10_mes} - {probabilidades.com_lance.p90_mes} meses
+                                  </p>
+                                </CardContent>
+                              </Card>
+                            </div>
+
+                            <div className="bg-white border border-gray-200 rounded-lg p-4">
+                              <h5 className="font-semibold mb-3">Probabilidade de Contemplação por Mês</h5>
+                              <div className="overflow-x-auto">
+                                <table className="w-full text-sm">
+                                  <thead>
+                                    <tr className="border-b bg-gray-50">
+                                      <th className="p-2 text-left">Mês</th>
+                                      <th className="p-2 text-right">Prob. no Mês</th>
+                                      <th className="p-2 text-right">Prob. Acumulada</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {probabilidades.com_lance.meses.slice(0, 12).map((mes, index) => (
+                                      <tr key={mes} className="border-b">
+                                        <td className="p-2 font-medium">{mes}</td>
+                                        <td className="p-2 text-right font-mono">
+                                          {(probabilidades.com_lance.probabilidade_mes[index] * 100).toFixed(2)}%
+                                        </td>
+                                        <td className="p-2 text-right font-mono">
+                                          {(probabilidades.com_lance.probabilidade_acumulada[index] * 100).toFixed(2)}%
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                              {probabilidades.com_lance.meses.length > 12 && (
+                                <p className="text-xs text-gray-500 mt-2">
+                                  Mostrando primeiros 12 meses de {probabilidades.parametros.meses_total} total
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </TabsContent>
                     </Tabs>
                   </CardContent>
                 </Card>
