@@ -25,9 +25,15 @@ function App() {
   });
 
   const [resultados, setResultados] = useState(null);
+  const [probabilidades, setProbabilidades] = useState(null);
   const [loading, setLoading] = useState(false);
   const [loadingPdf, setLoadingPdf] = useState(false);
+  const [loadingProb, setLoadingProb] = useState(false);
   const [erro, setErro] = useState(null);
+  const [parametrosProb, setParametrosProb] = useState({
+    num_participantes: 100,
+    contemplados_por_mes: 2
+  });
 
   // Carregar parâmetros padrão ao inicializar
   useEffect(() => {
