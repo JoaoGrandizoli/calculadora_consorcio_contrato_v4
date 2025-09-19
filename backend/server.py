@@ -392,7 +392,7 @@ async def calcular_probabilidades(parametros: ParametrosProbabilidade):
             raise HTTPException(status_code=400, detail="Contemplados por mês deve ser positivo")
         
         # Calcular probabilidades
-        resultado = calcular_probabilidades_contemplacao(
+        resultado = calcular_probabilidades_contemplacao_corrigido(
             num_participantes=parametros.num_participantes,
             contemplados_por_mes=parametros.contemplados_por_mes
         )
