@@ -744,9 +744,9 @@ def curvas_from_hazard(h):
         "p90_mes": p90
     }
 
-def calcular_probabilidades_contemplacao(num_participantes=100, contemplados_por_mes=2):
+def calcular_probabilidades_contemplacao(num_participantes=430, contemplados_por_mes=2):
     """
-    Calcula probabilidades de contemplação para um consórcio típico.
+    Calcula probabilidades de contemplação baseado na lógica da planilha.
     
     Args:
         num_participantes: Número total de participantes do grupo
@@ -756,26 +756,102 @@ def calcular_probabilidades_contemplacao(num_participantes=100, contemplados_por
         # Calcular quantos meses até contemplar todos
         meses_total = int(np.ceil(num_participantes / contemplados_por_mes))
         
-        # Assumir 1 por sorteio e o resto por lance
-        sorteio = np.ones(meses_total)
-        lance = np.full(meses_total, contemplados_por_mes - 1)
-        
-        # Participantes restantes no início de cada mês
+        # Listas para armazenar dados
+        meses = []
         participantes_restantes = []
-        for mes in range(meses_total):
-            restantes = num_participantes - (contemplados_por_mes * mes)
-            participantes_restantes.append(max(1, restantes))
+        prob_sem_lance = []  # Col5 da planilha
+        prob_com_lance = []  # Col6 da planilha
+        prob_acumulada_sem = []
+        prob_acumulada_com = []
         
-        # Calcular hazards
-        hazards = hazards_from_counts(participantes_restantes, sorteio, lance)
+        # Inicializar
+        participantes_atual = num_participantes
+        acum_sem = 0.0
+        acum_com = 0.0
         
-        # Calcular curvas sem lance e com lance
-        curvas_sem = curvas_from_hazard(hazards["h_sem"])
-        curvas_com = curvas_from_hazard(hazards["h_com"])
+        for mes in range(1, meses_total + 1):
+            meses.append(mes)
+            participantes_restantes.append(participantes_atual)
+            
+            # Lógica da planilha:
+            # - 1 contemplado por sorteio (sempre)
+            # - 1 contemplado por lance (col4 = 1)
+            # - Probabilidade sem lance = 1 / participantes_restantes
+            # - Probabilidade com lance = 2 / participantes_restantes
+            
+            if participantes_atual > 0:
+                prob_mes_sem = 1.0 / participantes_atual  # Col5: probabilidade apenas sorteio
+                prob_mes_com = 2.0 / participantes_atual  # Col6: probabilidade sorteio + lance
+            else:
+                prob_mes_sem = 0.0
+                prob_mes_com = 0.0
+            
+            prob_sem_lance.append(prob_mes_sem)
+            prob_com_lance.append(prob_mes_com)
+            
+            # Probabilidades acumuladas (aproximação simples)
+            acum_sem += prob_mes_sem
+            acum_com += prob_mes_com
+            
+            # Garantir que não passe de 1.0
+            acum_sem = min(acum_sem, 1.0)
+            acum_com = min(acum_com, 1.0)
+            
+            prob_acumulada_sem.append(acum_sem)
+            prob_acumulada_com.append(acum_com)
+            
+            # Reduzir participantes para próximo mês
+            participantes_atual = max(0, participantes_atual - contemplados_por_mes)
+        
+        # Calcular métricas estatísticas
+        def calcular_metricas(probabilidades):
+            total_prob = sum(probabilidades)
+            if total_prob > 0:
+                # Normalizar para que some 1
+                probs_norm = [p/total_prob for p in probabilidades]
+                esperanca = sum((i+1) * p for i, p in enumerate(probs_norm))
+                
+                # Mediana e percentis
+                acum = 0.0
+                p50 = p10 = p90 = None
+                for i, p in enumerate(probs_norm):
+                    acum += p
+                    if p10 is None and acum >= 0.10:
+                        p10 = i + 1
+                    if p50 is None and acum >= 0.50:
+                        p50 = i + 1
+                    if p90 is None and acum >= 0.90:
+                        p90 = i + 1
+                        break
+                
+                return esperanca, p50, p10, p90
+            else:
+                return 0, None, None, None
+        
+        esp_sem, med_sem, p10_sem, p90_sem = calcular_metricas(prob_sem_lance)
+        esp_com, med_com, p10_com, p90_com = calcular_metricas(prob_com_lance)
         
         return {
-            "sem_lance": curvas_sem,
-            "com_lance": curvas_com,
+            "sem_lance": {
+                "meses": meses,
+                "hazard": prob_sem_lance,
+                "probabilidade_acumulada": prob_acumulada_sem,
+                "probabilidade_mes": prob_sem_lance,  # Mesmo que hazard para este caso
+                "esperanca_meses": esp_sem,
+                "mediana_mes": med_sem,
+                "p10_mes": p10_sem,
+                "p90_mes": p90_sem
+            },
+            "com_lance": {
+                "meses": meses,
+                "hazard": prob_com_lance,
+                "probabilidade_acumulada": prob_acumulada_com,
+                "probabilidade_mes": prob_com_lance,  # Mesmo que hazard para este caso
+                "esperanca_meses": esp_com,
+                "mediana_mes": med_com,
+                "p10_mes": p10_com,
+                "p90_mes": p90_com
+            },
             "parametros": {
                 "num_participantes": num_participantes,
                 "contemplados_por_mes": contemplados_por_mes,
