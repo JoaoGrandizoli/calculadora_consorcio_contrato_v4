@@ -380,6 +380,42 @@ async def get_parametros_padrao():
     """Retorna os parâmetros padrão para simulação."""
     return ParametrosConsorcio()
 
+@api_router.post("/calcular-probabilidades", response_model=RespostaProbabilidades)
+async def calcular_probabilidades(parametros: ParametrosProbabilidade):
+    """Calcula probabilidades de contemplação para o consórcio."""
+    try:
+        # Validações básicas
+        if parametros.num_participantes <= 0:
+            raise HTTPException(status_code=400, detail="Número de participantes deve ser positivo")
+        
+        if parametros.contemplados_por_mes <= 0:
+            raise HTTPException(status_code=400, detail="Contemplados por mês deve ser positivo")
+        
+        # Calcular probabilidades
+        resultado = calcular_probabilidades_contemplacao(
+            num_participantes=parametros.num_participantes,
+            contemplados_por_mes=parametros.contemplados_por_mes
+        )
+        
+        if resultado is None:
+            return RespostaProbabilidades(
+                erro=True,
+                mensagem="Erro no cálculo de probabilidades"
+            )
+        
+        return RespostaProbabilidades(
+            erro=False,
+            sem_lance=CurvasProbabilidade(**resultado["sem_lance"]),
+            com_lance=CurvasProbabilidade(**resultado["com_lance"]),
+            parametros=resultado["parametros"]
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Erro no endpoint de probabilidades: {e}")
+        raise HTTPException(status_code=500, detail=f"Erro interno: {str(e)}")
+
 def criar_grafico_fluxo_caixa(detalhamento: List[Dict], mes_contemplacao: int, temp_dir: str) -> str:
     """Cria gráfico de fluxo de caixa e salva como imagem."""
     try:
