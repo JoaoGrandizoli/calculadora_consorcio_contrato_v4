@@ -383,16 +383,19 @@ function App() {
                 {/* Detalhamento */}
                 <Card className="border-moonstone">
                   <CardHeader className="bg-neutral-light border-b border-moonstone">
-                    <CardTitle className="text-primary-accent text-lg md:text-xl">Detalhamento da Simulação</CardTitle>
+                    <CardTitle className="text-primary-accent text-lg md:text-xl">Análise Completa</CardTitle>
                   </CardHeader>
                   <CardContent className="p-4 md:p-6">
                     <Tabs defaultValue="resumo" className="w-full">
-                      <TabsList className="grid w-full grid-cols-2 bg-neutral-light">
+                      <TabsList className="grid w-full grid-cols-3 bg-neutral-light">
                         <TabsTrigger value="resumo" className="data-[state=active]:bg-accent-warm data-[state=active]:text-light text-sm md:text-base">
                           Resumo Financeiro
                         </TabsTrigger>
                         <TabsTrigger value="detalhes" className="data-[state=active]:bg-accent-warm data-[state=active]:text-light text-sm md:text-base">
-                          Primeiros 24 Meses
+                          Fluxo de Caixa
+                        </TabsTrigger>
+                        <TabsTrigger value="probabilidades" className="data-[state=active]:bg-accent-warm data-[state=active]:text-light text-sm md:text-base">
+                          Probabilidades
                         </TabsTrigger>
                       </TabsList>
                       
