@@ -620,3 +620,112 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+# ----------------------------
+# CÁLCULOS DE PROBABILIDADE DE CONTEMPLAÇÃO
+# ----------------------------
+
+def _as_float_array(x):
+    """Converte para array numpy float."""
+    a = np.asarray(list(x), dtype=float)
+    if a.ndim != 1:
+        raise ValueError("Forneça vetores 1D.")
+    return a
+
+def _percentile_month(F, p):
+    """Primeiro mês (1-index) em que F_t ≥ p. Retorna None se não atingir."""
+    idx = np.argmax(F >= p)
+    if F[-1] < p:
+        return None
+    return int(np.where(F >= p)[0][0] + 1)
+
+def hazards_from_counts(participantes_restantes, sorteio, lance=None):
+    """Calcula hazards (prob. condicionais) a partir de CONTAGENS mensais."""
+    pr = _as_float_array(participantes_restantes)
+    s = _as_float_array(sorteio)
+    l = _as_float_array(lance) if lance is not None else np.zeros_like(s)
+    
+    if np.any(pr <= 0):
+        raise ValueError("Há 'participantes_restantes' ≤ 0. Use valores estritamente positivos.")
+
+    h_sem = np.divide(s, pr, out=np.zeros_like(s), where=pr>0)
+    h_com = np.divide(s + l, pr, out=np.zeros_like(s), where=pr>0)
+
+    h_sem = np.clip(h_sem, 0.0, 1.0)
+    h_com = np.clip(h_com, 0.0, 1.0)
+
+    return {"h_sem": h_sem, "h_com": h_com}
+
+def curvas_from_hazard(h):
+    """Calcula curvas de probabilidade a partir de hazards."""
+    h = _as_float_array(h)
+    h = np.clip(h, 0.0, 1.0)
+
+    # Sobrevivência e acumulada
+    S = np.cumprod(1.0 - h)
+    F = 1.0 - S
+
+    # f_t = h_t * S_{t-1}
+    S_prev = np.r_[1.0, S[:-1]]
+    f = h * S_prev
+
+    # Métricas de distribuição do mês de contemplação
+    meses = np.arange(1, len(h) + 1, dtype=int)
+    esperanca = float(np.sum(meses * f))
+    p50 = _percentile_month(F, 0.50)
+    p10 = _percentile_month(F, 0.10)
+    p90 = _percentile_month(F, 0.90)
+
+    return {
+        "meses": meses.tolist(),
+        "hazard": h.tolist(),
+        "probabilidade_acumulada": F.tolist(),
+        "probabilidade_mes": f.tolist(),
+        "esperanca_meses": esperanca,
+        "mediana_mes": p50,
+        "p10_mes": p10,
+        "p90_mes": p90
+    }
+
+def calcular_probabilidades_contemplacao(num_participantes=100, contemplados_por_mes=2):
+    """
+    Calcula probabilidades de contemplação para um consórcio típico.
+    
+    Args:
+        num_participantes: Número total de participantes do grupo
+        contemplados_por_mes: Número de contemplados por mês (sorteio + lance)
+    """
+    try:
+        # Calcular quantos meses até contemplar todos
+        meses_total = int(np.ceil(num_participantes / contemplados_por_mes))
+        
+        # Assumir 1 por sorteio e o resto por lance
+        sorteio = np.ones(meses_total)
+        lance = np.full(meses_total, contemplados_por_mes - 1)
+        
+        # Participantes restantes no início de cada mês
+        participantes_restantes = []
+        for mes in range(meses_total):
+            restantes = num_participantes - (contemplados_por_mes * mes)
+            participantes_restantes.append(max(1, restantes))
+        
+        # Calcular hazards
+        hazards = hazards_from_counts(participantes_restantes, sorteio, lance)
+        
+        # Calcular curvas sem lance e com lance
+        curvas_sem = curvas_from_hazard(hazards["h_sem"])
+        curvas_com = curvas_from_hazard(hazards["h_com"])
+        
+        return {
+            "sem_lance": curvas_sem,
+            "com_lance": curvas_com,
+            "parametros": {
+                "num_participantes": num_participantes,
+                "contemplados_por_mes": contemplados_por_mes,
+                "meses_total": meses_total
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"Erro no cálculo de probabilidades: {e}")
+        return None
