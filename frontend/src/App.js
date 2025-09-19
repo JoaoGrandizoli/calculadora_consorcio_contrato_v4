@@ -31,7 +31,7 @@ function App() {
   const [loadingProb, setLoadingProb] = useState(false);
   const [erro, setErro] = useState(null);
   const [parametrosProb, setParametrosProb] = useState({
-    num_participantes: 100,
+    num_participantes: 430,
     contemplados_por_mes: 2
   });
 
