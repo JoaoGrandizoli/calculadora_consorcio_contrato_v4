@@ -117,6 +117,27 @@ function App() {
     }
   };
 
+  const calcularProbabilidades = async () => {
+    setLoadingProb(true);
+    setErro(null);
+    
+    try {
+      const response = await axios.post(`${API}/calcular-probabilidades`, parametrosProb);
+      
+      if (response.data.erro) {
+        setErro(response.data.mensagem);
+        setProbabilidades(null);
+      } else {
+        setProbabilidades(response.data);
+      }
+    } catch (error) {
+      setErro(error.response?.data?.detail || 'Erro ao calcular probabilidades');
+      setProbabilidades(null);
+    } finally {
+      setLoadingProb(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-light">
       {/* Header */}
