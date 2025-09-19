@@ -603,6 +603,70 @@ function App() {
                               </Card>
                             </div>
 
+                            {/* Gráfico de Probabilidade Acumulada */}
+                            <Card className="border-gray-200">
+                              <CardHeader>
+                                <CardTitle className="text-lg">📈 Probabilidade Acumulada de Contemplação</CardTitle>
+                              </CardHeader>
+                              <CardContent>
+                                <div className="h-80">
+                                  <Line 
+                                    data={{
+                                      labels: probabilidades.com_lance.meses.slice(0, 60), // Primeiros 60 meses
+                                      datasets: [
+                                        {
+                                          label: 'Com Lance Livre',
+                                          data: probabilidades.com_lance.probabilidade_acumulada.slice(0, 60).map(p => p * 100),
+                                          borderColor: '#BC8159',
+                                          backgroundColor: 'rgba(188, 129, 89, 0.1)',
+                                          tension: 0.4,
+                                          pointRadius: 1,
+                                        },
+                                        {
+                                          label: 'Apenas Sorteio',
+                                          data: probabilidades.sem_lance.probabilidade_acumulada.slice(0, 60).map(p => p * 100),
+                                          borderColor: '#8D4C23',
+                                          backgroundColor: 'rgba(141, 76, 35, 0.1)',
+                                          tension: 0.4,
+                                          pointRadius: 1,
+                                        }
+                                      ]
+                                    }}
+                                    options={{
+                                      responsive: true,
+                                      maintainAspectRatio: false,
+                                      plugins: {
+                                        legend: {
+                                          position: 'top',
+                                        },
+                                        title: {
+                                          display: false,
+                                        },
+                                      },
+                                      scales: {
+                                        x: {
+                                          display: true,
+                                          title: {
+                                            display: true,
+                                            text: 'Mês'
+                                          }
+                                        },
+                                        y: {
+                                          display: true,
+                                          title: {
+                                            display: true,
+                                            text: 'Probabilidade Acumulada (%)'
+                                          },
+                                          min: 0,
+                                          max: 100
+                                        }
+                                      }
+                                    }}
+                                  />
+                                </div>
+                              </CardContent>
+                            </Card>
+
                             <div className="bg-white border border-gray-200 rounded-lg p-4">
                               <h5 className="font-semibold mb-3">Probabilidade de Contemplação por Mês</h5>
                               <div className="overflow-x-auto">
