@@ -982,15 +982,20 @@ def calcular_probabilidades_contemplacao(num_participantes=430, contemplados_por
         logger.error(f"Erro no cálculo de probabilidades: {e}")
         return None
 
-def calcular_probabilidades_contemplacao_corrigido(num_participantes=430, contemplados_por_mes=2):
+def calcular_probabilidades_contemplacao_corrigido(num_participantes=430, lance_livre_perc=0.10):
     """
     Versão corrigida do cálculo de probabilidades de contemplação.
     
     Args:
         num_participantes: Número total de participantes do grupo
-        contemplados_por_mes: Número de contemplados por mês (sorteio + lance)
+        lance_livre_perc: Percentual do lance livre (se 0, considera apenas sorteio)
     """
     try:
+        # Decidir contemplados por mês baseado no lance livre
+        if lance_livre_perc > 0:
+            contemplados_por_mes = 2  # 1 sorteio + 1 lance
+        else:
+            contemplados_por_mes = 1  # apenas sorteio
         # Calcular quantos meses até contemplar todos
         meses_total = int(np.ceil(num_participantes / contemplados_por_mes))
         
