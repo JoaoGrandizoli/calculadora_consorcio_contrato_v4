@@ -183,4 +183,4 @@ test_plan:
 
 agent_communication:
     - agent: "main"
-    - message: "Iniciando correção de probabilidades baseadas em lance livre. Foco no backend primeiro para corrigir lógica de hazard."
+    - message: "Implementadas todas as mudanças solicitadas. Backend atualizado para usar lance_livre_perc condicionalmente (1 ou 2 contemplados). Frontend atualizado para mostrar probabilidades corretas. Removido gráfico de fluxo de caixa. Pronto para testing."
