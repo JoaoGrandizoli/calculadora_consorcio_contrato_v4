@@ -449,39 +449,6 @@ async def calcular_probabilidades(parametros: ParametrosProbabilidade):
         logger.error(f"Erro no endpoint de probabilidades: {e}")
         raise HTTPException(status_code=500, detail=f"Erro interno: {str(e)}")
 
-def criar_grafico_fluxo_caixa(detalhamento: List[Dict], mes_contemplacao: int, temp_dir: str) -> str:
-    """Cria gráfico de fluxo de caixa e salva como imagem."""
-    try:
-        meses = [item['mes'] for item in detalhamento]
-        fluxos = [item['fluxo_liquido'] for item in detalhamento]
-        
-        plt.figure(figsize=(12, 6))
-        colors_list = ['green' if item['eh_contemplacao'] else 'red' for item in detalhamento]
-        
-        plt.bar(meses, fluxos, color=colors_list, alpha=0.7)
-        plt.axhline(y=0, color='black', linestyle='-', alpha=0.3)
-        plt.title('Fluxo de Caixa por Mês', fontsize=14, fontweight='bold')
-        plt.xlabel('Mês')
-        plt.ylabel('Fluxo de Caixa (R$)')
-        plt.grid(True, alpha=0.3)
-        
-        # Destacar contemplação
-        for i, item in enumerate(detalhamento):
-            if item['eh_contemplacao']:
-                plt.annotate('Contemplação', xy=(item['mes'], item['fluxo_liquido']), 
-                           xytext=(item['mes'], item['fluxo_liquido'] + max(fluxos) * 0.1),
-                           arrowprops=dict(arrowstyle='->', color='green'),
-                           fontweight='bold', color='green')
-        
-        plt.tight_layout()
-        grafico_path = os.path.join(temp_dir, 'grafico_fluxo.png')
-        plt.savefig(grafico_path, dpi=300, bbox_inches='tight')
-        plt.close()
-        
-        return grafico_path
-    except Exception as e:
-        logger.error(f"Erro ao criar gráfico: {e}")
-        return None
 
 def criar_grafico_probabilidades(num_participantes: int, lance_livre_perc: float, temp_dir: str) -> str:
     """Cria gráfico de probabilidades de contemplação."""
