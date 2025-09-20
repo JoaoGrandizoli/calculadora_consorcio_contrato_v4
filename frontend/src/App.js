@@ -580,11 +580,12 @@ function App() {
                               />
                             </div>
                             <div>
-                              <Label className="text-sm font-medium text-blue-700">Contemplados por Mês</Label>
+                              <Label className="text-sm font-medium text-blue-700">Lance Livre (%)</Label>
                               <Input
                                 type="number"
-                                value={parametrosProb.contemplados_por_mes}
-                                onChange={(e) => setParametrosProb(prev => ({...prev, contemplados_por_mes: parseInt(e.target.value)}))}
+                                step="0.01"
+                                value={parametrosProb.lance_livre_perc * 100}
+                                onChange={(e) => setParametrosProb(prev => ({...prev, lance_livre_perc: parseFloat(e.target.value) / 100}))}
                                 className="mt-1"
                               />
                             </div>
