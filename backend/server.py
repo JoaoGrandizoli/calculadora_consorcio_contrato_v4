@@ -90,8 +90,8 @@ class RespostaSimulacao(BaseModel):
     resumo_financeiro: Optional[ResumoFinanceiro] = None
 
 class ParametrosProbabilidade(BaseModel):
-    num_participantes: int = 100
-    contemplados_por_mes: int = 2
+    num_participantes: int = 430
+    lance_livre_perc: float = 0.10
 
 class CurvasProbabilidade(BaseModel):
     meses: List[int]
