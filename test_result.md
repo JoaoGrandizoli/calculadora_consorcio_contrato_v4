@@ -101,3 +101,86 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+user_problem_statement: Remover gráfico de fluxo de caixa da aplicação e corrigir cálculos de hazard/probabilidades para contemplação baseado em lance livre (lance_livre_perc = 0 -> 1/participantes, lance_livre_perc > 0 -> 2/participantes)
+
+backend:
+  - task: "Remover gráfico de fluxo de caixa do PDF"
+    implemented: false
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+        - agent: "main"
+        - comment: "Precisa remover chamada criar_grafico_fluxo_caixa em gerar_relatorio_pdf"
+
+  - task: "Corrigir cálculo hazard condicional baseado em lance_livre_perc"
+    implemented: false
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+        - agent: "main"
+        - comment: "Função calcular_probabilidade_mes_especifico precisa usar lance_livre_perc para decidir 1 ou 2 contemplados"
+
+  - task: "Atualizar endpoint /api/simular para passar lance_livre_perc"
+    implemented: false
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+        - agent: "main"
+        - comment: "Endpoint está hardcoded para 2 contemplados, precisa usar lance_livre_perc"
+
+  - task: "Corrigir função criar_grafico_probabilidades"
+    implemented: false
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+        - agent: "main"
+        - comment: "Função precisa receber e usar lance_livre_perc para cálculos corretos"
+
+frontend:
+  - task: "Atualizar display de probabilidades para mostrar 1/participantes vs 2/participantes"
+    implemented: false
+    working: "NA"
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+        - agent: "main"
+        - comment: "Linha 453 mostra sempre 2/participantes, precisa ser condicional"
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 1
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "Corrigir cálculo hazard condicional baseado em lance_livre_perc"
+    - "Atualizar endpoint /api/simular para passar lance_livre_perc"
+    - "Corrigir função criar_grafico_probabilidades"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+    - agent: "main"
+    - message: "Iniciando correção de probabilidades baseadas em lance livre. Foco no backend primeiro para corrigir lógica de hazard."
