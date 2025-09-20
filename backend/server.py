@@ -363,8 +363,7 @@ async def simular_consorcio(parametros: ParametrosConsorcio):
         prob_mes = calcular_probabilidade_mes_especifico(
             mes_contemplacao=parametros.mes_contemplacao,
             lance_livre_perc=parametros.lance_livre_perc,  # Agora passa o lance_livre_perc
-            num_participantes=430,  # Usar valores padrão da planilha
-            contemplados_por_mes=2
+            num_participantes=430  # Usar valores padrão da planilha
         )
         
         # Adicionar probabilidades ao resumo financeiro
