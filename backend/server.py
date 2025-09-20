@@ -1149,12 +1149,7 @@ def calcular_probabilidade_mes_especifico(mes_contemplacao: int, lance_livre_per
         
         # Probabilidade acumulada até o mês (F_t)
         # Usar aproximação simples para evitar erros numéricos
-        if lance_livre_perc > 0:
-            total_contemplados_ate_mes = min(mes_contemplacao * contemplados_por_mes, num_participantes)
-        else:
-            # Se não tem lance, assume apenas 1 contemplado por mês
-            total_contemplados_ate_mes = min(mes_contemplacao * 1, num_participantes)
-            
+        total_contemplados_ate_mes = min(mes_contemplacao * contemplados_mes, num_participantes)
         prob_ate_mes = min(total_contemplados_ate_mes / num_participantes, 1.0)
         
         return {
