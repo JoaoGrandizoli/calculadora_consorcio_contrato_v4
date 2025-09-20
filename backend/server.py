@@ -671,19 +671,10 @@ def gerar_relatorio_pdf(dados_simulacao: Dict, temp_dir: str) -> str:
         story.append(resultados_table)
         story.append(Spacer(1, 20))
         
-        # Adicionar gráfico de fluxo de caixa se conseguir gerar
-        grafico_fluxo_path = criar_grafico_fluxo_caixa(dados_simulacao['detalhamento'], 
-                                                       dados_simulacao['parametros']['mes_contemplacao'], 
-                                                       temp_dir)
-        
-        if grafico_fluxo_path and os.path.exists(grafico_fluxo_path):
-            from reportlab.platypus import Image
-            story.append(Paragraph("Gráfico de Fluxo de Caixa", heading_style))
-            story.append(Image(grafico_fluxo_path, width=6*inch, height=3*inch))
-            story.append(Spacer(1, 20))
+        # REMOVIDO: Gráfico de fluxo de caixa conforme solicitado pelo usuário
         
         # Adicionar gráfico de probabilidades
-        grafico_prob_path = criar_grafico_probabilidades(430, 2, temp_dir)  # Usar valores padrão da planilha
+        grafico_prob_path = criar_grafico_probabilidades(430, dados_simulacao['parametros']['lance_livre_perc'], temp_dir)  # Usar lance_livre_perc do usuário
         
         if grafico_prob_path and os.path.exists(grafico_prob_path):
             from reportlab.platypus import Image
