@@ -355,6 +355,23 @@ async def simular_consorcio(parametros: ParametrosConsorcio):
                 mensagem=resultado.get('mensagem', 'Erro desconhecido na simulação')
             )
         
+        # Calcular probabilidades específicas do mês de contemplação escolhido
+        prob_mes = calcular_probabilidade_mes_especifico(
+            mes_contemplacao=parametros.mes_contemplacao,
+            num_participantes=430,  # Usar valores padrão da planilha
+            contemplados_por_mes=2
+        )
+        
+        # Adicionar probabilidades ao resumo financeiro
+        if prob_mes:
+            resultado['resumo_financeiro']['prob_contemplacao_no_mes'] = prob_mes['prob_no_mes']
+            resultado['resumo_financeiro']['prob_contemplacao_ate_mes'] = prob_mes['prob_ate_mes']
+            resultado['resumo_financeiro']['participantes_restantes_mes'] = prob_mes['participantes_restantes']
+        else:
+            resultado['resumo_financeiro']['prob_contemplacao_no_mes'] = 0.0
+            resultado['resumo_financeiro']['prob_contemplacao_ate_mes'] = 0.0
+            resultado['resumo_financeiro']['participantes_restantes_mes'] = 0
+        
         # Converter detalhamento para o modelo Pydantic
         detalhamento_convertido = []
         for item in resultado['detalhamento']:
