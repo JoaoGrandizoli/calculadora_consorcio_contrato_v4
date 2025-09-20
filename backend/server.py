@@ -1076,7 +1076,7 @@ def calcular_probabilidades_contemplacao_corrigido(num_participantes=430, lance_
         logger.error(f"Erro no cálculo de probabilidades corrigido: {e}")
         return None
 
-def calcular_probabilidade_mes_especifico(mes_contemplacao: int, lance_livre_perc: float, num_participantes: int = 430, contemplados_por_mes: int = 2):
+def calcular_probabilidade_mes_especifico(mes_contemplacao: int, lance_livre_perc: float, num_participantes: int = 430):
     """
     Calcula as probabilidades específicas para um mês de contemplação escolhido.
     
@@ -1084,7 +1084,6 @@ def calcular_probabilidade_mes_especifico(mes_contemplacao: int, lance_livre_per
         mes_contemplacao: Mês escolhido para contemplação
         lance_livre_perc: Percentual do lance livre (se 0, considera apenas sorteio)
         num_participantes: Número total de participantes do grupo
-        contemplados_por_mes: Número de contemplados por mês
     
     Returns:
         dict com:
@@ -1099,6 +1098,12 @@ def calcular_probabilidade_mes_especifico(mes_contemplacao: int, lance_livre_per
                 "prob_ate_mes": 0.0,
                 "participantes_restantes": 0
             }
+        
+        # Determinar contemplados por mês baseado no lance livre
+        if lance_livre_perc > 0:
+            contemplados_por_mes = 2  # 1 sorteio + 1 lance
+        else:
+            contemplados_por_mes = 1  # apenas sorteio
             
         # Calcular participantes restantes no início do mês
         participantes_restantes = max(0, num_participantes - (mes_contemplacao - 1) * contemplados_por_mes)
