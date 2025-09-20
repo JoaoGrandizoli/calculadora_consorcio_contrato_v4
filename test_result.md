@@ -106,7 +106,7 @@ user_problem_statement: Remover gráfico de fluxo de caixa da aplicação e corr
 
 backend:
   - task: "Remover gráfico de fluxo de caixa do PDF"
-    implemented: false
+    implemented: true
     working: "NA"
     file: "/app/backend/server.py"
     stuck_count: 0
@@ -115,10 +115,10 @@ backend:
     status_history:
         - working: "NA"
         - agent: "main"
-        - comment: "Precisa remover chamada criar_grafico_fluxo_caixa em gerar_relatorio_pdf"
+        - comment: "Removido função criar_grafico_fluxo_caixa e suas chamadas do PDF"
 
   - task: "Corrigir cálculo hazard condicional baseado em lance_livre_perc"
-    implemented: false
+    implemented: true
     working: "NA"
     file: "/app/backend/server.py"
     stuck_count: 0
@@ -127,10 +127,10 @@ backend:
     status_history:
         - working: "NA"
         - agent: "main"
-        - comment: "Função calcular_probabilidade_mes_especifico precisa usar lance_livre_perc para decidir 1 ou 2 contemplados"
+        - comment: "Implementado lógica condicional em calcular_probabilidade_mes_especifico"
 
   - task: "Atualizar endpoint /api/simular para passar lance_livre_perc"
-    implemented: false
+    implemented: true
     working: "NA"
     file: "/app/backend/server.py"
     stuck_count: 0
@@ -139,10 +139,10 @@ backend:
     status_history:
         - working: "NA"
         - agent: "main"
-        - comment: "Endpoint está hardcoded para 2 contemplados, precisa usar lance_livre_perc"
+        - comment: "Endpoint atualizado para passar lance_livre_perc para calcular_probabilidade_mes_especifico"
 
   - task: "Corrigir função criar_grafico_probabilidades"
-    implemented: false
+    implemented: true
     working: "NA"
     file: "/app/backend/server.py"
     stuck_count: 0
@@ -151,7 +151,7 @@ backend:
     status_history:
         - working: "NA"
         - agent: "main"
-        - comment: "Função precisa receber e usar lance_livre_perc para cálculos corretos"
+        - comment: "Função atualizada para receber lance_livre_perc e usar lógica condicional"
 
 frontend:
   - task: "Atualizar display de probabilidades para mostrar 1/participantes vs 2/participantes"
