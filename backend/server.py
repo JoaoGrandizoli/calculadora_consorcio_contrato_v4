@@ -483,14 +483,18 @@ def criar_grafico_fluxo_caixa(detalhamento: List[Dict], mes_contemplacao: int, t
         logger.error(f"Erro ao criar gráfico: {e}")
         return None
 
-def criar_grafico_probabilidades(num_participantes: int, contemplados_por_mes: int, temp_dir: str) -> str:
+def criar_grafico_probabilidades(num_participantes: int, lance_livre_perc: float, temp_dir: str) -> str:
     """Cria gráfico de probabilidades de contemplação."""
     try:
         # Calcular probabilidades usando lógica similar ao código fornecido
         N0 = num_participantes
         
-        # Com lance: 2 contemplados por mês (1 sorteio + 1 lance)
-        # Sem lance: 1 contemplado por mês (apenas sorteio)
+        # Decidir contemplados por mês baseado no lance livre
+        if lance_livre_perc > 0:
+            contemplados_por_mes = 2  # 1 sorteio + 1 lance
+        else:
+            contemplados_por_mes = 1  # apenas sorteio
+        
         meses_total = int(np.ceil(N0 / contemplados_por_mes))
         
         # Listas para dados
