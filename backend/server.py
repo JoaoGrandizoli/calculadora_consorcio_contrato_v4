@@ -830,7 +830,7 @@ def curvas_from_hazard(h):
         "p90_mes": p90
     }
 
-def calcular_probabilidades_contemplacao(num_participantes=430, contemplados_por_mes=2):
+def calcular_probabilidades_contemplacao(num_participantes=430, contemplados_por_mes=2, lance_livre_perc=0.10):
     """
     Calcula probabilidades de contemplação baseado na lógica da planilha.
     
