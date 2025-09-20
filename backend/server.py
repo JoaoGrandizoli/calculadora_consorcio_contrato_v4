@@ -1103,9 +1103,15 @@ def calcular_probabilidades_contemplacao_corrigido(num_participantes=430, contem
         logger.error(f"Erro no cálculo de probabilidades corrigido: {e}")
         return None
 
-def calcular_probabilidade_mes_especifico(mes_contemplacao: int, num_participantes: int = 430, contemplados_por_mes: int = 2):
+def calcular_probabilidade_mes_especifico(mes_contemplacao: int, lance_livre_perc: float, num_participantes: int = 430, contemplados_por_mes: int = 2):
     """
     Calcula as probabilidades específicas para um mês de contemplação escolhido.
+    
+    Args:
+        mes_contemplacao: Mês escolhido para contemplação
+        lance_livre_perc: Percentual do lance livre (se 0, considera apenas sorteio)
+        num_participantes: Número total de participantes do grupo
+        contemplados_por_mes: Número de contemplados por mês
     
     Returns:
         dict com:
@@ -1132,12 +1138,21 @@ def calcular_probabilidade_mes_especifico(mes_contemplacao: int, num_participant
             }
         
         # Probabilidade no mês específico (hazard)
-        # Com lance: 2 contemplados (1 sorteio + 1 lance)
-        prob_no_mes = min(2.0 / participantes_restantes, 1.0)
+        if lance_livre_perc > 0:
+            # COM LANCE: 2 contemplados (1 sorteio + 1 lance)
+            prob_no_mes = min(2.0 / participantes_restantes, 1.0)
+        else:
+            # SEM LANCE: apenas 1 contemplado (só sorteio)
+            prob_no_mes = min(1.0 / participantes_restantes, 1.0)
         
         # Probabilidade acumulada até o mês (F_t)
         # Usar aproximação simples para evitar erros numéricos
-        total_contemplados_ate_mes = min(mes_contemplacao * contemplados_por_mes, num_participantes)
+        if lance_livre_perc > 0:
+            total_contemplados_ate_mes = min(mes_contemplacao * contemplados_por_mes, num_participantes)
+        else:
+            # Se não tem lance, assume apenas 1 contemplado por mês
+            total_contemplados_ate_mes = min(mes_contemplacao * 1, num_participantes)
+            
         prob_ate_mes = min(total_contemplados_ate_mes / num_participantes, 1.0)
         
         return {
