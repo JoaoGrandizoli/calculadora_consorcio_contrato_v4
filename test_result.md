@@ -107,51 +107,75 @@ user_problem_statement: Remover gráfico de fluxo de caixa da aplicação e corr
 backend:
   - task: "Remover gráfico de fluxo de caixa do PDF"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "medium"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
         - agent: "main"
         - comment: "Removido função criar_grafico_fluxo_caixa e suas chamadas do PDF"
+        - working: true
+        - agent: "testing"
+        - comment: "✅ TESTED: PDF generation working correctly without cash flow graph. PDF size: 303KB. Function criar_grafico_fluxo_caixa successfully removed from gerar_relatorio_pdf."
 
   - task: "Corrigir cálculo hazard condicional baseado em lance_livre_perc"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
         - agent: "main"
         - comment: "Implementado lógica condicional em calcular_probabilidade_mes_especifico"
+        - working: true
+        - agent: "testing"
+        - comment: "✅ TESTED: Hazard calculation working correctly. lance_livre_perc=0 uses 1 contemplado (prob=1/414=0.002415), lance_livre_perc>0 uses 2 contemplados (prob=2/398=0.005025). Fixed function signature to determine contemplados_por_mes internally."
 
   - task: "Atualizar endpoint /api/simular para passar lance_livre_perc"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
         - agent: "main"
         - comment: "Endpoint atualizado para passar lance_livre_perc para calcular_probabilidade_mes_especifico"
+        - working: true
+        - agent: "testing"
+        - comment: "✅ TESTED: /api/simular endpoint correctly passes lance_livre_perc and calculates probabilities. All test scenarios passed with realistic data (valor_carta=100000, mes_contemplacao=17). No NaN/infinite values detected."
 
   - task: "Corrigir função criar_grafico_probabilidades"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
         - agent: "main"
         - comment: "Função atualizada para receber lance_livre_perc e usar lógica condicional"
+        - working: true
+        - agent: "testing"
+        - comment: "✅ TESTED: criar_grafico_probabilidades function correctly uses lance_livre_perc parameter. Conditional logic working: lance_livre_perc>0 uses 2 contemplados, lance_livre_perc=0 uses 1 contemplado. Graph generation successful in PDF."
+
+  - task: "Atualizar endpoint /api/calcular-probabilidades com novo modelo"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+        - agent: "testing"
+        - comment: "✅ TESTED: /api/calcular-probabilidades endpoint working with new ParametrosProbabilidade model. lance_livre_perc=0 returns contemplados_por_mes=1, lance_livre_perc>0 returns contemplados_por_mes=2. Valid probability curves generated."
 
 frontend:
   - task: "Atualizar display de probabilidades para mostrar 1/participantes vs 2/participantes"
