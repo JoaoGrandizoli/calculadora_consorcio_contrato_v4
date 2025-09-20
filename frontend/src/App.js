@@ -53,7 +53,7 @@ function App() {
   const [erro, setErro] = useState(null);
   const [parametrosProb, setParametrosProb] = useState({
     num_participantes: 430,
-    contemplados_por_mes: 2
+    lance_livre_perc: 0.10
   });
 
   // Carregar parâmetros padrão ao inicializar
