@@ -1140,9 +1140,11 @@ def calcular_probabilidade_mes_especifico(mes_contemplacao: int, lance_livre_per
         # Probabilidade no mês específico (hazard)
         if lance_livre_perc > 0:
             # COM LANCE: 2 contemplados (1 sorteio + 1 lance)
+            contemplados_mes = 2
             prob_no_mes = min(2.0 / participantes_restantes, 1.0)
         else:
             # SEM LANCE: apenas 1 contemplado (só sorteio)
+            contemplados_mes = 1
             prob_no_mes = min(1.0 / participantes_restantes, 1.0)
         
         # Probabilidade acumulada até o mês (F_t)
