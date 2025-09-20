@@ -1115,7 +1115,11 @@ def calcular_probabilidade_mes_especifico(mes_contemplacao: int, num_participant
     """
     try:
         if mes_contemplacao < 1:
-            return None
+            return {
+                "prob_no_mes": 0.0,
+                "prob_ate_mes": 0.0,
+                "participantes_restantes": 0
+            }
             
         # Calcular participantes restantes no início do mês
         participantes_restantes = max(0, num_participantes - (mes_contemplacao - 1) * contemplados_por_mes)
@@ -1132,26 +1136,20 @@ def calcular_probabilidade_mes_especifico(mes_contemplacao: int, num_participant
         prob_no_mes = min(2.0 / participantes_restantes, 1.0)
         
         # Probabilidade acumulada até o mês (F_t)
-        # Calcular usando a fórmula de sobrevivência: F_t = 1 - ∏(1 - h_k)
-        S = 1.0  # Sobrevivência inicial
-        
-        for m in range(1, mes_contemplacao + 1):
-            part_atual = max(0, num_participantes - (m - 1) * contemplados_por_mes)
-            if part_atual > 0:
-                h_mes = min(2.0 / part_atual, 1.0)
-                S *= (1 - h_mes)
-            else:
-                S = 0.0
-                break
-        
-        prob_ate_mes = 1 - S
+        # Usar aproximação simples para evitar erros numéricos
+        total_contemplados_ate_mes = min(mes_contemplacao * contemplados_por_mes, num_participantes)
+        prob_ate_mes = min(total_contemplados_ate_mes / num_participantes, 1.0)
         
         return {
-            "prob_no_mes": prob_no_mes,
-            "prob_ate_mes": prob_ate_mes,
-            "participantes_restantes": participantes_restantes
+            "prob_no_mes": float(prob_no_mes),
+            "prob_ate_mes": float(prob_ate_mes),
+            "participantes_restantes": int(participantes_restantes)
         }
         
     except Exception as e:
         logger.error(f"Erro ao calcular probabilidade do mês específico: {e}")
-        return None
+        return {
+            "prob_no_mes": 0.0,
+            "prob_ate_mes": 0.0,
+            "participantes_restantes": 0
+        }
