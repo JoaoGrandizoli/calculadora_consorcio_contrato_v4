@@ -537,7 +537,16 @@ class ConsortiumAPITester:
             
         self.test_validacao_parametros()
         self.test_detailed_calculations()
+        
+        # NEW TESTS for lance_livre_perc functionality
+        print("\n🎯 Testing Lance Livre Functionality:")
+        self.test_lance_livre_zero()
+        self.test_lance_livre_positivo()
+        self.test_calcular_probabilidades_endpoint()
+        
+        # PDF tests
         self.test_pdf_generation()
+        self.test_pdf_without_cashflow_graph()
         
         # Summary
         print("\n" + "=" * 70)
