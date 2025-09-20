@@ -1070,3 +1070,56 @@ def calcular_probabilidades_contemplacao_corrigido(num_participantes=430, contem
     except Exception as e:
         logger.error(f"Erro no cálculo de probabilidades corrigido: {e}")
         return None
+
+def calcular_probabilidade_mes_especifico(mes_contemplacao: int, num_participantes: int = 430, contemplados_por_mes: int = 2):
+    """
+    Calcula as probabilidades específicas para um mês de contemplação escolhido.
+    
+    Returns:
+        dict com:
+        - prob_no_mes: probabilidade de ser contemplado NAQUELE mês
+        - prob_ate_mes: probabilidade de ter sido contemplado ATÉ aquele mês
+        - participantes_restantes: quantos participantes restam no início daquele mês
+    """
+    try:
+        if mes_contemplacao < 1:
+            return None
+            
+        # Calcular participantes restantes no início do mês
+        participantes_restantes = max(0, num_participantes - (mes_contemplacao - 1) * contemplados_por_mes)
+        
+        if participantes_restantes <= 0:
+            return {
+                "prob_no_mes": 0.0,
+                "prob_ate_mes": 1.0,
+                "participantes_restantes": 0
+            }
+        
+        # Probabilidade no mês específico (hazard)
+        # Com lance: 2 contemplados (1 sorteio + 1 lance)
+        prob_no_mes = min(2.0 / participantes_restantes, 1.0)
+        
+        # Probabilidade acumulada até o mês (F_t)
+        # Calcular usando a fórmula de sobrevivência: F_t = 1 - ∏(1 - h_k)
+        S = 1.0  # Sobrevivência inicial
+        
+        for m in range(1, mes_contemplacao + 1):
+            part_atual = max(0, num_participantes - (m - 1) * contemplados_por_mes)
+            if part_atual > 0:
+                h_mes = min(2.0 / part_atual, 1.0)
+                S *= (1 - h_mes)
+            else:
+                S = 0.0
+                break
+        
+        prob_ate_mes = 1 - S
+        
+        return {
+            "prob_no_mes": prob_no_mes,
+            "prob_ate_mes": prob_ate_mes,
+            "participantes_restantes": participantes_restantes
+        }
+        
+    except Exception as e:
+        logger.error(f"Erro ao calcular probabilidade do mês específico: {e}")
+        return None
