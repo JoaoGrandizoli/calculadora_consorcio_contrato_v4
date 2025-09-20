@@ -69,6 +69,10 @@ class ResumoFinanceiro(BaseModel):
     taxas: float
     lance_embutido: float
     credito_liquido: float
+    # Probabilidades específicas do mês de contemplação escolhido
+    prob_contemplacao_no_mes: float = 0.0
+    prob_contemplacao_ate_mes: float = 0.0
+    participantes_restantes_mes: int = 0
 
 class ResultadosSimulacao(BaseModel):
     cet_anual: Optional[float]
