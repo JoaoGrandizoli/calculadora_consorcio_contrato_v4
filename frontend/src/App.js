@@ -443,6 +443,28 @@ function App() {
                           </div>
                         </div>
 
+                        {/* Probabilidades do Mês Escolhido */}
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                          <h4 className="text-blue-800 font-semibold mb-3">🎲 Probabilidades para o Mês {parametros.mes_contemplacao}</h4>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+                            <div className="text-center">
+                              <p className="text-blue-600 font-mono text-lg">{(resultados.resumo_financeiro.prob_contemplacao_no_mes * 100).toFixed(3)}%</p>
+                              <p className="text-blue-700">Prob. no Mês {parametros.mes_contemplacao}</p>
+                              <p className="text-xs text-blue-600">2/{resultados.resumo_financeiro.participantes_restantes_mes} participantes</p>
+                            </div>
+                            <div className="text-center">
+                              <p className="text-blue-600 font-mono text-lg">{(resultados.resumo_financeiro.prob_contemplacao_ate_mes * 100).toFixed(2)}%</p>
+                              <p className="text-blue-700">Prob. até o Mês {parametros.mes_contemplacao}</p>
+                              <p className="text-xs text-blue-600">Probabilidade Acumulada</p>
+                            </div>
+                            <div className="text-center">
+                              <p className="text-blue-600 font-mono text-lg">{resultados.resumo_financeiro.participantes_restantes_mes}</p>
+                              <p className="text-blue-700">Participantes Restantes</p>
+                              <p className="text-xs text-blue-600">No início do mês</p>
+                            </div>
+                          </div>
+                        </div>
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="space-y-3">
                             <div className="flex justify-between items-center">
