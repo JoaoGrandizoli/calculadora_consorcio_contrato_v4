@@ -450,6 +450,86 @@ def criar_grafico_fluxo_caixa(detalhamento: List[Dict], mes_contemplacao: int, t
         logger.error(f"Erro ao criar gráfico: {e}")
         return None
 
+def criar_grafico_probabilidades(num_participantes: int, contemplados_por_mes: int, temp_dir: str) -> str:
+    """Cria gráfico de probabilidades de contemplação."""
+    try:
+        # Calcular probabilidades usando lógica similar ao código fornecido
+        N0 = num_participantes
+        
+        # Com lance: 2 contemplados por mês (1 sorteio + 1 lance)
+        # Sem lance: 1 contemplado por mês (apenas sorteio)
+        meses_total = int(np.ceil(N0 / contemplados_por_mes))
+        
+        # Listas para dados
+        meses = []
+        hazard_sem = []
+        hazard_com = []
+        prob_acum_sem = []
+        prob_acum_com = []
+        
+        # Inicializar
+        n_atual_sem = N0
+        n_atual_com = N0
+        S_sem = 1.0  # Sobrevivência sem lance
+        S_com = 1.0  # Sobrevivência com lance
+        
+        for mes in range(1, min(meses_total + 1, 101)):  # Limitar a 100 meses para o gráfico
+            meses.append(mes)
+            
+            # Hazard sem lance (apenas 1 contemplado por sorteio)
+            h_sem = 1.0 / n_atual_sem if n_atual_sem > 0 else 0
+            hazard_sem.append(h_sem * 100)  # Em %
+            
+            # Hazard com lance (2 contemplados: 1 sorteio + 1 lance)
+            h_com = min(2.0 / n_atual_com, 1.0) if n_atual_com > 0 else 0
+            hazard_com.append(h_com * 100)  # Em %
+            
+            # Atualizar sobrevivência e probabilidade acumulada
+            S_sem *= (1 - h_sem)
+            S_com *= (1 - h_com)
+            
+            prob_acum_sem.append((1 - S_sem) * 100)  # F_t em %
+            prob_acum_com.append((1 - S_com) * 100)  # F_t em %
+            
+            # Reduzir participantes
+            n_atual_sem = max(0, n_atual_sem - 1)
+            n_atual_com = max(0, n_atual_com - 2)
+        
+        # Criar gráfico
+        fig, ax1 = plt.subplots(figsize=(12, 6))
+        
+        # Hazard (probabilidade do mês) no eixo esquerdo
+        ax1.plot(meses, hazard_com, label="Com Lance — hazard", lw=2, color='#BC8159')
+        ax1.plot(meses, hazard_sem, label="Sem Lance — hazard", lw=2, alpha=0.9, color='#8D4C23')
+        ax1.set_xlabel("Mês")
+        ax1.set_ylabel("Probabilidade do mês, h(t) [%]")
+        ax1.set_ylim(0, max(max(hazard_com), max(hazard_sem)) * 1.1)
+        ax1.grid(True, alpha=0.25)
+        
+        # Probabilidade acumulada no eixo direito
+        ax2 = ax1.twinx()
+        ax2.plot(meses, prob_acum_com, linestyle="--", alpha=0.7, label="Com Lance — F(t)", color='#BC8159')
+        ax2.plot(meses, prob_acum_sem, linestyle="--", alpha=0.7, label="Sem Lance — F(t)", color='#8D4C23')
+        ax2.set_ylabel("Probabilidade acumulada, F(t) [%]")
+        ax2.set_ylim(0, 100)
+        
+        # Combinar legendas
+        lines1, labels1 = ax1.get_legend_handles_labels()
+        lines2, labels2 = ax2.get_legend_handles_labels()
+        ax1.legend(lines1 + lines2, labels1 + labels2, loc="upper left")
+        
+        plt.title(f"Probabilidade de Contemplação — {N0} Participantes\n(hazard do mês + probabilidade acumulada)")
+        plt.tight_layout()
+        
+        grafico_path = os.path.join(temp_dir, 'grafico_probabilidades.png')
+        plt.savefig(grafico_path, dpi=300, bbox_inches='tight')
+        plt.close()
+        
+        return grafico_path
+    except Exception as e:
+        logger.error(f"Erro ao criar gráfico de probabilidades: {e}")
+        return None
+
 def gerar_relatorio_pdf(dados_simulacao: Dict, temp_dir: str) -> str:
     """Gera relatório PDF da simulação de consórcio."""
     try:
