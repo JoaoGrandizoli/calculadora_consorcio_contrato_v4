@@ -1066,6 +1066,7 @@ def calcular_probabilidades_contemplacao_corrigido(num_participantes=430, lance_
             },
             "parametros": {
                 "num_participantes": num_participantes,
+                "lance_livre_perc": lance_livre_perc,
                 "contemplados_por_mes": contemplados_por_mes,
                 "meses_total": meses_total
             }
