@@ -368,9 +368,20 @@ async def simular_consorcio(parametros: ParametrosConsorcio):
         
         # Adicionar probabilidades ao resumo financeiro
         if prob_mes:
-            resultado['resumo_financeiro']['prob_contemplacao_no_mes'] = prob_mes['prob_no_mes']
-            resultado['resumo_financeiro']['prob_contemplacao_ate_mes'] = prob_mes['prob_ate_mes']
-            resultado['resumo_financeiro']['participantes_restantes_mes'] = prob_mes['participantes_restantes']
+            # Verificar se os valores são válidos (não NaN ou infinito)
+            prob_no_mes = prob_mes['prob_no_mes']
+            prob_ate_mes = prob_mes['prob_ate_mes']
+            participantes_restantes = prob_mes['participantes_restantes']
+            
+            # Sanitizar valores
+            if not np.isfinite(prob_no_mes):
+                prob_no_mes = 0.0
+            if not np.isfinite(prob_ate_mes):
+                prob_ate_mes = 0.0
+                
+            resultado['resumo_financeiro']['prob_contemplacao_no_mes'] = float(prob_no_mes)
+            resultado['resumo_financeiro']['prob_contemplacao_ate_mes'] = float(prob_ate_mes)
+            resultado['resumo_financeiro']['participantes_restantes_mes'] = int(participantes_restantes)
         else:
             resultado['resumo_financeiro']['prob_contemplacao_no_mes'] = 0.0
             resultado['resumo_financeiro']['prob_contemplacao_ate_mes'] = 0.0
