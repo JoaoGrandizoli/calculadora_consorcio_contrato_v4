@@ -969,8 +969,8 @@ def calcular_probabilidades_contemplacao_corrigido(num_participantes=430, lance_
         # Listas para armazenar dados
         meses = []
         participantes_restantes = []
-        prob_sem_lance = []  # Col5 da planilha
-        prob_com_lance = []  # Col6 da planilha
+        prob_sem_lance = []  # Sempre será 1/participantes_restantes
+        prob_com_lance = []  # Será 1 ou 2/participantes_restantes dependendo de lance_livre_perc
         prob_acumulada_sem = []
         prob_acumulada_com = []
         
@@ -985,15 +985,19 @@ def calcular_probabilidades_contemplacao_corrigido(num_participantes=430, lance_
             meses.append(mes)
             participantes_restantes.append(participantes_atual)
             
-            # Lógica da planilha:
-            # - 1 contemplado por sorteio (sempre)
-            # - 1 contemplado por lance (col4 = 1)
-            # - Probabilidade sem lance = 1 / participantes_restantes
-            # - Probabilidade com lance = 2 / participantes_restantes
+            # Lógica corrigida:
+            # - SEM LANCE: sempre 1 contemplado por sorteio
+            # - COM LANCE: depende do lance_livre_perc (1 se = 0, 2 se > 0)
             
             if participantes_atual > 0:
-                prob_mes_sem = 1.0 / participantes_atual  # Col5: probabilidade apenas sorteio
-                prob_mes_com = min(2.0 / participantes_atual, 1.0)  # Col6: probabilidade sorteio + lance (limitada a 1.0)
+                # SEM LANCE: sempre 1/participantes_restantes
+                prob_mes_sem = 1.0 / participantes_atual
+                
+                # COM LANCE: depende do lance_livre_perc
+                if lance_livre_perc > 0:
+                    prob_mes_com = min(2.0 / participantes_atual, 1.0)  # 2 contemplados (sorteio + lance)
+                else:
+                    prob_mes_com = 1.0 / participantes_atual  # Apenas 1 contemplado (só sorteio)
             else:
                 prob_mes_sem = 0.0
                 prob_mes_com = 0.0
@@ -1008,7 +1012,7 @@ def calcular_probabilidades_contemplacao_corrigido(num_participantes=430, lance_
             prob_acumulada_sem.append(1.0 - prob_nao_contemplado_sem)
             prob_acumulada_com.append(1.0 - prob_nao_contemplado_com)
             
-            # Reduzir participantes para próximo mês
+            # Reduzir participantes para próximo mês baseado no cenário atual
             participantes_atual = max(0, participantes_atual - contemplados_por_mes)
         
         # Calcular métricas estatísticas corrigidas
