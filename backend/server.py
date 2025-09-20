@@ -421,13 +421,13 @@ async def calcular_probabilidades(parametros: ParametrosProbabilidade):
         if parametros.num_participantes <= 0:
             raise HTTPException(status_code=400, detail="Número de participantes deve ser positivo")
         
-        if parametros.contemplados_por_mes <= 0:
-            raise HTTPException(status_code=400, detail="Contemplados por mês deve ser positivo")
+        if parametros.lance_livre_perc < 0:
+            raise HTTPException(status_code=400, detail="Lance livre deve ser >= 0")
         
         # Calcular probabilidades
         resultado = calcular_probabilidades_contemplacao_corrigido(
             num_participantes=parametros.num_participantes,
-            contemplados_por_mes=parametros.contemplados_por_mes
+            lance_livre_perc=parametros.lance_livre_perc
         )
         
         if resultado is None:
