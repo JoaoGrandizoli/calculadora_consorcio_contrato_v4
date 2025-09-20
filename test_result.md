@@ -155,7 +155,7 @@ backend:
 
 frontend:
   - task: "Atualizar display de probabilidades para mostrar 1/participantes vs 2/participantes"
-    implemented: false
+    implemented: true
     working: "NA"
     file: "/app/frontend/src/App.js"
     stuck_count: 0
@@ -164,7 +164,7 @@ frontend:
     status_history:
         - working: "NA"
         - agent: "main"
-        - comment: "Linha 453 mostra sempre 2/participantes, precisa ser condicional"
+        - comment: "Implementado lógica condicional para mostrar 1 ou 2 participantes baseado em lance_livre_perc"
 
 metadata:
   created_by: "main_agent"
