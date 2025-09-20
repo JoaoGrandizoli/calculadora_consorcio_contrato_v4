@@ -208,3 +208,5 @@ test_plan:
 agent_communication:
     - agent: "main"
     - message: "Implementadas todas as mudanças solicitadas. Backend atualizado para usar lance_livre_perc condicionalmente (1 ou 2 contemplados). Frontend atualizado para mostrar probabilidades corretas. Removido gráfico de fluxo de caixa. Pronto para testing."
+    - agent: "testing"
+    - message: "✅ BACKEND TESTING COMPLETED: All 5 backend tasks tested and working correctly. Key findings: 1) lance_livre_perc=0 correctly uses 1 contemplado (prob=1/414), 2) lance_livre_perc>0 correctly uses 2 contemplados (prob=2/398), 3) PDF generation works without cash flow graph, 4) /api/calcular-probabilidades endpoint working with new model, 5) All endpoints return valid data (no NaN/infinity). Fixed minor issue in calcular_probabilidade_mes_especifico function signature. Success rate: 100% (14/14 tests passed)."
