@@ -450,7 +450,9 @@ function App() {
                             <div className="text-center">
                               <p className="text-blue-600 font-mono text-lg">{(resultados.resumo_financeiro.prob_contemplacao_no_mes * 100).toFixed(3)}%</p>
                               <p className="text-blue-700">Prob. no Mês {parametros.mes_contemplacao}</p>
-                              <p className="text-xs text-blue-600">2/{resultados.resumo_financeiro.participantes_restantes_mes} participantes</p>
+                              <p className="text-xs text-blue-600">
+                                {parametros.lance_livre_perc > 0 ? '2' : '1'}/{resultados.resumo_financeiro.participantes_restantes_mes} participantes
+                              </p>
                             </div>
                             <div className="text-center">
                               <p className="text-blue-600 font-mono text-lg">{(resultados.resumo_financeiro.prob_contemplacao_ate_mes * 100).toFixed(2)}%</p>
