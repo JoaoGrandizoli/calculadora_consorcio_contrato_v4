@@ -344,13 +344,27 @@ class SimuladorConsorcio:
         # Tentar calcular CET primeiro
         cet = self.calcular_cet(resultado_fluxos['fluxos'])
         
+        # Verificar se CET é válido (não NaN e não negativo)
+        cet_valido = not np.isnan(cet) and cet >= 0
+        
+        # Se CET for negativo, também considerar como não convergido
+        if not np.isnan(cet) and cet < 0:
+            self.convergiu = False
+            if not self.motivo_erro:  # Só sobrescrever se não houver motivo anterior
+                self.motivo_erro = "CET negativo - resultado inválido"
+        
         # Calcular VPL sempre (como alternativa ao CET)
         taxa_desconto = 0.10  # 10% para teste, conforme solicitado
         vpl = self.calcular_vpl(resultado_fluxos['fluxos'], taxa_desconto)
         
-        # Convert NaN values to None for JSON serialization
-        cet_anual_json = None if np.isnan(cet) else float(cet)
-        cet_mensal_json = None if np.isnan(cet) else float((1 + cet) ** (1/12) - 1)
+        # Convert values for JSON serialization - usar VPL quando CET não for válido
+        if cet_valido:
+            cet_anual_json = float(cet)
+            cet_mensal_json = float((1 + cet) ** (1/12) - 1)
+        else:
+            cet_anual_json = None
+            cet_mensal_json = None
+            
         vpl_json = None if np.isnan(vpl) else float(vpl)
         
         return {
