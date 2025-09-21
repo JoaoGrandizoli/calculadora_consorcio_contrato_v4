@@ -77,6 +77,8 @@ class ResumoFinanceiro(BaseModel):
 class ResultadosSimulacao(BaseModel):
     cet_anual: Optional[float]
     cet_mensal: Optional[float]
+    vpl: Optional[float]  # Valor Presente Líquido
+    taxa_desconto_vpl: Optional[float]  # Taxa usada no VPL
     convergiu: bool
     motivo_erro: Optional[str]
 
