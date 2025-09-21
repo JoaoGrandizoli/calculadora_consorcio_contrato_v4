@@ -533,6 +533,12 @@ function App() {
                                     {formatarMoeda(resultados.resumo_financeiro.ultima_parcela)}
                                   </Badge>
                                 </div>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-neutral-mid text-sm md:text-base">Última Parcela:</span>
+                                  <Badge variant="outline" className="font-mono text-xs md:text-sm">
+                                    {formatarMoeda(resultados.resumo_financeiro.ultima_parcela)}
+                                  </Badge>
+                                </div>
                               </>
                             )}
                             <div className="flex justify-between items-center">
