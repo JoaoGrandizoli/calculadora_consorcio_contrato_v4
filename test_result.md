@@ -102,9 +102,24 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: Testar especificamente a correção do valor da carta na tabela de fluxo de caixa - Bug corrigido: Valor da carta estava hardcoded como R$ 100.000,00 na tabela frontend e PDF, corrigido para mostrar valor_carta_corrigido que sofre correção monetária anual
+user_problem_statement: Testar especificamente a nova funcionalidade de VPL quando CET não converge - Nova funcionalidade implementada: Cálculo de VPL (Valor Presente Líquido) como método alternativo quando CET não converge, Taxa de desconto de 10% conforme solicitado pelo usuário, Novos campos: vpl, taxa_desconto_vpl no modelo ResultadosSimulacao
 
 backend:
+  - task: "Implementar cálculo de VPL quando CET não converge"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+        - agent: "main"
+        - comment: "Nova funcionalidade implementada: Cálculo de VPL (Valor Presente Líquido) como método alternativo quando CET não converge. Taxa de desconto de 10% conforme solicitado pelo usuário. Novos campos: vpl, taxa_desconto_vpl no modelo ResultadosSimulacao"
+        - working: true
+        - agent: "testing"
+        - comment: "✅ TESTED: VPL functionality working perfectly. 1) Early contemplation (month 1): CET converges (12.58% a.a.) AND VPL calculated (R$-9,502.22), 2) Late contemplation (month 50): CET does NOT converge but VPL calculated successfully (R$-23,032.76), 3) VPL always uses 10% annual discount rate converted to monthly, 4) Fixed JSON serialization issue with NaN values when CET doesn't converge, 5) Both convergiu=false and VPL exist when CET fails. All 21 backend tests passed (100% success rate)."
+
   - task: "Remover gráfico de fluxo de caixa do PDF"
     implemented: true
     working: true
