@@ -701,7 +701,9 @@ def gerar_relatorio_pdf(dados_simulacao: Dict, temp_dir: str) -> str:
         # REMOVIDO: Gráfico de fluxo de caixa conforme solicitado pelo usuário
         
         # Adicionar gráfico de probabilidades
-        grafico_prob_path = criar_grafico_probabilidades(430, dados_simulacao['parametros']['lance_livre_perc'], temp_dir)  # Usar lance_livre_perc do usuário
+        # NOVA LÓGICA: usar participantes padrão = 2 × prazo_meses
+        participantes_grafico = dados_simulacao['parametros']['prazo_meses'] * 2
+        grafico_prob_path = criar_grafico_probabilidades(participantes_grafico, dados_simulacao['parametros']['lance_livre_perc'], temp_dir)
         
         if grafico_prob_path and os.path.exists(grafico_prob_path):
             from reportlab.platypus import Image
