@@ -228,7 +228,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Corrigir lógica do saldo devedor pós-contemplação"
+    - "Corrigir valor da carta na tabela de fluxo de caixa"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -240,3 +240,5 @@ agent_communication:
     - message: "✅ BACKEND TESTING COMPLETED: All 5 backend tasks tested and working correctly. Key findings: 1) lance_livre_perc=0 correctly uses 1 contemplado (prob=1/414), 2) lance_livre_perc>0 correctly uses 2 contemplados (prob=2/398), 3) PDF generation works without cash flow graph, 4) /api/calcular-probabilidades endpoint working with new model, 5) All endpoints return valid data (no NaN/infinity). Fixed minor issue in calcular_probabilidade_mes_especifico function signature. Success rate: 100% (14/14 tests passed)."
     - agent: "testing"
     - message: "✅ SALDO DEVEDOR BUG FIX VERIFIED: Tested specific user-reported bug with exact parameters (valor_carta=100000, mes_contemplacao=17, lance_livre_perc=0.10, prazo_meses=120). Confirmed fix is working correctly: 1) Balance does NOT go to zero after contemplation, 2) Balance decreases only by installment amount (R$1,085.00), not by carta value (R$105,000.00), 3) Balance progression: Month 16: R$107,260 → Month 17: R$106,175 → Month 18: R$105,090, 4) Final balance reaches zero naturally at end of term. All 16 backend tests passed (100% success rate)."
+    - agent: "testing"
+    - message: "✅ VALOR DA CARTA CORRIGIDO BUG FIX VERIFIED: Tested specific card value correction with exact parameters (valor_carta=100000, mes_contemplacao=17, taxa_reajuste_anual=0.05, prazo_meses=120). Confirmed fix is working correctly: 1) Card value is NOT hardcoded to R$100,000, 2) Annual monetary correction applied properly: Year 1 (months 1-12): R$100,000.00, Year 2 (months 13-24): R$105,000.00, Year 3 (months 25-36): R$110,250.00, 3) Contemplation in month 17 uses corrected value R$105,000.00, 4) PDF generation includes corrected values in cash flow table. All 17 backend tests passed (100% success rate)."
