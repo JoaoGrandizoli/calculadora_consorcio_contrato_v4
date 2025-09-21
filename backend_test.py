@@ -788,8 +788,9 @@ class ConsortiumAPITester:
         self.test_pdf_generation()
         self.test_pdf_without_cashflow_graph()
         
-        # SPECIFIC BUG FIX TEST
-        print("\n🐛 Testing Saldo Devedor Bug Fix:")
+        # SPECIFIC BUG FIX TESTS
+        print("\n🐛 Testing Specific Bug Fixes:")
+        self.test_valor_carta_corrigido_bug_fix()
         self.test_saldo_devedor_pos_contemplacao()
         
         # Summary
