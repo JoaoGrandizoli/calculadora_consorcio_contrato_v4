@@ -1193,6 +1193,258 @@ class ConsortiumAPITester:
         self.log_test("VPL Always Calculated", all_passed, details)
         return all_passed
 
+    def test_negative_cet_detection(self):
+        """
+        Test the new functionality for negative CET detection and VPL usage.
+        
+        NEW FUNCTIONALITY IMPLEMENTED:
+        - VPL is now used both when CET doesn't converge AND when CET becomes negative
+        - Negative CET is treated as "didn't converge" with reason "CET negativo - resultado inválido"
+        
+        SPECIFIC TESTS:
+        1. Test contemplation at month 90 (should generate negative CET)
+        2. Verify convergiu=false when CET is negative
+        3. Verify motivo_erro = "CET negativo - resultado inválido"
+        4. Verify VPL is used instead of negative CET
+        5. Verify negative CET is not returned (should be None)
+        
+        Test parameters for negative CET:
+        - valor_carta: 100000
+        - mes_contemplacao: 90 (very late contemplation)
+        - lance_livre_perc: 0.10
+        - prazo_meses: 120
+        
+        Expected validations:
+        - convergiu: false
+        - cet_anual: None (should not return negative value)
+        - cet_mensal: None
+        - vpl: valid negative value
+        - motivo_erro: "CET negativo - resultado inválido"
+        - taxa_desconto_vpl: 0.10
+        """
+        parametros = {
+            "valor_carta": 100000,
+            "prazo_meses": 120,
+            "taxa_admin": 0.21,
+            "fundo_reserva": 0.03,
+            "mes_contemplacao": 90,  # Very late contemplation - should generate negative CET
+            "lance_livre_perc": 0.10,
+            "taxa_reajuste_anual": 0.05
+        }
+        
+        try:
+            response = requests.post(f"{self.api_url}/simular", 
+                                   json=parametros, 
+                                   timeout=30)
+            success = response.status_code == 200
+            
+            if success:
+                data = response.json()
+                
+                if data.get('erro'):
+                    success = False
+                    details = f"Simulation error: {data.get('mensagem')}"
+                else:
+                    resultados = data['resultados']
+                    issues = []
+                    
+                    # 1. Check that CET did NOT converge (due to negative result)
+                    convergiu = resultados.get('convergiu', True)
+                    if convergiu:
+                        issues.append(f"CET should NOT converge for very late contemplation (month 90) due to negative CET, but convergiu={convergiu}")
+                    
+                    # 2. Check that CET values are None (not negative values)
+                    cet_anual = resultados.get('cet_anual')
+                    cet_mensal = resultados.get('cet_mensal')
+                    
+                    if cet_anual is not None:
+                        issues.append(f"CET anual should be None when negative CET detected, got: {cet_anual}")
+                    
+                    if cet_mensal is not None:
+                        issues.append(f"CET mensal should be None when negative CET detected, got: {cet_mensal}")
+                    
+                    # 3. Check specific error message for negative CET
+                    motivo_erro = resultados.get('motivo_erro', '')
+                    expected_motivo = "CET negativo - resultado inválido"
+                    if expected_motivo not in motivo_erro:
+                        issues.append(f"motivo_erro should contain '{expected_motivo}', got: '{motivo_erro}'")
+                    
+                    # 4. Check that VPL is calculated as alternative
+                    vpl = resultados.get('vpl')
+                    taxa_desconto_vpl = resultados.get('taxa_desconto_vpl')
+                    
+                    if vpl is None or str(vpl) in ['nan', 'inf', '-inf']:
+                        issues.append(f"VPL should be calculated as alternative when CET is negative, got: {vpl}")
+                    
+                    if taxa_desconto_vpl != 0.10:
+                        issues.append(f"Taxa desconto VPL should be 0.10 (10%), got: {taxa_desconto_vpl}")
+                    
+                    # 5. VPL should be reasonable (negative for this type of operation)
+                    if vpl is not None and str(vpl) not in ['nan', 'inf', '-inf']:
+                        if vpl > 0:
+                            issues.append(f"VPL should typically be negative for consortium operations, got: R${vpl:,.2f}")
+                    
+                    success = len(issues) == 0
+                    
+                    if success:
+                        details = (f"✅ Negative CET detection working correctly. "
+                                 f"Convergiu: {convergiu}, "
+                                 f"CET anual: {cet_anual}, "
+                                 f"CET mensal: {cet_mensal}, "
+                                 f"VPL: R${vpl:,.2f}, "
+                                 f"Taxa VPL: {taxa_desconto_vpl*100:.0f}%, "
+                                 f"Motivo: {motivo_erro}")
+                    else:
+                        details = f"❌ Issues found: {'; '.join(issues)}"
+                        
+            else:
+                details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+                
+            self.log_test("Negative CET Detection (Month 90)", success, details)
+            return success
+            
+        except Exception as e:
+            self.log_test("Negative CET Detection (Month 90)", False, str(e))
+            return False
+
+    def test_negative_cet_vs_non_convergence_comparison(self):
+        """
+        Compare negative CET scenario (month 90) with non-convergence scenario (month 50)
+        to ensure both are treated equally in terms of VPL usage and response structure.
+        """
+        scenarios = [
+            {
+                "name": "Non-Convergence (Month 50)",
+                "params": {
+                    "valor_carta": 100000,
+                    "prazo_meses": 120,
+                    "taxa_admin": 0.21,
+                    "fundo_reserva": 0.03,
+                    "mes_contemplacao": 50,  # Late contemplation - should cause non-convergence
+                    "lance_livre_perc": 0.10,
+                    "taxa_reajuste_anual": 0.05
+                },
+                "expected_convergiu": False,
+                "expected_motivo_contains": ["Convergência não alcançada", "não convergiu"]
+            },
+            {
+                "name": "Negative CET (Month 90)",
+                "params": {
+                    "valor_carta": 100000,
+                    "prazo_meses": 120,
+                    "taxa_admin": 0.21,
+                    "fundo_reserva": 0.03,
+                    "mes_contemplacao": 90,  # Very late contemplation - should generate negative CET
+                    "lance_livre_perc": 0.10,
+                    "taxa_reajuste_anual": 0.05
+                },
+                "expected_convergiu": False,
+                "expected_motivo_contains": ["CET negativo - resultado inválido"]
+            }
+        ]
+        
+        scenario_results = []
+        all_passed = True
+        
+        for scenario in scenarios:
+            try:
+                response = requests.post(f"{self.api_url}/simular", 
+                                       json=scenario["params"], 
+                                       timeout=30)
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    
+                    if not data.get('erro'):
+                        resultados = data['resultados']
+                        issues = []
+                        
+                        # Check convergence status
+                        convergiu = resultados.get('convergiu', True)
+                        if convergiu != scenario["expected_convergiu"]:
+                            issues.append(f"Expected convergiu={scenario['expected_convergiu']}, got {convergiu}")
+                        
+                        # Check CET values are None/NaN when not converged
+                        cet_anual = resultados.get('cet_anual')
+                        cet_mensal = resultados.get('cet_mensal')
+                        
+                        if not convergiu:
+                            if cet_anual is not None:
+                                issues.append(f"CET anual should be None when not converged, got: {cet_anual}")
+                            if cet_mensal is not None:
+                                issues.append(f"CET mensal should be None when not converged, got: {cet_mensal}")
+                        
+                        # Check VPL is calculated
+                        vpl = resultados.get('vpl')
+                        taxa_desconto_vpl = resultados.get('taxa_desconto_vpl')
+                        
+                        if vpl is None or str(vpl) in ['nan', 'inf', '-inf']:
+                            issues.append(f"VPL should be calculated, got: {vpl}")
+                        
+                        if taxa_desconto_vpl != 0.10:
+                            issues.append(f"Taxa desconto VPL should be 0.10, got: {taxa_desconto_vpl}")
+                        
+                        # Check error message
+                        motivo_erro = resultados.get('motivo_erro', '')
+                        motivo_found = any(expected in motivo_erro for expected in scenario["expected_motivo_contains"])
+                        if not motivo_found:
+                            issues.append(f"motivo_erro should contain one of {scenario['expected_motivo_contains']}, got: '{motivo_erro}'")
+                        
+                        scenario_success = len(issues) == 0
+                        
+                        scenario_results.append({
+                            "name": scenario["name"],
+                            "success": scenario_success,
+                            "convergiu": convergiu,
+                            "vpl": vpl,
+                            "taxa_desconto_vpl": taxa_desconto_vpl,
+                            "motivo_erro": motivo_erro,
+                            "issues": issues
+                        })
+                        
+                        if not scenario_success:
+                            all_passed = False
+                    else:
+                        scenario_results.append({
+                            "name": scenario["name"],
+                            "success": False,
+                            "error": data.get('mensagem', 'Unknown error')
+                        })
+                        all_passed = False
+                else:
+                    scenario_results.append({
+                        "name": scenario["name"],
+                        "success": False,
+                        "error": f"HTTP {response.status_code}"
+                    })
+                    all_passed = False
+                    
+            except Exception as e:
+                scenario_results.append({
+                    "name": scenario["name"],
+                    "success": False,
+                    "error": str(e)
+                })
+                all_passed = False
+        
+        # Generate comparison summary
+        if all_passed:
+            details = "✅ Both scenarios handled equally: "
+            for r in scenario_results:
+                if r['success']:
+                    details += f"{r['name']}: convergiu={r['convergiu']}, VPL=R${r['vpl']:,.2f}, motivo='{r['motivo_erro'][:50]}...'; "
+        else:
+            failed_scenarios = [r for r in scenario_results if not r['success']]
+            details = f"❌ Issues in {len(failed_scenarios)} scenarios: "
+            for r in failed_scenarios:
+                if 'issues' in r:
+                    details += f"{r['name']}: {'; '.join(r['issues'])}; "
+                else:
+                    details += f"{r['name']}: {r.get('error', 'Unknown error')}; "
+        
+        self.log_test("Negative CET vs Non-Convergence Comparison", all_passed, details)
+        return all_passed
+
     def run_all_tests(self):
         """Run all backend tests"""
         print("🚀 Starting Backend API Tests for Consortium Simulation System")
