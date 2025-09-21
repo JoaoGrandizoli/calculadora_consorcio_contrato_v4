@@ -1137,14 +1137,20 @@ def calcular_probabilidades_contemplacao_corrigido(num_participantes=430, lance_
         logger.error(f"Erro no cálculo de probabilidades corrigido: {e}")
         return None
 
-def calcular_probabilidade_mes_especifico(mes_contemplacao: int, lance_livre_perc: float, num_participantes: int = 430):
+def calcular_probabilidade_mes_especifico(mes_contemplacao: int, lance_livre_perc: float, num_participantes: int, contemplados_por_mes: int = 2):
     """
     Calcula as probabilidades específicas para um mês de contemplação escolhido.
     
+    NOVA LÓGICA SIMPLIFICADA:
+    - Sempre usa contemplados_por_mes passado como parâmetro (padrão: 2)
+    - num_participantes é calculado como 2 × prazo_meses automaticamente
+    - lance_livre_perc mantido para compatibilidade, mas probabilidades sempre usam contemplados_por_mes
+    
     Args:
         mes_contemplacao: Mês escolhido para contemplação
-        lance_livre_perc: Percentual do lance livre (se 0, considera apenas sorteio)
+        lance_livre_perc: Percentual do lance livre (mantido para compatibilidade)
         num_participantes: Número total de participantes do grupo
+        contemplados_por_mes: Número de contemplados por mês (padrão: 2)
     
     Returns:
         dict com:
@@ -1159,12 +1165,6 @@ def calcular_probabilidade_mes_especifico(mes_contemplacao: int, lance_livre_per
                 "prob_ate_mes": 0.0,
                 "participantes_restantes": 0
             }
-        
-        # Determinar contemplados por mês baseado no lance livre
-        if lance_livre_perc > 0:
-            contemplados_por_mes = 2  # 1 sorteio + 1 lance
-        else:
-            contemplados_por_mes = 1  # apenas sorteio
             
         # Calcular participantes restantes no início do mês
         participantes_restantes = max(0, num_participantes - (mes_contemplacao - 1) * contemplados_por_mes)
@@ -1176,19 +1176,11 @@ def calcular_probabilidade_mes_especifico(mes_contemplacao: int, lance_livre_per
                 "participantes_restantes": 0
             }
         
-        # Probabilidade no mês específico (hazard)
-        if lance_livre_perc > 0:
-            # COM LANCE: 2 contemplados (1 sorteio + 1 lance)
-            contemplados_mes = 2
-            prob_no_mes = min(2.0 / participantes_restantes, 1.0)
-        else:
-            # SEM LANCE: apenas 1 contemplado (só sorteio)
-            contemplados_mes = 1
-            prob_no_mes = min(1.0 / participantes_restantes, 1.0)
+        # NOVA LÓGICA: sempre usa contemplados_por_mes (normalmente 2)
+        prob_no_mes = min(contemplados_por_mes / participantes_restantes, 1.0)
         
         # Probabilidade acumulada até o mês (F_t)
-        # Usar aproximação simples para evitar erros numéricos
-        total_contemplados_ate_mes = min(mes_contemplacao * contemplados_mes, num_participantes)
+        total_contemplados_ate_mes = min(mes_contemplacao * contemplados_por_mes, num_participantes)
         prob_ate_mes = min(total_contemplados_ate_mes / num_participantes, 1.0)
         
         return {
