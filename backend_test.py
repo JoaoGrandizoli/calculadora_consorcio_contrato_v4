@@ -520,6 +520,117 @@ class ConsortiumAPITester:
             self.log_test("PDF Without Cash Flow Graph", False, str(e))
             return False
 
+    def test_saldo_devedor_pos_contemplacao(self):
+        """
+        Test the specific bug fix for saldo devedor after contemplation.
+        Bug: After contemplation, balance was incorrectly going to zero.
+        Fix: Balance should only decrease by installment amount, not by carta value.
+        """
+        # Use exact parameters from user report
+        parametros = {
+            "valor_carta": 100000,
+            "prazo_meses": 120,
+            "taxa_admin": 0.21,
+            "fundo_reserva": 0.03,
+            "mes_contemplacao": 17,  # As reported by user
+            "lance_livre_perc": 0.10,
+            "taxa_reajuste_anual": 0.05
+        }
+        
+        try:
+            response = requests.post(f"{self.api_url}/simular", 
+                                   json=parametros, 
+                                   timeout=30)
+            success = response.status_code == 200
+            
+            if success:
+                data = response.json()
+                
+                if data.get('erro'):
+                    success = False
+                    details = f"Simulation error: {data.get('mensagem')}"
+                else:
+                    detalhamento = data['detalhamento']
+                    
+                    # Find months around contemplation (16, 17, 18, 19, 20)
+                    months_to_check = [16, 17, 18, 19, 20]
+                    month_data = {}
+                    
+                    for item in detalhamento:
+                        if item['mes'] in months_to_check:
+                            month_data[item['mes']] = {
+                                'saldo_devedor': item['saldo_devedor'],
+                                'parcela_corrigida': item['parcela_corrigida'],
+                                'eh_contemplacao': item['eh_contemplacao'],
+                                'valor_carta_corrigido': item['valor_carta_corrigido'],
+                                'fluxo_liquido': item['fluxo_liquido']
+                            }
+                    
+                    # Validate the bug fix
+                    issues = []
+                    
+                    # 1. Check that month 17 is marked as contemplation
+                    if not month_data[17]['eh_contemplacao']:
+                        issues.append("Month 17 not marked as contemplation")
+                    
+                    # 2. Check that saldo devedor doesn't go to zero in month 17
+                    saldo_17 = month_data[17]['saldo_devedor']
+                    if saldo_17 <= 1000:  # Should not be close to zero
+                        issues.append(f"Saldo devedor too low in month 17: R${saldo_17:,.2f}")
+                    
+                    # 3. Check that saldo devedor decreases properly between months
+                    saldo_16 = month_data[16]['saldo_devedor']
+                    saldo_18 = month_data[18]['saldo_devedor']
+                    parcela_17 = month_data[17]['parcela_corrigida']
+                    
+                    # Expected decrease should be approximately the installment amount
+                    expected_saldo_17 = saldo_16 - parcela_17
+                    saldo_diff = abs(saldo_17 - expected_saldo_17)
+                    
+                    if saldo_diff > 100:  # Allow small rounding differences
+                        issues.append(f"Saldo devedor calculation incorrect in month 17. "
+                                    f"Expected: ~R${expected_saldo_17:,.2f}, "
+                                    f"Actual: R${saldo_17:,.2f}, "
+                                    f"Difference: R${saldo_diff:,.2f}")
+                    
+                    # 4. Check that balance continues decreasing in following months
+                    if saldo_18 >= saldo_17:
+                        issues.append(f"Saldo devedor not decreasing properly after contemplation. "
+                                    f"Month 17: R${saldo_17:,.2f}, Month 18: R${saldo_18:,.2f}")
+                    
+                    # 5. Check final balance (should be close to zero at end)
+                    final_month = detalhamento[-1]
+                    final_saldo = final_month['saldo_devedor']
+                    if final_saldo > 1000:  # Should be close to zero at the end
+                        issues.append(f"Final saldo devedor too high: R${final_saldo:,.2f}")
+                    
+                    # 6. Verify contemplation flow is positive (receives carta value)
+                    fluxo_17 = month_data[17]['fluxo_liquido']
+                    if fluxo_17 <= 0:
+                        issues.append(f"Contemplation flow should be positive, got: R${fluxo_17:,.2f}")
+                    
+                    success = len(issues) == 0
+                    
+                    if success:
+                        details = (f"✅ Saldo devedor bug fix working correctly. "
+                                 f"Month 16: R${saldo_16:,.2f}, "
+                                 f"Month 17 (contemplação): R${saldo_17:,.2f}, "
+                                 f"Month 18: R${saldo_18:,.2f}, "
+                                 f"Final: R${final_saldo:,.2f}, "
+                                 f"Contemplation flow: R${fluxo_17:,.2f}")
+                    else:
+                        details = f"❌ Issues found: {'; '.join(issues)}"
+                        
+            else:
+                details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+                
+            self.log_test("Saldo Devedor Pós-Contemplação Bug Fix", success, details)
+            return success
+            
+        except Exception as e:
+            self.log_test("Saldo Devedor Pós-Contemplação Bug Fix", False, str(e))
+            return False
+
     def run_all_tests(self):
         """Run all backend tests"""
         print("🚀 Starting Backend API Tests for Consortium Simulation System")
