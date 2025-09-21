@@ -544,7 +544,7 @@ function App() {
                                     {formatarMoeda(item.parcela_corrigida)}
                                   </td>
                                   <td className="p-2 md:p-3 text-right font-mono text-neutral-dark text-xs md:text-sm">
-                                    R$ 100.000,00
+                                    {formatarMoeda(item.valor_carta_corrigido)}
                                   </td>
                                   <td className={`p-2 md:p-3 text-right font-mono text-xs md:text-sm ${item.fluxo_liquido > 0 ? 'text-green-600' : 'text-red-600'}`}>
                                     {formatarMoeda(item.fluxo_liquido)}
