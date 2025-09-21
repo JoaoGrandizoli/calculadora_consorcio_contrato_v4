@@ -605,36 +605,71 @@ function App() {
                       </TabsContent>
 
                       <TabsContent value="probabilidades" className="space-y-4">
-                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                          <h4 className="text-blue-800 font-semibold mb-3">🎲 Configurar Análise de Probabilidades</h4>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                              <Label className="text-sm font-medium text-blue-700">Participantes do Grupo</Label>
-                              <Input
-                                type="number"
-                                value={parametrosProb.num_participantes}
-                                onChange={(e) => setParametrosProb(prev => ({...prev, num_participantes: parseInt(e.target.value)}))}
-                                className="mt-1"
-                              />
-                            </div>
-                            <div>
-                              <Label className="text-sm font-medium text-blue-700">Lance Livre (%)</Label>
-                              <Input
-                                type="number"
-                                step="0.01"
-                                value={parametrosProb.lance_livre_perc * 100}
-                                onChange={(e) => setParametrosProb(prev => ({...prev, lance_livre_perc: parseFloat(e.target.value) / 100}))}
-                                className="mt-1"
-                              />
-                            </div>
+                        {/* Nova seção explicativa da lógica padrão */}
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                          <h4 className="text-green-800 font-semibold mb-3">📊 Lógica Padrão de Probabilidades</h4>
+                          <div className="text-sm text-green-700">
+                            <p className="mb-2">
+                              <strong>Participantes:</strong> {parametros.prazo_meses * 2} participantes ({parametros.prazo_meses} meses × 2)
+                            </p>
+                            <p className="mb-2">
+                              <strong>Contemplações por mês:</strong> 2 (1 sorteio + 1 lance livre)
+                            </p>
+                            <p className="text-xs text-green-600">
+                              Esta lógica garante que todos os participantes sejam contemplados ao final do prazo.
+                            </p>
                           </div>
-                          <Button 
-                            onClick={calcularProbabilidades}
-                            disabled={loadingProb}
-                            className="mt-3 bg-blue-600 hover:bg-blue-700 text-white"
-                          >
-                            {loadingProb ? 'Calculando...' : 'Calcular Probabilidades'}
-                          </Button>
+                        </div>
+
+                        {/* Botão para mostrar configuração detalhada */}
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h4 className="text-blue-800 font-semibold">🔧 Detalhar Probabilidades</h4>
+                              <p className="text-sm text-blue-600">Configure manualmente para análise mais específica</p>
+                            </div>
+                            <Button 
+                              onClick={() => setMostrarDetalheProbabilidades(!mostrarDetalheProbabilidades)}
+                              variant="outline"
+                              className="border-blue-300 text-blue-700 hover:bg-blue-100"
+                            >
+                              {mostrarDetalheProbabilidades ? 'Ocultar' : 'Configurar'}
+                            </Button>
+                          </div>
+                          
+                          {mostrarDetalheProbabilidades && (
+                            <div className="mt-4 pt-4 border-t border-blue-200">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                  <Label className="text-sm font-medium text-blue-700">Participantes do Grupo</Label>
+                                  <Input
+                                    type="number"
+                                    value={parametrosProb.num_participantes}
+                                    onChange={(e) => setParametrosProb(prev => ({...prev, num_participantes: parseInt(e.target.value)}))}
+                                    className="mt-1"
+                                    placeholder={`Padrão: ${parametros.prazo_meses * 2}`}
+                                  />
+                                </div>
+                                <div>
+                                  <Label className="text-sm font-medium text-blue-700">Lance Livre (%)</Label>
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    value={parametrosProb.lance_livre_perc * 100}
+                                    onChange={(e) => setParametrosProb(prev => ({...prev, lance_livre_perc: parseFloat(e.target.value) / 100}))}
+                                    className="mt-1"
+                                  />
+                                </div>
+                              </div>
+                              <Button 
+                                onClick={calcularProbabilidades}
+                                disabled={loadingProb}
+                                className="mt-3 bg-blue-600 hover:bg-blue-700 text-white"
+                              >
+                                {loadingProb ? 'Calculando...' : 'Calcular Probabilidades Detalhadas'}
+                              </Button>
+                            </div>
+                          )}
                         </div>
 
                         {probabilidades && !probabilidades.erro && (
