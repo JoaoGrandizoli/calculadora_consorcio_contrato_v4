@@ -1713,6 +1713,11 @@ class ConsortiumAPITester:
         self.test_lance_livre_positivo()
         self.test_calcular_probabilidades_endpoint()
         
+        # NEW PROBABILITY LOGIC TESTS (Priority tests for current review)
+        print("\n🆕 Testing NEW PROBABILITY LOGIC (Priority Tests):")
+        self.test_nova_logica_probabilidades()
+        self.test_nova_logica_comparacao_com_anterior()
+        
         # PDF tests
         self.test_pdf_generation()
         self.test_pdf_without_cashflow_graph()
