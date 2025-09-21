@@ -259,6 +259,33 @@ class SimuladorConsorcio:
             logger.error(f"Erro na geração de fluxos: {e}")
             return {'fluxos': [], 'detalhamento': [], 'resumo': {}}
     
+    def calcular_vpl(self, fluxos: List[float], taxa_desconto: float = 0.10) -> float:
+        """
+        Calcula VPL (Valor Presente Líquido) como método alternativo quando CET não converge.
+        
+        Args:
+            fluxos: Lista de fluxos de caixa
+            taxa_desconto: Taxa de desconto anual (default: 10%)
+            
+        Returns:
+            VPL dos fluxos de caixa
+        """
+        try:
+            if len(fluxos) < 2:
+                return np.nan
+            
+            # Converter taxa anual para mensal
+            taxa_mensal = (1 + taxa_desconto) ** (1/12) - 1
+            
+            # Calcular VPL
+            vpl = sum(cf / (1 + taxa_mensal) ** i for i, cf in enumerate(fluxos))
+            
+            return vpl
+            
+        except Exception as e:
+            logger.error(f"Erro no cálculo do VPL: {e}")
+            return np.nan
+    
     def calcular_cet(self, fluxos: List[float]) -> float:
         """Calcula CET com método robusto."""
         def vpv(taxa_mensal):
