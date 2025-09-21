@@ -55,6 +55,7 @@ function App() {
     num_participantes: 430,
     lance_livre_perc: 0.10
   });
+  const [mostrarDetalheProbabilidades, setMostrarDetalheProbabilidades] = useState(false);
 
   // Carregar parâmetros padrão ao inicializar
   useEffect(() => {
