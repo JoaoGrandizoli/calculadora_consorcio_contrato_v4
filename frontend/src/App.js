@@ -504,6 +504,18 @@ function App() {
                                     {formatarPorcentagem(resultados.resultados.cet_mensal)}
                                   </Badge>
                                 </div>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-neutral-mid text-sm md:text-base">1ª Parcela Pós-Contemplação:</span>
+                                  <Badge variant="outline" className="font-mono text-xs md:text-sm">
+                                    {formatarMoeda(resultados.resumo_financeiro.primeira_parcela_pos_contemplacao)}
+                                  </Badge>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-neutral-mid text-sm md:text-base">Última Parcela:</span>
+                                  <Badge variant="outline" className="font-mono text-xs md:text-sm">
+                                    {formatarMoeda(resultados.resumo_financeiro.ultima_parcela)}
+                                  </Badge>
+                                </div>
                               </>
                             ) : (
                               <>
@@ -519,8 +531,6 @@ function App() {
                                     {resultados.resultados.motivo_erro || 'CET não convergiu'}
                                   </Badge>
                                 </div>
-                              </>
-                            )}
                                 <div className="flex justify-between items-center">
                                   <span className="text-neutral-mid text-sm md:text-base">1ª Parcela Pós-Contemplação:</span>
                                   <Badge variant="outline" className="font-mono text-xs md:text-sm">
@@ -533,18 +543,12 @@ function App() {
                                     {formatarMoeda(resultados.resumo_financeiro.ultima_parcela)}
                                   </Badge>
                                 </div>
-                                <div className="flex justify-between items-center">
-                                  <span className="text-neutral-mid text-sm md:text-base">Última Parcela:</span>
-                                  <Badge variant="outline" className="font-mono text-xs md:text-sm">
-                                    {formatarMoeda(resultados.resumo_financeiro.ultima_parcela)}
-                                  </Badge>
-                                </div>
                               </>
                             )}
                             <div className="flex justify-between items-center">
                               <span className="text-neutral-mid text-sm md:text-base">Status:</span>
-                              <Badge className="bg-green-100 text-green-800 border-green-200 text-xs md:text-sm">
-                                Cálculo OK
+                              <Badge className={`text-xs md:text-sm ${resultados.resultados.convergiu ? 'bg-green-100 text-green-800 border-green-200' : 'bg-orange-100 text-orange-800 border-orange-200'}`}>
+                                {resultados.resultados.convergiu ? 'CET Calculado' : 'VPL Calculado'}
                               </Badge>
                             </div>
                           </div>
