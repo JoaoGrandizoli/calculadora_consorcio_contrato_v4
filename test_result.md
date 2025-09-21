@@ -119,6 +119,9 @@ backend:
         - working: true
         - agent: "testing"
         - comment: "✅ TESTED: VPL functionality working perfectly. 1) Early contemplation (month 1): CET converges (12.58% a.a.) AND VPL calculated (R$-9,502.22), 2) Late contemplation (month 50): CET does NOT converge but VPL calculated successfully (R$-23,032.76), 3) VPL always uses 10% annual discount rate converted to monthly, 4) Fixed JSON serialization issue with NaN values when CET doesn't converge, 5) Both convergiu=false and VPL exist when CET fails. All 21 backend tests passed (100% success rate)."
+        - working: true
+        - agent: "testing"
+        - comment: "✅ NEGATIVE CET DETECTION TESTED: New functionality for negative CET detection working perfectly. 1) Month 90 contemplation generates negative CET correctly detected, 2) convergiu=false when CET is negative, 3) motivo_erro='CET negativo - resultado inválido' as expected, 4) VPL calculated as alternative (R$-33,630.05), 5) Negative CET not returned (cet_anual=None, cet_mensal=None), 6) Both non-convergence (month 50) and negative CET (month 90) scenarios treated equally with VPL usage. All 23 backend tests passed (100% success rate)."
 
   - task: "Remover gráfico de fluxo de caixa do PDF"
     implemented: true
