@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: Remover gráfico de fluxo de caixa da aplicação e corrigir cálculos de hazard/probabilidades para contemplação baseado em lance livre (lance_livre_perc = 0 -> 1/participantes, lance_livre_perc > 0 -> 2/participantes)
+user_problem_statement: Testar especificamente a correção do valor da carta na tabela de fluxo de caixa - Bug corrigido: Valor da carta estava hardcoded como R$ 100.000,00 na tabela frontend e PDF, corrigido para mostrar valor_carta_corrigido que sofre correção monetária anual
 
 backend:
   - task: "Remover gráfico de fluxo de caixa do PDF"
@@ -191,6 +191,21 @@ backend:
         - working: true
         - agent: "testing"
         - comment: "✅ TESTED: Saldo devedor bug fix working correctly. Tested with exact user parameters (valor_carta=100000, mes_contemplacao=17, lance_livre_perc=0.10, prazo_meses=120). Month 16: R$107,260.00 → Month 17 (contemplação): R$106,175.00 → Month 18: R$105,090.00. Balance decreases only by installment amount (R$1,085.00), not by carta value (R$105,000.00). Final balance reaches zero naturally. Contemplation flow positive: R$91,515.00."
+
+  - task: "Corrigir valor da carta na tabela de fluxo de caixa"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+        - agent: "user"
+        - comment: "Bug reportado: Valor da carta estava hardcoded como R$ 100.000,00 na tabela frontend e PDF. Deve mostrar valor_carta_corrigido que sofre correção monetária anual."
+        - working: true
+        - agent: "testing"
+        - comment: "✅ TESTED: Card value correction working correctly with annual monetary adjustment (taxa_reajuste_anual=5%). Verified specific values: Year 1 (months 1-12): R$100,000.00, Year 2 (months 13-24): R$105,000.00, Year 3 (months 25-36): R$110,250.00. Contemplation in month 17 correctly uses corrected value R$105,000.00. PDF generation includes corrected values in cash flow table. All 17 backend tests passed (100% success rate)."
 
 frontend:
   - task: "Atualizar display de probabilidades para mostrar 1/participantes vs 2/participantes"
