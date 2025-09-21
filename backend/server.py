@@ -341,7 +341,12 @@ class SimuladorConsorcio:
                 'mensagem': 'Erro na geração de fluxos'
             }
         
+        # Tentar calcular CET primeiro
         cet = self.calcular_cet(resultado_fluxos['fluxos'])
+        
+        # Calcular VPL sempre (como alternativa ao CET)
+        taxa_desconto = 0.10  # 10% para teste, conforme solicitado
+        vpl = self.calcular_vpl(resultado_fluxos['fluxos'], taxa_desconto)
         
         return {
             'erro': False,
@@ -349,6 +354,8 @@ class SimuladorConsorcio:
             'resultados': {
                 'cet_anual': cet,
                 'cet_mensal': (1 + cet) ** (1/12) - 1 if not np.isnan(cet) else np.nan,
+                'vpl': vpl,
+                'taxa_desconto_vpl': taxa_desconto,
                 'convergiu': self.convergiu,
                 'motivo_erro': self.motivo_erro
             },
