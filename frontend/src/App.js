@@ -339,13 +339,20 @@ function App() {
                           <PieChart className="h-4 w-4 md:h-6 md:w-6 text-light" />
                         </div>
                         <div>
-                          <p className="text-xs md:text-sm text-neutral-mid">CET Anual</p>
+                          <p className="text-xs md:text-sm text-neutral-mid">
+                            {resultados.resultados.convergiu ? 'CET Anual' : 'VPL (Taxa 10%)'}
+                          </p>
                           <p className="text-lg md:text-2xl font-bold text-primary-accent">
                             {resultados.resultados.convergiu ? 
                               formatarPorcentagem(resultados.resultados.cet_anual) : 
-                              'Erro no cálculo'
+                              (resultados.resultados.vpl ? formatarMoeda(resultados.resultados.vpl) : 'Erro no cálculo')
                             }
                           </p>
+                          {!resultados.resultados.convergiu && resultados.resultados.vpl && (
+                            <p className="text-xs text-orange-600 mt-1">
+                              CET não convergiu - usando VPL
+                            </p>
+                          )}
                         </div>
                       </div>
                     </CardContent>
