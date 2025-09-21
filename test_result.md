@@ -261,7 +261,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Implementar cálculo de VPL quando CET não converge"
+    - "Testar nova lógica de probabilidades com contemplação no mês 17"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -279,3 +279,5 @@ agent_communication:
     - message: "✅ VPL FUNCTIONALITY FULLY TESTED: Comprehensive testing of new VPL (Net Present Value) functionality completed successfully. Key findings: 1) VPL calculated correctly when CET converges (early contemplation month 1): CET=12.58% a.a., VPL=R$-9,502.22, 2) VPL calculated successfully when CET does NOT converge (late contemplation month 50): convergiu=false, VPL=R$-23,032.76, 3) VPL always uses 10% annual discount rate converted to monthly rate, 4) Fixed critical JSON serialization bug with NaN values when CET doesn't converge, 5) New fields vpl and taxa_desconto_vpl properly included in ResultadosSimulacao model, 6) VPL calculated in all scenarios regardless of CET convergence status. All 21 backend tests passed (100% success rate)."
     - agent: "testing"
     - message: "✅ NEGATIVE CET DETECTION FUNCTIONALITY FULLY TESTED: New functionality for detecting and handling negative CET values working perfectly. Key findings: 1) Month 90 contemplation correctly generates negative CET scenario, 2) convergiu=false when CET becomes negative, 3) motivo_erro='CET negativo - resultado inválido' as expected, 4) VPL calculated as alternative method (R$-33,630.05), 5) Negative CET values NOT returned (cet_anual=None, cet_mensal=None), 6) Both non-convergence (month 50) and negative CET (month 90) scenarios treated equally with VPL usage, 7) Taxa_desconto_vpl=0.10 (10%) consistently applied. All 23 backend tests passed (100% success rate). NEW FUNCTIONALITY WORKING AS SPECIFIED."
+    - agent: "testing"
+    - message: "✅ NOVA LÓGICA DE PROBABILIDADES TESTADA COM SUCESSO: Comprehensive testing of new probability logic completed successfully. Key findings: 1) NEW FORMULA WORKING: Participantes = 2 × prazo_meses (120 meses → 240 participantes), 2) ALWAYS 2 CONTEMPLADOS: Independente de lance_livre_perc, sempre usa 2 contemplados por mês, 3) MONTH 17 TEST PASSED: Participantes restantes = 208 (240 - 16×2), Probabilidade = 2/208 = 0.009615 (0.96%) exatamente como especificado, 4) MULTIPLE TERM TESTS: 60 meses→120 participantes, 120 meses→240 participantes, 180 meses→360 participantes, 5) OLD LOGIC REPLACED: Testes antigos falharam conforme esperado, confirmando que nova lógica substituiu a anterior, 6) ALL ENDPOINTS UPDATED: /api/simular e /api/calcular-probabilidades funcionando com nova lógica. Taxa de sucesso: 92% (23/25 testes passaram, 2 falharam intencionalmente por serem da lógica antiga). NOVA LÓGICA IMPLEMENTADA E FUNCIONANDO PERFEITAMENTE."
