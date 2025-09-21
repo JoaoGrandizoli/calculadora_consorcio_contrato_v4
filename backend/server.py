@@ -662,8 +662,8 @@ def gerar_relatorio_pdf(dados_simulacao: Dict, temp_dir: str) -> str:
             mes = str(item['mes'])
             data = item['data']
             parcela = f"R$ {item['parcela_corrigida']:,.2f}"
-            # Valor da carta sempre R$ 100.000,00 (como no documento de referência)
-            valor_carta = "R$ 100.000,00"
+            # Valor da carta corrigido (sofre variação anual)
+            valor_carta = f"R$ {item['valor_carta_corrigido']:,.2f}"
             fluxo = f"R$ {item['fluxo_liquido']:,.2f}"
             saldo = f"R$ {item['saldo_devedor']:,.2f}"
             
