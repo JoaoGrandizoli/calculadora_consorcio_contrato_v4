@@ -520,6 +520,135 @@ class ConsortiumAPITester:
             self.log_test("PDF Without Cash Flow Graph", False, str(e))
             return False
 
+    def test_valor_carta_corrigido_bug_fix(self):
+        """
+        Test the specific bug fix for valor da carta correction in cash flow table.
+        Bug: Card value was hardcoded as R$ 100,000.00 in frontend table and PDF.
+        Fix: Should show valor_carta_corrigido that undergoes annual monetary correction.
+        
+        Test parameters:
+        - valor_carta: 100000
+        - mes_contemplacao: 17
+        - taxa_reajuste_anual: 0.05 (5%)
+        - prazo_meses: 120
+        
+        Expected values:
+        - Month 1-12: R$ 100,000.00 (year 1, factor 1.0)
+        - Month 13-24: R$ 105,000.00 (year 2, factor 1.05)
+        - Month 25-36: R$ 110,250.00 (year 3, factor 1.05²)
+        - Contemplation in month 17: should use corrected value R$ 105,000.00
+        """
+        parametros = {
+            "valor_carta": 100000,
+            "prazo_meses": 120,
+            "taxa_admin": 0.21,
+            "fundo_reserva": 0.03,
+            "mes_contemplacao": 17,
+            "lance_livre_perc": 0.10,
+            "taxa_reajuste_anual": 0.05  # 5% annual correction
+        }
+        
+        try:
+            response = requests.post(f"{self.api_url}/simular", 
+                                   json=parametros, 
+                                   timeout=30)
+            success = response.status_code == 200
+            
+            if success:
+                data = response.json()
+                
+                if data.get('erro'):
+                    success = False
+                    details = f"Simulation error: {data.get('mensagem')}"
+                else:
+                    detalhamento = data['detalhamento']
+                    issues = []
+                    
+                    # Test specific months for card value correction
+                    test_months = {
+                        1: {"expected_value": 100000.00, "year": 1, "factor": 1.0},
+                        12: {"expected_value": 100000.00, "year": 1, "factor": 1.0},
+                        13: {"expected_value": 105000.00, "year": 2, "factor": 1.05},
+                        17: {"expected_value": 105000.00, "year": 2, "factor": 1.05},  # Contemplation month
+                        24: {"expected_value": 105000.00, "year": 2, "factor": 1.05},
+                        25: {"expected_value": 110250.00, "year": 3, "factor": 1.1025},
+                        36: {"expected_value": 110250.00, "year": 3, "factor": 1.1025}
+                    }
+                    
+                    month_data = {}
+                    for item in detalhamento:
+                        if item['mes'] in test_months:
+                            month_data[item['mes']] = item
+                    
+                    # Validate card values for each test month
+                    for mes, expected in test_months.items():
+                        if mes in month_data:
+                            actual_value = month_data[mes]['valor_carta_corrigido']
+                            expected_value = expected['expected_value']
+                            tolerance = 1.0  # R$ 1.00 tolerance for rounding
+                            
+                            if abs(actual_value - expected_value) > tolerance:
+                                issues.append(f"Month {mes}: Expected R${expected_value:,.2f}, "
+                                            f"got R${actual_value:,.2f} "
+                                            f"(diff: R${abs(actual_value - expected_value):,.2f})")
+                            
+                            # Verify year and factor calculations
+                            actual_year = month_data[mes]['ano']
+                            actual_factor = month_data[mes]['fator_correcao']
+                            expected_year = expected['year']
+                            expected_factor = expected['factor']
+                            
+                            if actual_year != expected_year:
+                                issues.append(f"Month {mes}: Expected year {expected_year}, got {actual_year}")
+                            
+                            if abs(actual_factor - expected_factor) > 0.001:
+                                issues.append(f"Month {mes}: Expected factor {expected_factor:.4f}, "
+                                            f"got {actual_factor:.4f}")
+                    
+                    # Special validation for contemplation month (17)
+                    if 17 in month_data:
+                        contemplacao_data = month_data[17]
+                        if not contemplacao_data['eh_contemplacao']:
+                            issues.append("Month 17 should be marked as contemplation month")
+                        
+                        # Verify contemplation uses corrected card value
+                        carta_contemplacao = data['resumo_financeiro']['valor_carta_contemplacao']
+                        expected_carta_contemplacao = 105000.00  # R$ 100k * 1.05
+                        
+                        if abs(carta_contemplacao - expected_carta_contemplacao) > 1.0:
+                            issues.append(f"Contemplation card value: Expected R${expected_carta_contemplacao:,.2f}, "
+                                        f"got R${carta_contemplacao:,.2f}")
+                    
+                    # Verify that values are NOT hardcoded to 100,000
+                    hardcoded_count = sum(1 for item in detalhamento[:36] 
+                                        if abs(item['valor_carta_corrigido'] - 100000.00) < 0.01)
+                    
+                    # Only first 12 months should have exactly 100,000
+                    if hardcoded_count > 12:
+                        issues.append(f"Too many months with hardcoded R$100,000 value: {hardcoded_count} "
+                                    f"(expected max 12 for first year)")
+                    
+                    success = len(issues) == 0
+                    
+                    if success:
+                        details = (f"✅ Card value correction working correctly. "
+                                 f"Year 1 (months 1-12): R$100,000.00, "
+                                 f"Year 2 (months 13-24): R$105,000.00, "
+                                 f"Year 3 (months 25-36): R$110,250.00, "
+                                 f"Contemplation (month 17): R${carta_contemplacao:,.2f}")
+                    else:
+                        details = f"❌ Card value correction issues: {'; '.join(issues)}"
+                        
+            else:
+                details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+                
+            self.log_test("Valor da Carta Corrigido Bug Fix", success, details)
+            return success
+            
+        except Exception as e:
+            self.log_test("Valor da Carta Corrigido Bug Fix", False, str(e))
+            return False
+
     def test_saldo_devedor_pos_contemplacao(self):
         """
         Test the specific bug fix for saldo devedor after contemplation.
