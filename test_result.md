@@ -213,9 +213,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Corrigir cálculo hazard condicional baseado em lance_livre_perc"
-    - "Atualizar endpoint /api/simular para passar lance_livre_perc"
-    - "Corrigir função criar_grafico_probabilidades"
+    - "Corrigir lógica do saldo devedor pós-contemplação"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
