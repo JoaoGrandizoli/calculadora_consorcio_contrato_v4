@@ -496,7 +496,7 @@ function App() {
                             </div>
                           </div>
                           <div className="space-y-3">
-                            {resultados.resultados.convergiu && (
+                            {resultados.resultados.convergiu ? (
                               <>
                                 <div className="flex justify-between items-center">
                                   <span className="text-neutral-mid text-sm md:text-base">CET Mensal:</span>
@@ -504,6 +504,23 @@ function App() {
                                     {formatarPorcentagem(resultados.resultados.cet_mensal)}
                                   </Badge>
                                 </div>
+                              </>
+                            ) : (
+                              <>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-neutral-mid text-sm md:text-base">VPL (Taxa 10%):</span>
+                                  <Badge variant="outline" className="font-mono text-xs md:text-sm bg-orange-50 text-orange-700 border-orange-200">
+                                    {resultados.resultados.vpl ? formatarMoeda(resultados.resultados.vpl) : 'N/A'}
+                                  </Badge>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-neutral-mid text-sm md:text-base">Motivo:</span>
+                                  <Badge variant="outline" className="text-xs md:text-sm bg-yellow-50 text-yellow-700 border-yellow-200">
+                                    {resultados.resultados.motivo_erro || 'CET não convergiu'}
+                                  </Badge>
+                                </div>
+                              </>
+                            )}
                                 <div className="flex justify-between items-center">
                                   <span className="text-neutral-mid text-sm md:text-base">1ª Parcela Pós-Contemplação:</span>
                                   <Badge variant="outline" className="font-mono text-xs md:text-sm">
