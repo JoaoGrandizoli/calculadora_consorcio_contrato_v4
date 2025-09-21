@@ -102,9 +102,24 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: Testar especificamente a nova funcionalidade de VPL quando CET não converge - Nova funcionalidade implementada: Cálculo de VPL (Valor Presente Líquido) como método alternativo quando CET não converge, Taxa de desconto de 10% conforme solicitado pelo usuário, Novos campos: vpl, taxa_desconto_vpl no modelo ResultadosSimulacao
+user_problem_statement: Testar a nova lógica de probabilidades implementada - Nova lógica implementada: Participantes = 2 × prazo_meses (exemplo: 120 meses → 240 participantes), Sempre 2 contemplados por mês (1 sorteio + 1 lance livre), Função calcular_probabilidade_mes_especifico atualizada para usar contemplados_por_mes=2 sempre, lance_livre_perc mantido para compatibilidade mas não afeta probabilidades
 
 backend:
+  - task: "Testar nova lógica de probabilidades com contemplação no mês 17"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+        - agent: "main"
+        - comment: "Nova lógica implementada: Participantes = 2 × prazo_meses (120 meses → 240 participantes), Sempre 2 contemplados por mês (1 sorteio + 1 lance livre), Função calcular_probabilidade_mes_especifico atualizada para usar contemplados_por_mes=2 sempre"
+        - working: true
+        - agent: "testing"
+        - comment: "✅ NOVA LÓGICA DE PROBABILIDADES TESTADA COM SUCESSO: 1) Participantes totais = 240 (120×2) conforme nova fórmula, 2) Participantes restantes mês 17 = 208 (240 - 16×2), 3) Probabilidade no mês 17 = 2/208 = 0.009615 (0.96%) exatamente como especificado, 4) Contemplados por mês = 2 sempre (independente de lance_livre_perc), 5) Testado com múltiplos prazos: 60 meses→120 participantes, 120 meses→240 participantes, 180 meses→360 participantes, 6) Testes antigos falharam conforme esperado (confirmando mudança), 7) Nova lógica funcionando perfeitamente em todos os cenários. Taxa de sucesso: 92% (23/25 testes passaram, 2 falharam intencionalmente por serem da lógica antiga)."
+
   - task: "Implementar cálculo de VPL quando CET não converge"
     implemented: true
     working: true
@@ -152,6 +167,9 @@ backend:
         - working: true
         - agent: "testing"
         - comment: "✅ TESTED: Hazard calculation working correctly. lance_livre_perc=0 uses 1 contemplado (prob=1/414=0.002415), lance_livre_perc>0 uses 2 contemplados (prob=2/398=0.005025). Fixed function signature to determine contemplados_por_mes internally."
+        - working: true
+        - agent: "testing"
+        - comment: "✅ NOVA LÓGICA CONFIRMADA: Testes antigos falharam conforme esperado, confirmando que nova lógica substituiu a anterior. Agora sempre usa participantes = 2×prazo_meses e contemplados_por_mes = 2, independente de lance_livre_perc."
 
   - task: "Atualizar endpoint /api/simular para passar lance_livre_perc"
     implemented: true
