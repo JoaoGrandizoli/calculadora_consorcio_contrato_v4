@@ -1486,6 +1486,11 @@ class ConsortiumAPITester:
         self.test_vpl_calculation_accuracy()
         self.test_vpl_always_calculated()
         
+        # NEW NEGATIVE CET DETECTION TESTS
+        print("\n🔴 Testing Negative CET Detection Functionality:")
+        self.test_negative_cet_detection()
+        self.test_negative_cet_vs_non_convergence_comparison()
+        
         # Summary
         print("\n" + "=" * 70)
         print("📊 TEST SUMMARY")
