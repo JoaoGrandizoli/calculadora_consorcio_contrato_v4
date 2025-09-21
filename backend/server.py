@@ -178,8 +178,9 @@ class SimuladorConsorcio:
                     lance_mes = valor_lance_livre
                     primeira_parcela = parcela_corrigida
                     
-                    # CORREÇÃO DO SALDO DEVEDOR: Após contemplação, subtrai o valor da carta
-                    saldo_devedor_atual = saldo_devedor_atual - valor_carta_corrigido - parcela_corrigida
+                    # CORREÇÃO DO SALDO DEVEDOR: Após contemplação, apenas subtrai a parcela
+                    # O valor da carta "sai" do financiamento, mas o saldo devedor continua sendo abatido pelas parcelas
+                    saldo_devedor_atual -= parcela_corrigida
                 else:
                     # DEMAIS MESES: Só paga parcela (valor sempre igual)
                     fluxo = -parcela_corrigida
@@ -189,7 +190,7 @@ class SimuladorConsorcio:
                     if mes == self.params.mes_contemplacao + 1:
                         primeira_parcela_pos_contemplacao = parcela_corrigida
                     
-                    # CORREÇÃO: Subtrai apenas a parcela do saldo devedor
+                    # Subtrai apenas a parcela do saldo devedor
                     saldo_devedor_atual -= parcela_corrigida
                 
                 # Guardar parcela intermediária (meio do prazo)
