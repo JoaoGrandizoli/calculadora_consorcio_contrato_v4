@@ -1227,6 +1227,13 @@ class ConsortiumAPITester:
         self.test_valor_carta_corrigido_bug_fix()
         self.test_saldo_devedor_pos_contemplacao()
         
+        # NEW VPL FUNCTIONALITY TESTS
+        print("\n💰 Testing VPL (Net Present Value) Functionality:")
+        self.test_vpl_when_cet_converges()
+        self.test_vpl_when_cet_not_converges()
+        self.test_vpl_calculation_accuracy()
+        self.test_vpl_always_calculated()
+        
         # Summary
         print("\n" + "=" * 70)
         print("📊 TEST SUMMARY")
