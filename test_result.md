@@ -240,7 +240,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Corrigir valor da carta na tabela de fluxo de caixa"
+    - "Implementar cálculo de VPL quando CET não converge"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -254,3 +254,5 @@ agent_communication:
     - message: "✅ SALDO DEVEDOR BUG FIX VERIFIED: Tested specific user-reported bug with exact parameters (valor_carta=100000, mes_contemplacao=17, lance_livre_perc=0.10, prazo_meses=120). Confirmed fix is working correctly: 1) Balance does NOT go to zero after contemplation, 2) Balance decreases only by installment amount (R$1,085.00), not by carta value (R$105,000.00), 3) Balance progression: Month 16: R$107,260 → Month 17: R$106,175 → Month 18: R$105,090, 4) Final balance reaches zero naturally at end of term. All 16 backend tests passed (100% success rate)."
     - agent: "testing"
     - message: "✅ VALOR DA CARTA CORRIGIDO BUG FIX VERIFIED: Tested specific card value correction with exact parameters (valor_carta=100000, mes_contemplacao=17, taxa_reajuste_anual=0.05, prazo_meses=120). Confirmed fix is working correctly: 1) Card value is NOT hardcoded to R$100,000, 2) Annual monetary correction applied properly: Year 1 (months 1-12): R$100,000.00, Year 2 (months 13-24): R$105,000.00, Year 3 (months 25-36): R$110,250.00, 3) Contemplation in month 17 uses corrected value R$105,000.00, 4) PDF generation includes corrected values in cash flow table. All 17 backend tests passed (100% success rate)."
+    - agent: "testing"
+    - message: "✅ VPL FUNCTIONALITY FULLY TESTED: Comprehensive testing of new VPL (Net Present Value) functionality completed successfully. Key findings: 1) VPL calculated correctly when CET converges (early contemplation month 1): CET=12.58% a.a., VPL=R$-9,502.22, 2) VPL calculated successfully when CET does NOT converge (late contemplation month 50): convergiu=false, VPL=R$-23,032.76, 3) VPL always uses 10% annual discount rate converted to monthly rate, 4) Fixed critical JSON serialization bug with NaN values when CET doesn't converge, 5) New fields vpl and taxa_desconto_vpl properly included in ResultadosSimulacao model, 6) VPL calculated in all scenarios regardless of CET convergence status. All 21 backend tests passed (100% success rate)."
