@@ -179,15 +179,18 @@ backend:
 
   - task: "Corrigir lógica do saldo devedor pós-contemplação"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
         - agent: "main"
         - comment: "Bug reportado pelo usuário: saldo devedor indo para zero após contemplação. Corrigido para apenas subtrair parcela, não valor da carta."
+        - working: true
+        - agent: "testing"
+        - comment: "✅ TESTED: Saldo devedor bug fix working correctly. Tested with exact user parameters (valor_carta=100000, mes_contemplacao=17, lance_livre_perc=0.10, prazo_meses=120). Month 16: R$107,260.00 → Month 17 (contemplação): R$106,175.00 → Month 18: R$105,090.00. Balance decreases only by installment amount (R$1,085.00), not by carta value (R$105,000.00). Final balance reaches zero naturally. Contemplation flow positive: R$91,515.00."
 
 frontend:
   - task: "Atualizar display de probabilidades para mostrar 1/participantes vs 2/participantes"
