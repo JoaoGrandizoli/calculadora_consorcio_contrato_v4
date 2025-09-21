@@ -188,6 +188,9 @@ backend:
         - working: "NA"
         - agent: "main"
         - comment: "Bug reportado pelo usuário: saldo devedor indo para zero após contemplação. Corrigido para apenas subtrair parcela, não valor da carta."
+
+frontend:
+  - task: "Atualizar display de probabilidades para mostrar 1/participantes vs 2/participantes"
     implemented: true
     working: "NA"
     file: "/app/frontend/src/App.js"
