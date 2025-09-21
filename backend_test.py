@@ -828,6 +828,7 @@ class ConsortiumAPITester:
         # PDF tests
         self.test_pdf_generation()
         self.test_pdf_without_cashflow_graph()
+        self.test_pdf_with_corrected_card_values()
         
         # SPECIFIC BUG FIX TESTS
         print("\n🐛 Testing Specific Bug Fixes:")
