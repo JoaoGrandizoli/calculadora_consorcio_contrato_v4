@@ -801,6 +801,398 @@ class ConsortiumAPITester:
             self.log_test("Saldo Devedor Pós-Contemplação Bug Fix", False, str(e))
             return False
 
+    def test_vpl_when_cet_converges(self):
+        """
+        Test VPL calculation when CET converges (early contemplation).
+        Should calculate both CET and VPL successfully.
+        
+        Test parameters for convergence:
+        - valor_carta: 100000
+        - mes_contemplacao: 1 (early contemplation should converge)
+        - lance_livre_perc: 0.10
+        - prazo_meses: 120
+        """
+        parametros = {
+            "valor_carta": 100000,
+            "prazo_meses": 120,
+            "taxa_admin": 0.21,
+            "fundo_reserva": 0.03,
+            "mes_contemplacao": 1,  # Early contemplation - should converge
+            "lance_livre_perc": 0.10,
+            "taxa_reajuste_anual": 0.05
+        }
+        
+        try:
+            response = requests.post(f"{self.api_url}/simular", 
+                                   json=parametros, 
+                                   timeout=30)
+            success = response.status_code == 200
+            
+            if success:
+                data = response.json()
+                
+                if data.get('erro'):
+                    success = False
+                    details = f"Simulation error: {data.get('mensagem')}"
+                else:
+                    resultados = data['resultados']
+                    issues = []
+                    
+                    # 1. Check that CET converged
+                    convergiu = resultados.get('convergiu', False)
+                    if not convergiu:
+                        issues.append(f"CET should converge for early contemplation, but convergiu={convergiu}")
+                    
+                    # 2. Check that CET values are present and valid
+                    cet_anual = resultados.get('cet_anual')
+                    cet_mensal = resultados.get('cet_mensal')
+                    
+                    if cet_anual is None or str(cet_anual) in ['nan', 'inf', '-inf']:
+                        issues.append(f"Invalid CET anual: {cet_anual}")
+                    elif not (0.05 <= cet_anual <= 0.20):  # Expected range 5-20%
+                        issues.append(f"CET anual out of expected range: {cet_anual*100:.2f}% (expected 5-20%)")
+                    
+                    if cet_mensal is None or str(cet_mensal) in ['nan', 'inf', '-inf']:
+                        issues.append(f"Invalid CET mensal: {cet_mensal}")
+                    
+                    # 3. Check that VPL is calculated
+                    vpl = resultados.get('vpl')
+                    taxa_desconto_vpl = resultados.get('taxa_desconto_vpl')
+                    
+                    if vpl is None or str(vpl) in ['nan', 'inf', '-inf']:
+                        issues.append(f"VPL should be calculated, got: {vpl}")
+                    
+                    if taxa_desconto_vpl != 0.10:
+                        issues.append(f"Taxa desconto VPL should be 0.10 (10%), got: {taxa_desconto_vpl}")
+                    
+                    # 4. VPL should be reasonable (negative for this type of operation)
+                    if vpl is not None and str(vpl) not in ['nan', 'inf', '-inf']:
+                        if vpl > 0:
+                            issues.append(f"VPL should typically be negative for consortium operations, got: R${vpl:,.2f}")
+                    
+                    success = len(issues) == 0
+                    
+                    if success:
+                        details = (f"✅ CET converged and VPL calculated successfully. "
+                                 f"CET: {cet_anual*100:.2f}% a.a., "
+                                 f"VPL: R${vpl:,.2f}, "
+                                 f"Taxa VPL: {taxa_desconto_vpl*100:.0f}%")
+                    else:
+                        details = f"❌ Issues found: {'; '.join(issues)}"
+                        
+            else:
+                details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+                
+            self.log_test("VPL When CET Converges (Early Contemplation)", success, details)
+            return success
+            
+        except Exception as e:
+            self.log_test("VPL When CET Converges (Early Contemplation)", False, str(e))
+            return False
+
+    def test_vpl_when_cet_not_converges(self):
+        """
+        Test VPL calculation when CET does not converge (late contemplation).
+        This is the main new functionality being tested.
+        
+        Test parameters for non-convergence:
+        - valor_carta: 100000
+        - mes_contemplacao: 50 (late contemplation should cause non-convergence)
+        - lance_livre_perc: 0.10
+        - prazo_meses: 120
+        """
+        parametros = {
+            "valor_carta": 100000,
+            "prazo_meses": 120,
+            "taxa_admin": 0.21,
+            "fundo_reserva": 0.03,
+            "mes_contemplacao": 50,  # Late contemplation - should NOT converge
+            "lance_livre_perc": 0.10,
+            "taxa_reajuste_anual": 0.05
+        }
+        
+        try:
+            response = requests.post(f"{self.api_url}/simular", 
+                                   json=parametros, 
+                                   timeout=30)
+            success = response.status_code == 200
+            
+            if success:
+                data = response.json()
+                
+                if data.get('erro'):
+                    success = False
+                    details = f"Simulation error: {data.get('mensagem')}"
+                else:
+                    resultados = data['resultados']
+                    issues = []
+                    
+                    # 1. Check that CET did NOT converge
+                    convergiu = resultados.get('convergiu', True)
+                    if convergiu:
+                        issues.append(f"CET should NOT converge for late contemplation (month 50), but convergiu={convergiu}")
+                    
+                    # 2. Check that CET values are NaN/None when not converged
+                    cet_anual = resultados.get('cet_anual')
+                    cet_mensal = resultados.get('cet_mensal')
+                    
+                    if convergiu == False:
+                        # When not converged, CET should be NaN or None
+                        if cet_anual is not None and str(cet_anual) not in ['nan', 'inf', '-inf']:
+                            issues.append(f"CET anual should be NaN when not converged, got: {cet_anual}")
+                        if cet_mensal is not None and str(cet_mensal) not in ['nan', 'inf', '-inf']:
+                            issues.append(f"CET mensal should be NaN when not converged, got: {cet_mensal}")
+                    
+                    # 3. Check that VPL is calculated even when CET doesn't converge
+                    vpl = resultados.get('vpl')
+                    taxa_desconto_vpl = resultados.get('taxa_desconto_vpl')
+                    
+                    if vpl is None or str(vpl) in ['nan', 'inf', '-inf']:
+                        issues.append(f"VPL should be calculated even when CET doesn't converge, got: {vpl}")
+                    
+                    if taxa_desconto_vpl != 0.10:
+                        issues.append(f"Taxa desconto VPL should be 0.10 (10%), got: {taxa_desconto_vpl}")
+                    
+                    # 4. VPL should be reasonable (negative for this type of operation)
+                    if vpl is not None and str(vpl) not in ['nan', 'inf', '-inf']:
+                        if vpl > 0:
+                            issues.append(f"VPL should typically be negative for consortium operations, got: R${vpl:,.2f}")
+                    
+                    # 5. Check that motivo_erro is provided when CET doesn't converge
+                    motivo_erro = resultados.get('motivo_erro')
+                    if not convergiu and not motivo_erro:
+                        issues.append("motivo_erro should be provided when CET doesn't converge")
+                    
+                    success = len(issues) == 0
+                    
+                    if success:
+                        details = (f"✅ VPL calculated successfully when CET doesn't converge. "
+                                 f"Convergiu: {convergiu}, "
+                                 f"VPL: R${vpl:,.2f}, "
+                                 f"Taxa VPL: {taxa_desconto_vpl*100:.0f}%, "
+                                 f"Motivo: {motivo_erro}")
+                    else:
+                        details = f"❌ Issues found: {'; '.join(issues)}"
+                        
+            else:
+                details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+                
+            self.log_test("VPL When CET Does NOT Converge (Late Contemplation)", success, details)
+            return success
+            
+        except Exception as e:
+            self.log_test("VPL When CET Does NOT Converge (Late Contemplation)", False, str(e))
+            return False
+
+    def test_vpl_calculation_accuracy(self):
+        """
+        Test VPL calculation accuracy with known parameters.
+        Verify that VPL is calculated using 10% annual discount rate converted to monthly.
+        """
+        parametros = {
+            "valor_carta": 100000,
+            "prazo_meses": 120,
+            "taxa_admin": 0.21,
+            "fundo_reserva": 0.03,
+            "mes_contemplacao": 1,  # Early contemplation for stable calculation
+            "lance_livre_perc": 0.10,
+            "taxa_reajuste_anual": 0.05
+        }
+        
+        try:
+            response = requests.post(f"{self.api_url}/simular", 
+                                   json=parametros, 
+                                   timeout=30)
+            success = response.status_code == 200
+            
+            if success:
+                data = response.json()
+                
+                if data.get('erro'):
+                    success = False
+                    details = f"Simulation error: {data.get('mensagem')}"
+                else:
+                    resultados = data['resultados']
+                    fluxos = data['fluxos']
+                    issues = []
+                    
+                    # 1. Check that we have valid cash flows
+                    if not fluxos or len(fluxos) < 2:
+                        issues.append(f"Invalid cash flows for VPL calculation: {len(fluxos) if fluxos else 0} flows")
+                    
+                    # 2. Check VPL calculation
+                    vpl = resultados.get('vpl')
+                    taxa_desconto_vpl = resultados.get('taxa_desconto_vpl')
+                    
+                    if vpl is None or str(vpl) in ['nan', 'inf', '-inf']:
+                        issues.append(f"Invalid VPL value: {vpl}")
+                    
+                    if taxa_desconto_vpl != 0.10:
+                        issues.append(f"Incorrect discount rate: {taxa_desconto_vpl} (expected 0.10)")
+                    
+                    # 3. Manual VPL calculation to verify accuracy
+                    if fluxos and len(fluxos) >= 2 and taxa_desconto_vpl == 0.10:
+                        try:
+                            # Convert annual rate to monthly: (1 + 0.10)^(1/12) - 1
+                            taxa_mensal = (1 + 0.10) ** (1/12) - 1
+                            
+                            # Calculate VPL manually
+                            vpl_manual = sum(cf / (1 + taxa_mensal) ** i for i, cf in enumerate(fluxos))
+                            
+                            # Compare with API result (allow 1% tolerance)
+                            if abs(vpl - vpl_manual) > abs(vpl_manual * 0.01):
+                                issues.append(f"VPL calculation mismatch. API: R${vpl:,.2f}, Manual: R${vpl_manual:,.2f}")
+                            
+                        except Exception as calc_error:
+                            issues.append(f"Error in manual VPL calculation: {calc_error}")
+                    
+                    # 4. Check that VPL fields are present in response model
+                    required_vpl_fields = ['vpl', 'taxa_desconto_vpl']
+                    missing_fields = [field for field in required_vpl_fields if field not in resultados]
+                    if missing_fields:
+                        issues.append(f"Missing VPL fields in response: {missing_fields}")
+                    
+                    success = len(issues) == 0
+                    
+                    if success:
+                        details = (f"✅ VPL calculation accurate. "
+                                 f"VPL: R${vpl:,.2f}, "
+                                 f"Taxa: {taxa_desconto_vpl*100:.0f}%, "
+                                 f"Cash flows: {len(fluxos)} periods")
+                    else:
+                        details = f"❌ Issues found: {'; '.join(issues)}"
+                        
+            else:
+                details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+                
+            self.log_test("VPL Calculation Accuracy", success, details)
+            return success
+            
+        except Exception as e:
+            self.log_test("VPL Calculation Accuracy", False, str(e))
+            return False
+
+    def test_vpl_always_calculated(self):
+        """
+        Test that VPL is always calculated regardless of CET convergence.
+        Test multiple scenarios to ensure VPL is consistently present.
+        """
+        test_scenarios = [
+            {
+                "name": "Early Contemplation (CET should converge)",
+                "params": {
+                    "valor_carta": 100000,
+                    "prazo_meses": 120,
+                    "taxa_admin": 0.21,
+                    "fundo_reserva": 0.03,
+                    "mes_contemplacao": 1,
+                    "lance_livre_perc": 0.10,
+                    "taxa_reajuste_anual": 0.05
+                }
+            },
+            {
+                "name": "Mid Contemplation",
+                "params": {
+                    "valor_carta": 100000,
+                    "prazo_meses": 120,
+                    "taxa_admin": 0.21,
+                    "fundo_reserva": 0.03,
+                    "mes_contemplacao": 25,
+                    "lance_livre_perc": 0.10,
+                    "taxa_reajuste_anual": 0.05
+                }
+            },
+            {
+                "name": "Late Contemplation (CET should NOT converge)",
+                "params": {
+                    "valor_carta": 100000,
+                    "prazo_meses": 120,
+                    "taxa_admin": 0.21,
+                    "fundo_reserva": 0.03,
+                    "mes_contemplacao": 50,
+                    "lance_livre_perc": 0.10,
+                    "taxa_reajuste_anual": 0.05
+                }
+            }
+        ]
+        
+        all_passed = True
+        scenario_results = []
+        
+        for scenario in test_scenarios:
+            try:
+                response = requests.post(f"{self.api_url}/simular", 
+                                       json=scenario["params"], 
+                                       timeout=30)
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    
+                    if not data.get('erro'):
+                        resultados = data['resultados']
+                        
+                        # Check VPL presence and validity
+                        vpl = resultados.get('vpl')
+                        taxa_desconto_vpl = resultados.get('taxa_desconto_vpl')
+                        convergiu = resultados.get('convergiu', False)
+                        
+                        vpl_valid = vpl is not None and str(vpl) not in ['nan', 'inf', '-inf']
+                        taxa_valid = taxa_desconto_vpl == 0.10
+                        
+                        scenario_success = vpl_valid and taxa_valid
+                        
+                        scenario_results.append({
+                            "name": scenario["name"],
+                            "success": scenario_success,
+                            "convergiu": convergiu,
+                            "vpl": vpl,
+                            "taxa_desconto_vpl": taxa_desconto_vpl,
+                            "mes_contemplacao": scenario["params"]["mes_contemplacao"]
+                        })
+                        
+                        if not scenario_success:
+                            all_passed = False
+                    else:
+                        scenario_results.append({
+                            "name": scenario["name"],
+                            "success": False,
+                            "error": data.get('mensagem', 'Unknown error')
+                        })
+                        all_passed = False
+                else:
+                    scenario_results.append({
+                        "name": scenario["name"],
+                        "success": False,
+                        "error": f"HTTP {response.status_code}"
+                    })
+                    all_passed = False
+                    
+            except Exception as e:
+                scenario_results.append({
+                    "name": scenario["name"],
+                    "success": False,
+                    "error": str(e)
+                })
+                all_passed = False
+        
+        # Generate summary
+        if all_passed:
+            details = "✅ VPL calculated in all scenarios: "
+            details += ", ".join([
+                f"{r['name']}: VPL=R${r['vpl']:,.2f} (convergiu={r['convergiu']})"
+                for r in scenario_results if r['success']
+            ])
+        else:
+            failed_scenarios = [r for r in scenario_results if not r['success']]
+            details = f"❌ VPL calculation failed in {len(failed_scenarios)} scenarios: "
+            details += ", ".join([
+                f"{r['name']}: {r.get('error', 'VPL calculation issue')}"
+                for r in failed_scenarios
+            ])
+        
+        self.log_test("VPL Always Calculated", all_passed, details)
+        return all_passed
+
     def run_all_tests(self):
         """Run all backend tests"""
         print("🚀 Starting Backend API Tests for Consortium Simulation System")
