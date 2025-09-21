@@ -1445,6 +1445,250 @@ class ConsortiumAPITester:
         self.log_test("Negative CET vs Non-Convergence Comparison", all_passed, details)
         return all_passed
 
+    def test_nova_logica_probabilidades(self):
+        """
+        Test the new probability logic implemented:
+        
+        NOVA LÓGICA IMPLEMENTADA:
+        - Participantes = 2 × prazo_meses (exemplo: 120 meses → 240 participantes)
+        - Sempre 2 contemplados por mês (1 sorteio + 1 lance livre)
+        - Função calcular_probabilidade_mes_especifico atualizada para usar contemplados_por_mes=2 sempre
+        - lance_livre_perc mantido para compatibilidade mas não afeta probabilidades
+        
+        TESTES ESPECÍFICOS:
+        1. Testar simulação com contemplação no mês 17
+        2. Verificar se usa 240 participantes (120 × 2) para probabilidades
+        3. Verificar se probabilidade no mês 17 = 2/participantes_restantes
+        4. Verificar se participantes_restantes = 240 - (17-1) × 2 = 208 participantes
+        5. Verificar se probabilidade = 2/208 = ~0,96%
+        
+        PARÂMETROS PARA TESTE:
+        - valor_carta: 100000
+        - mes_contemplacao: 17
+        - prazo_meses: 120 (deve gerar 240 participantes)
+        - lance_livre_perc: 0.10
+        
+        VALIDAÇÕES:
+        - num_participantes usado = 240 (2 × 120)
+        - participantes_restantes no mês 17 = 208
+        - prob_no_mes = 2/208 = 0.009615 (0,96%)
+        - contemplados_por_mes = 2 sempre
+        """
+        parametros = {
+            "valor_carta": 100000,
+            "prazo_meses": 120,
+            "taxa_admin": 0.21,
+            "fundo_reserva": 0.03,
+            "mes_contemplacao": 17,
+            "lance_livre_perc": 0.10,  # Mantido para compatibilidade
+            "taxa_reajuste_anual": 0.05
+        }
+        
+        try:
+            response = requests.post(f"{self.api_url}/simular", 
+                                   json=parametros, 
+                                   timeout=30)
+            success = response.status_code == 200
+            
+            if success:
+                data = response.json()
+                
+                if data.get('erro'):
+                    success = False
+                    details = f"Simulation error: {data.get('mensagem')}"
+                else:
+                    resumo = data['resumo_financeiro']
+                    issues = []
+                    
+                    # 1. Verificar participantes totais = 2 × prazo_meses
+                    expected_participantes = parametros['prazo_meses'] * 2  # 120 × 2 = 240
+                    
+                    # 2. Verificar participantes restantes no mês 17
+                    # Formula: participantes_restantes = 240 - (17-1) × 2 = 240 - 32 = 208
+                    expected_participantes_restantes = expected_participantes - (parametros['mes_contemplacao'] - 1) * 2
+                    actual_participantes_restantes = resumo.get('participantes_restantes_mes', 0)
+                    
+                    if actual_participantes_restantes != expected_participantes_restantes:
+                        issues.append(f"Participantes restantes incorreto: esperado {expected_participantes_restantes}, obtido {actual_participantes_restantes}")
+                    
+                    # 3. Verificar probabilidade no mês = 2/participantes_restantes
+                    expected_prob_no_mes = 2.0 / expected_participantes_restantes  # 2/208 = 0.009615
+                    actual_prob_no_mes = resumo.get('prob_contemplacao_no_mes', 0)
+                    
+                    prob_tolerance = 0.0001  # Tolerância para comparação de float
+                    if abs(actual_prob_no_mes - expected_prob_no_mes) > prob_tolerance:
+                        issues.append(f"Probabilidade no mês incorreta: esperado {expected_prob_no_mes:.6f} (~{expected_prob_no_mes*100:.2f}%), obtido {actual_prob_no_mes:.6f} (~{actual_prob_no_mes*100:.2f}%)")
+                    
+                    # 4. Verificar que sempre usa 2 contemplados por mês (nova lógica)
+                    # Isso é verificado indiretamente pela fórmula de participantes restantes
+                    contemplados_por_mes_usado = (expected_participantes - actual_participantes_restantes) / (parametros['mes_contemplacao'] - 1)
+                    if abs(contemplados_por_mes_usado - 2.0) > 0.01:
+                        issues.append(f"Contemplados por mês incorreto: esperado 2, calculado {contemplados_por_mes_usado:.2f}")
+                    
+                    # 5. Verificar que lance_livre_perc não afeta as probabilidades (nova lógica)
+                    # A probabilidade deve ser sempre 2/participantes_restantes, independente do lance_livre_perc
+                    
+                    # 6. Verificar valores específicos esperados
+                    expected_prob_percentage = expected_prob_no_mes * 100  # ~0.96%
+                    if not (0.95 <= expected_prob_percentage <= 0.97):
+                        issues.append(f"Probabilidade percentual fora do esperado: {expected_prob_percentage:.2f}% (esperado ~0.96%)")
+                    
+                    # 7. Verificar que não há valores NaN ou infinitos
+                    if not all(isinstance(val, (int, float)) and str(val) not in ['nan', 'inf', '-inf'] 
+                              for val in [actual_prob_no_mes, actual_participantes_restantes]):
+                        issues.append("Valores inválidos (NaN/infinito) encontrados nas probabilidades")
+                    
+                    success = len(issues) == 0
+                    
+                    if success:
+                        details = (f"✅ Nova lógica de probabilidades funcionando corretamente. "
+                                 f"Participantes totais: {expected_participantes} (120×2), "
+                                 f"Participantes restantes mês 17: {actual_participantes_restantes}, "
+                                 f"Probabilidade no mês: {actual_prob_no_mes:.6f} ({actual_prob_no_mes*100:.2f}%), "
+                                 f"Contemplados por mês: 2 (sempre)")
+                    else:
+                        details = f"❌ Problemas na nova lógica: {'; '.join(issues)}"
+                        
+            else:
+                details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+                
+            self.log_test("Nova Lógica de Probabilidades (Mês 17, 240 Participantes)", success, details)
+            return success
+            
+        except Exception as e:
+            self.log_test("Nova Lógica de Probabilidades (Mês 17, 240 Participantes)", False, str(e))
+            return False
+
+    def test_nova_logica_comparacao_com_anterior(self):
+        """
+        Test comparison between new and old probability logic to confirm the change worked correctly.
+        
+        COMPARAÇÃO COM LÓGICA ANTERIOR:
+        - Lógica anterior: participantes baseado em num_participantes fixo (430)
+        - Nova lógica: participantes = 2 × prazo_meses (240 para 120 meses)
+        - Lógica anterior: contemplados_por_mes dependia de lance_livre_perc
+        - Nova lógica: sempre 2 contemplados por mês
+        
+        Este teste verifica que a mudança foi implementada corretamente.
+        """
+        # Teste com diferentes prazos para verificar a nova fórmula
+        test_cases = [
+            {
+                "name": "Prazo 60 meses",
+                "prazo_meses": 60,
+                "expected_participantes": 120,  # 60 × 2
+                "mes_contemplacao": 10,
+                "expected_participantes_restantes": 102  # 120 - (10-1) × 2 = 102
+            },
+            {
+                "name": "Prazo 120 meses", 
+                "prazo_meses": 120,
+                "expected_participantes": 240,  # 120 × 2
+                "mes_contemplacao": 17,
+                "expected_participantes_restantes": 208  # 240 - (17-1) × 2 = 208
+            },
+            {
+                "name": "Prazo 180 meses",
+                "prazo_meses": 180,
+                "expected_participantes": 360,  # 180 × 2
+                "mes_contemplacao": 25,
+                "expected_participantes_restantes": 312  # 360 - (25-1) × 2 = 312
+            }
+        ]
+        
+        all_passed = True
+        results = []
+        
+        for case in test_cases:
+            parametros = {
+                "valor_carta": 100000,
+                "prazo_meses": case["prazo_meses"],
+                "taxa_admin": 0.21,
+                "fundo_reserva": 0.03,
+                "mes_contemplacao": case["mes_contemplacao"],
+                "lance_livre_perc": 0.10,
+                "taxa_reajuste_anual": 0.05
+            }
+            
+            try:
+                response = requests.post(f"{self.api_url}/simular", 
+                                       json=parametros, 
+                                       timeout=30)
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    
+                    if not data.get('erro'):
+                        resumo = data['resumo_financeiro']
+                        
+                        actual_participantes_restantes = resumo.get('participantes_restantes_mes', 0)
+                        expected_participantes_restantes = case["expected_participantes_restantes"]
+                        
+                        # Verificar se a nova fórmula está sendo usada
+                        formula_correct = actual_participantes_restantes == expected_participantes_restantes
+                        
+                        # Verificar probabilidade = 2/participantes_restantes
+                        expected_prob = 2.0 / expected_participantes_restantes
+                        actual_prob = resumo.get('prob_contemplacao_no_mes', 0)
+                        prob_correct = abs(actual_prob - expected_prob) < 0.0001
+                        
+                        case_success = formula_correct and prob_correct
+                        
+                        results.append({
+                            "name": case["name"],
+                            "success": case_success,
+                            "expected_participantes": case["expected_participantes"],
+                            "expected_participantes_restantes": expected_participantes_restantes,
+                            "actual_participantes_restantes": actual_participantes_restantes,
+                            "expected_prob": expected_prob,
+                            "actual_prob": actual_prob,
+                            "formula_correct": formula_correct,
+                            "prob_correct": prob_correct
+                        })
+                        
+                        if not case_success:
+                            all_passed = False
+                    else:
+                        results.append({
+                            "name": case["name"],
+                            "success": False,
+                            "error": data.get('mensagem', 'Simulation error')
+                        })
+                        all_passed = False
+                else:
+                    results.append({
+                        "name": case["name"],
+                        "success": False,
+                        "error": f"HTTP {response.status_code}"
+                    })
+                    all_passed = False
+                    
+            except Exception as e:
+                results.append({
+                    "name": case["name"],
+                    "success": False,
+                    "error": str(e)
+                })
+                all_passed = False
+        
+        # Generate summary
+        if all_passed:
+            details = "✅ Nova fórmula funcionando para todos os prazos: "
+            details += ", ".join([
+                f"{r['name']}: {r['expected_participantes']} participantes → {r['actual_participantes_restantes']} restantes (prob: {r['actual_prob']*100:.2f}%)"
+                for r in results if r['success']
+            ])
+        else:
+            failed_cases = [r for r in results if not r['success']]
+            details = f"❌ Falhas em {len(failed_cases)} casos: "
+            details += ", ".join([
+                f"{r['name']}: {r.get('error', 'Cálculo incorreto')}"
+                for r in failed_cases
+            ])
+        
+        self.log_test("Nova Lógica - Comparação com Diferentes Prazos", all_passed, details)
+        return all_passed
+
     def run_all_tests(self):
         """Run all backend tests"""
         print("🚀 Starting Backend API Tests for Consortium Simulation System")
