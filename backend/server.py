@@ -348,13 +348,18 @@ class SimuladorConsorcio:
         taxa_desconto = 0.10  # 10% para teste, conforme solicitado
         vpl = self.calcular_vpl(resultado_fluxos['fluxos'], taxa_desconto)
         
+        # Convert NaN values to None for JSON serialization
+        cet_anual_json = None if np.isnan(cet) else float(cet)
+        cet_mensal_json = None if np.isnan(cet) else float((1 + cet) ** (1/12) - 1)
+        vpl_json = None if np.isnan(vpl) else float(vpl)
+        
         return {
             'erro': False,
             'parametros': self.params.dict(),
             'resultados': {
-                'cet_anual': cet,
-                'cet_mensal': (1 + cet) ** (1/12) - 1 if not np.isnan(cet) else np.nan,
-                'vpl': vpl,
+                'cet_anual': cet_anual_json,
+                'cet_mensal': cet_mensal_json,
+                'vpl': vpl_json,
                 'taxa_desconto_vpl': taxa_desconto,
                 'convergiu': self.convergiu,
                 'motivo_erro': self.motivo_erro
