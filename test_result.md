@@ -177,8 +177,17 @@ backend:
         - agent: "testing"
         - comment: "✅ TESTED: /api/calcular-probabilidades endpoint working with new ParametrosProbabilidade model. lance_livre_perc=0 returns contemplados_por_mes=1, lance_livre_perc>0 returns contemplados_por_mes=2. Valid probability curves generated."
 
-frontend:
-  - task: "Atualizar display de probabilidades para mostrar 1/participantes vs 2/participantes"
+  - task: "Corrigir lógica do saldo devedor pós-contemplação"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+        - agent: "main"
+        - comment: "Bug reportado pelo usuário: saldo devedor indo para zero após contemplação. Corrigido para apenas subtrair parcela, não valor da carta."
     implemented: true
     working: "NA"
     file: "/app/frontend/src/App.js"
