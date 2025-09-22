@@ -268,6 +268,18 @@ frontend:
         - agent: "testing"
         - comment: "✅ CORREÇÃO VALIDADA COM SUCESSO: 1) SEM LANCE: fórmula 1/(N-1) confirmada - Mês 1: 1/429 = 0.002331, Mês 2: 1/427 = 0.002342, Mês 3: 1/425 = 0.002353 ✓, 2) COM LANCE: fórmula 2/N confirmada - Mês 1: 2/430 = 0.004651, Mês 2: 2/428 = 0.004673, Mês 3: 2/426 = 0.004695 ✓, 3) Redução de participantes: ambas as curvas reduzem 2 por mês (430→428→426→424) ✓, 4) Probabilidades acumuladas calculadas corretamente e crescentes ✓, 5) Frontend exibindo valores corretos: 0.47% (0.004651) para Com Lance no mês 1 ✓, 6) Endpoint /api/calcular-probabilidades funcionando perfeitamente. LÓGICA CORRIGIDA BASEADA NA PLANILHA DO USUÁRIO IMPLEMENTADA E TESTADA COM SUCESSO."
 
+  - task: "CORREÇÃO PDF: Ajustar gráfico de hazard e tabela de detalhamento no relatório PDF"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+        - agent: "main"
+        - comment: "Corrigidas duas inconsistências no PDF: 1) Gráfico de probabilidades agora mostra apenas linhas sólidas de hazard com eixo Y até 100% (removidas linhas tracejadas de probabilidade acumulada), 2) Tabela de detalhamento agora segue nova formatação: primeiros 24 meses + meses anuais (36, 48, 60...) ao invés de apenas 36 meses. Funções criar_grafico_probabilidades e gerar_pdf_relatorio atualizadas."
+
 metadata:
   created_by: "main_agent"
   version: "1.0"
