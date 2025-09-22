@@ -298,6 +298,18 @@ frontend:
         - agent: "main"
         - comment: "✅ CORREÇÃO VALIDADA: Teste realizado com sucesso. Saldo devedor inicial corrigido de R$124.000 para R$154.932,53 (valor presente de todas parcelas corrigidas). Mês 119: R$1.603,04 (uma parcela), Mês 120: R$0,00 (zerando exatamente no final). Comportamento financeiro agora está correto - saldo dura exatamente até o prazo final de 120 meses."
 
+  - task: "CORREÇÃO: Gráfico de probabilidades deve mostrar TODOS os meses até o final"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/App.js, /app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+        - agent: "main"
+        - comment: "PROBLEMA: Gráfico de probabilidades estava limitado a apenas 100 meses (slice(0, 100) no frontend e min(meses_total + 1, 101) no backend), não mostrando todos os meses até o final do prazo como na planilha do usuário. CORREÇÃO: Removidas limitações - frontend agora usa probabilidades.com_lance.meses (todos) e backend usa range(1, meses_total + 1) para mostrar todos os meses até o prazo final."
+
 metadata:
   created_by: "main_agent"
   version: "1.0"
