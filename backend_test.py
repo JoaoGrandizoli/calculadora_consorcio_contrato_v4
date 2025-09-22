@@ -2046,6 +2046,10 @@ class ConsortiumAPITester:
         self.test_negative_cet_detection()
         self.test_negative_cet_vs_non_convergence_comparison()
         
+        # CORRECTED HAZARD LOGIC TEST (HIGH PRIORITY - Current Review Focus)
+        print("\n🎯 Testing CORRECTED HAZARD LOGIC from User's Spreadsheet (HIGH PRIORITY):")
+        self.test_corrected_hazard_logic_from_spreadsheet()
+        
         # Summary
         print("\n" + "=" * 70)
         print("📊 TEST SUMMARY")
