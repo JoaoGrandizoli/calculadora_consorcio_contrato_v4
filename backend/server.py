@@ -1016,13 +1016,14 @@ def calcular_probabilidades_contemplacao_corrigido(num_participantes=430, lance_
     """
     Versão corrigida do cálculo de probabilidades de contemplação.
     
-    LÓGICA AJUSTADA CONFORME SOLICITAÇÃO:
-    - SEM LANCE: 1/240, 1/239, 1/238... (reduz 1 participante por mês - apenas sorteio)
-    - COM LANCE: 2/240, 2/238, 2/236... (reduz 2 participantes por mês - sorteio + lance)
+    LÓGICA CORRIGIDA BASEADA NA PLANILHA DO USUÁRIO:
+    - SEM LANCE: 1/(N-1) - você só compete no sorteio (não participa do lance)
+    - COM LANCE: 2/N - você pode ganhar tanto no sorteio quanto no lance
+    - REDUÇÃO DE PARTICIPANTES: Sempre 2 por mês (1 sorteio + 1 lance) em ambos os cenários
     
     Args:
         num_participantes: Número total de participantes do grupo
-        lance_livre_perc: Percentual do lance livre (se 0, considera apenas sorteio)
+        lance_livre_perc: Percentual do lance livre (mantido para compatibilidade)
     """
     try:
         # Calcular quantos meses até contemplar todos (sempre assumindo 2 contemplados por mês)
@@ -1031,50 +1032,44 @@ def calcular_probabilidades_contemplacao_corrigido(num_participantes=430, lance_
         # Listas para armazenar dados
         meses = []
         
-        # CURVA SEM LANCE: reduz 1 participante por mês (apenas sorteio)
+        # Ambas as curvas usam a mesma redução de participantes (2 por mês)
+        # A diferença está na fórmula de probabilidade individual
         prob_sem_lance = []
         prob_acumulada_sem = []
-        participantes_sem_lance = []
-        participantes_atual_sem = num_participantes
-        prob_nao_contemplado_sem = 1.0
-        
-        # CURVA COM LANCE: reduz 2 participantes por mês (sorteio + lance)
         prob_com_lance = []
         prob_acumulada_com = []
-        participantes_com_lance = []
-        participantes_atual_com = num_participantes
+        
+        # Inicializar
+        participantes_atual = num_participantes
+        prob_nao_contemplado_sem = 1.0
         prob_nao_contemplado_com = 1.0
         
         for mes in range(1, meses_total + 1):
             meses.append(mes)
             
-            # CURVA SEM LANCE: 1/participantes_restantes, reduz 1 por mês
-            participantes_sem_lance.append(participantes_atual_sem)
-            if participantes_atual_sem > 0:
-                prob_mes_sem = 1.0 / participantes_atual_sem
+            if participantes_atual > 0:
+                # SEM LANCE: 1/(N-1) - só compete no sorteio
+                # Subtrai 1 porque o lance "tira" uma oportunidade de você ganhar no sorteio
+                prob_mes_sem = 1.0 / max(1, participantes_atual - 1)
+                
+                # COM LANCE: 2/N - pode ganhar no sorteio OU no lance
+                prob_mes_com = min(2.0 / participantes_atual, 1.0)
             else:
                 prob_mes_sem = 0.0
-            
-            prob_sem_lance.append(prob_mes_sem)
-            prob_nao_contemplado_sem *= (1.0 - prob_mes_sem)
-            prob_acumulada_sem.append(1.0 - prob_nao_contemplado_sem)
-            
-            # Reduzir 1 participante para próximo mês (apenas sorteio)
-            participantes_atual_sem = max(0, participantes_atual_sem - 1)
-            
-            # CURVA COM LANCE: 2/participantes_restantes, reduz 2 por mês
-            participantes_com_lance.append(participantes_atual_com)
-            if participantes_atual_com > 0:
-                prob_mes_com = min(2.0 / participantes_atual_com, 1.0)
-            else:
                 prob_mes_com = 0.0
             
+            prob_sem_lance.append(prob_mes_sem)
             prob_com_lance.append(prob_mes_com)
+            
+            # Cálculo das probabilidades acumuladas usando a fórmula de sobrevivência
+            prob_nao_contemplado_sem *= (1.0 - prob_mes_sem)
             prob_nao_contemplado_com *= (1.0 - prob_mes_com)
+            
+            prob_acumulada_sem.append(1.0 - prob_nao_contemplado_sem)
             prob_acumulada_com.append(1.0 - prob_nao_contemplado_com)
             
-            # Reduzir 2 participantes para próximo mês (sorteio + lance)
-            participantes_atual_com = max(0, participantes_atual_com - 2)
+            # Reduzir 2 participantes para próximo mês (sempre: 1 sorteio + 1 lance)
+            participantes_atual = max(0, participantes_atual - 2)
         
         # Calcular métricas estatísticas corrigidas
         def calcular_metricas_corrigidas(probabilidades_mensais, probabilidades_acumuladas):
