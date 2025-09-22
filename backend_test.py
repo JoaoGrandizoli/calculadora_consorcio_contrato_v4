@@ -2286,9 +2286,15 @@ class ConsortiumAPITester:
         self.test_hazard_curves_no_nan_infinite()
         
         # PDF tests
+        print("\n📄 Testing PDF Generation:")
         self.test_pdf_generation()
         self.test_pdf_without_cashflow_graph()
         self.test_pdf_with_corrected_card_values()
+        
+        # NEW: PDF CORRECTIONS TESTS (HIGH PRIORITY - Current Review Focus)
+        print("\n🎯 Testing PDF CORRECTIONS (Current Review Focus):")
+        self.test_pdf_corrections_hazard_graph_and_table()
+        self.test_gerar_relatorio_endpoint_specific_params()
         
         # SPECIFIC BUG FIX TESTS
         print("\n🐛 Testing Specific Bug Fixes:")
