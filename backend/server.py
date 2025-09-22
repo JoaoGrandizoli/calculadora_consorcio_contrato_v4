@@ -560,25 +560,16 @@ def criar_grafico_probabilidades(num_participantes: int, lance_livre_perc: float
         # Criar gráfico
         fig, ax1 = plt.subplots(figsize=(12, 6))
         
-        # Hazard (probabilidade do mês) no eixo esquerdo
+        # Apenas Hazard (probabilidade do mês) - sem linhas tracejadas
         ax1.plot(meses, hazard_com, label="Com Lance — hazard", lw=2, color='#BC8159')
         ax1.plot(meses, hazard_sem, label="Sem Lance — hazard", lw=2, alpha=0.9, color='#8D4C23')
         ax1.set_xlabel("Mês")
         ax1.set_ylabel("Probabilidade do mês, h(t) [%]")
-        ax1.set_ylim(0, max(max(hazard_com), max(hazard_sem)) * 1.1)
+        ax1.set_ylim(0, 100)  # Eixo Y até 100%
         ax1.grid(True, alpha=0.25)
         
-        # Probabilidade acumulada no eixo direito
-        ax2 = ax1.twinx()
-        ax2.plot(meses, prob_acum_com, linestyle="--", alpha=0.7, label="Com Lance — F(t)", color='#BC8159')
-        ax2.plot(meses, prob_acum_sem, linestyle="--", alpha=0.7, label="Sem Lance — F(t)", color='#8D4C23')
-        ax2.set_ylabel("Probabilidade acumulada, F(t) [%]")
-        ax2.set_ylim(0, 100)
-        
-        # Combinar legendas
-        lines1, labels1 = ax1.get_legend_handles_labels()
-        lines2, labels2 = ax2.get_legend_handles_labels()
-        ax1.legend(lines1 + lines2, labels1 + labels2, loc="upper left")
+        # Apenas uma legenda para as linhas de hazard
+        ax1.legend(loc='upper left')
         
         plt.title(f"Probabilidade de Contemplação — {N0} Participantes\n(hazard do mês + probabilidade acumulada)")
         plt.tight_layout()
