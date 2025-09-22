@@ -701,32 +701,34 @@ function App() {
                               </Card>
                             </div>
 
-                            {/* Gráfico de Probabilidade Acumulada */}
+                            {/* Gráfico de Hazard (Probabilidade Mensal) */}
                             <Card className="border-gray-200">
                               <CardHeader>
-                                <CardTitle className="text-lg">📈 Probabilidade Acumulada de Contemplação</CardTitle>
+                                <CardTitle className="text-lg">📈 Hazard - Probabilidade de Contemplação por Mês</CardTitle>
                               </CardHeader>
                               <CardContent>
                                 <div className="h-80">
                                   <Line 
                                     data={{
-                                      labels: probabilidades.com_lance.meses.slice(0, 60), // Primeiros 60 meses
+                                      labels: probabilidades.com_lance.meses.slice(0, 100), // Primeiros 100 meses
                                       datasets: [
                                         {
-                                          label: 'Com Lance Livre',
-                                          data: probabilidades.com_lance.probabilidade_acumulada.slice(0, 60).map(p => p * 100),
+                                          label: 'Com Lance — hazard',
+                                          data: probabilidades.com_lance.hazard.slice(0, 100).map(p => p * 100),
                                           borderColor: '#BC8159',
                                           backgroundColor: 'rgba(188, 129, 89, 0.1)',
-                                          tension: 0.4,
-                                          pointRadius: 1,
+                                          tension: 0.1,
+                                          pointRadius: 0,
+                                          borderWidth: 2,
                                         },
                                         {
-                                          label: 'Apenas Sorteio',
-                                          data: probabilidades.sem_lance.probabilidade_acumulada.slice(0, 60).map(p => p * 100),
+                                          label: 'Sem Lance — hazard',
+                                          data: probabilidades.sem_lance.hazard.slice(0, 100).map(p => p * 100),
                                           borderColor: '#8D4C23',
                                           backgroundColor: 'rgba(141, 76, 35, 0.1)',
-                                          tension: 0.4,
-                                          pointRadius: 1,
+                                          tension: 0.1,
+                                          pointRadius: 0,
+                                          borderWidth: 2,
                                         }
                                       ]
                                     }}
@@ -753,7 +755,7 @@ function App() {
                                           display: true,
                                           title: {
                                             display: true,
-                                            text: 'Probabilidade Acumulada (%)'
+                                            text: 'Probabilidade do mês, h(t) [%]'
                                           },
                                           min: 0,
                                           max: 100
