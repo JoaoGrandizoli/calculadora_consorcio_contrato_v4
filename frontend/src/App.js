@@ -733,11 +733,11 @@ function App() {
                                 <div className="h-80">
                                   <Line 
                                     data={{
-                                      labels: probabilidades.com_lance.meses.slice(0, 100), // Primeiros 100 meses
+                                      labels: probabilidades.com_lance.meses, // TODOS os meses até o final
                                       datasets: [
                                         {
                                           label: 'Com Lance — hazard',
-                                          data: probabilidades.com_lance.hazard.slice(0, 100).map(p => p * 100),
+                                          data: probabilidades.com_lance.hazard.map(p => p * 100),
                                           borderColor: '#BC8159',
                                           backgroundColor: 'rgba(188, 129, 89, 0.1)',
                                           tension: 0.1,
@@ -746,7 +746,7 @@ function App() {
                                         },
                                         {
                                           label: 'Sem Lance — hazard',
-                                          data: probabilidades.sem_lance.hazard.slice(0, 100).map(p => p * 100),
+                                          data: probabilidades.sem_lance.hazard.map(p => p * 100),
                                           borderColor: '#8D4C23',
                                           backgroundColor: 'rgba(141, 76, 35, 0.1)',
                                           tension: 0.1,
