@@ -1989,6 +1989,153 @@ class ConsortiumAPITester:
             self.log_test("Hazard Curves No NaN/Infinite Values", False, str(e))
             return False
 
+    def test_corrected_hazard_logic_from_spreadsheet(self):
+        """
+        Test the CORRECTED hazard logic based on user's spreadsheet.
+        
+        CORRECTED LOGIC TO BE TESTED:
+        - SEM LANCE: 1/(N-1) - you only compete in the draw (don't participate in the bid)
+        - COM LANCE: 2/N - you can win both in the draw and in the bid
+        - PARTICIPANT REDUCTION: Always 2 per month (1 draw + 1 bid) in both scenarios
+        
+        SPECIFIC VALIDATIONS:
+        1. SEM LANCE curve: Check if it uses formula 1/(N-1)
+           - Month 1: 1/(430-1) = 1/429 = 0.002331
+           - Month 2: 1/(428-1) = 1/427 = 0.002342
+           - Month 3: 1/(426-1) = 1/425 = 0.002353
+        
+        2. COM LANCE curve: Check if it uses formula 2/N
+           - Month 1: 2/430 = 0.004651
+           - Month 2: 2/428 = 0.004673
+           - Month 3: 2/426 = 0.004695
+        
+        3. PARTICIPANT REDUCTION: Both curves should reduce 2 participants per month
+           - 430 → 428 → 426 → 424...
+        
+        Test parameters:
+        - num_participantes: 430 (as in the spreadsheet)
+        - lance_livre_perc: 0.10
+        
+        Endpoint: POST /api/calcular-probabilidades
+        """
+        parametros = {
+            "num_participantes": 430,
+            "lance_livre_perc": 0.10
+        }
+        
+        try:
+            response = requests.post(f"{self.api_url}/calcular-probabilidades", 
+                                   json=parametros, 
+                                   timeout=30)
+            success = response.status_code == 200
+            
+            if success:
+                data = response.json()
+                
+                if data.get('erro'):
+                    success = False
+                    details = f"API error: {data.get('mensagem')}"
+                else:
+                    sem_lance = data['sem_lance']
+                    com_lance = data['com_lance']
+                    issues = []
+                    
+                    # Get hazard values for first 3 months
+                    hazard_sem = sem_lance.get('hazard', [])
+                    hazard_com = com_lance.get('hazard', [])
+                    
+                    if len(hazard_sem) < 3 or len(hazard_com) < 3:
+                        issues.append(f"Insufficient hazard data: sem_lance={len(hazard_sem)}, com_lance={len(hazard_com)}")
+                    else:
+                        # VALIDATION 1: SEM LANCE curve - 1/(N-1) formula
+                        expected_sem_lance = [
+                            1/(430-1),  # Month 1: 1/429 = 0.002331
+                            1/(428-1),  # Month 2: 1/427 = 0.002342  
+                            1/(426-1)   # Month 3: 1/425 = 0.002353
+                        ]
+                        
+                        for i, (actual, expected) in enumerate(zip(hazard_sem[:3], expected_sem_lance)):
+                            tolerance = 0.000001  # Very tight tolerance for exact formula validation
+                            if abs(actual - expected) > tolerance:
+                                issues.append(f"SEM LANCE Month {i+1}: Expected {expected:.6f}, got {actual:.6f} "
+                                            f"(diff: {abs(actual - expected):.6f})")
+                        
+                        # VALIDATION 2: COM LANCE curve - 2/N formula
+                        expected_com_lance = [
+                            2/430,  # Month 1: 2/430 = 0.004651
+                            2/428,  # Month 2: 2/428 = 0.004673
+                            2/426   # Month 3: 2/426 = 0.004695
+                        ]
+                        
+                        for i, (actual, expected) in enumerate(zip(hazard_com[:3], expected_com_lance)):
+                            tolerance = 0.000001  # Very tight tolerance for exact formula validation
+                            if abs(actual - expected) > tolerance:
+                                issues.append(f"COM LANCE Month {i+1}: Expected {expected:.6f}, got {actual:.6f} "
+                                            f"(diff: {abs(actual - expected):.6f})")
+                        
+                        # VALIDATION 3: Participant reduction pattern (both curves should follow same reduction)
+                        # Check if the pattern follows N, N-2, N-4, N-6... for both curves
+                        participants_pattern = [430, 428, 426, 424, 422]  # First 5 months
+                        
+                        # For SEM LANCE: should be 1/(N-1) where N follows the reduction pattern
+                        expected_sem_pattern = [1/(n-1) for n in participants_pattern]
+                        # For COM LANCE: should be 2/N where N follows the reduction pattern  
+                        expected_com_pattern = [2/n for n in participants_pattern]
+                        
+                        if len(hazard_sem) >= 5 and len(hazard_com) >= 5:
+                            for i in range(5):
+                                # Check SEM LANCE pattern
+                                if abs(hazard_sem[i] - expected_sem_pattern[i]) > 0.000001:
+                                    issues.append(f"SEM LANCE pattern Month {i+1}: Expected {expected_sem_pattern[i]:.6f}, "
+                                                f"got {hazard_sem[i]:.6f} (participants should be {participants_pattern[i]})")
+                                
+                                # Check COM LANCE pattern
+                                if abs(hazard_com[i] - expected_com_pattern[i]) > 0.000001:
+                                    issues.append(f"COM LANCE pattern Month {i+1}: Expected {expected_com_pattern[i]:.6f}, "
+                                                f"got {hazard_com[i]:.6f} (participants should be {participants_pattern[i]})")
+                        
+                        # VALIDATION 4: Check accumulated probabilities are calculated correctly
+                        prob_acum_sem = sem_lance.get('probabilidade_acumulada', [])
+                        prob_acum_com = com_lance.get('probabilidade_acumulada', [])
+                        
+                        if len(prob_acum_sem) >= 3 and len(prob_acum_com) >= 3:
+                            # Accumulated probabilities should be increasing
+                            for i in range(1, 3):
+                                if prob_acum_sem[i] <= prob_acum_sem[i-1]:
+                                    issues.append(f"SEM LANCE accumulated probability not increasing: "
+                                                f"Month {i}: {prob_acum_sem[i-1]:.6f} → Month {i+1}: {prob_acum_sem[i]:.6f}")
+                                
+                                if prob_acum_com[i] <= prob_acum_com[i-1]:
+                                    issues.append(f"COM LANCE accumulated probability not increasing: "
+                                                f"Month {i}: {prob_acum_com[i-1]:.6f} → Month {i+1}: {prob_acum_com[i]:.6f}")
+                        
+                        # VALIDATION 5: Check for NaN or infinite values
+                        all_hazard_values = hazard_sem[:10] + hazard_com[:10]  # Check first 10 values of each
+                        invalid_values = [v for v in all_hazard_values if str(v) in ['nan', 'inf', '-inf'] or v < 0]
+                        if invalid_values:
+                            issues.append(f"Found invalid hazard values: {invalid_values}")
+                    
+                    success = len(issues) == 0
+                    
+                    if success:
+                        details = (f"✅ CORRECTED HAZARD LOGIC WORKING PERFECTLY. "
+                                 f"SEM LANCE: 1/(N-1) formula validated for months 1-3 "
+                                 f"({hazard_sem[0]:.6f}, {hazard_sem[1]:.6f}, {hazard_sem[2]:.6f}), "
+                                 f"COM LANCE: 2/N formula validated for months 1-3 "
+                                 f"({hazard_com[0]:.6f}, {hazard_com[1]:.6f}, {hazard_com[2]:.6f}), "
+                                 f"Participant reduction: 430→428→426 confirmed for both curves")
+                    else:
+                        details = f"❌ CORRECTED HAZARD LOGIC ISSUES: {'; '.join(issues)}"
+            else:
+                details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+                
+            self.log_test("CORRECTED Hazard Logic from Spreadsheet", success, details)
+            return success
+            
+        except Exception as e:
+            self.log_test("CORRECTED Hazard Logic from Spreadsheet", False, str(e))
+            return False
+
     def run_all_tests(self):
         """Run all backend tests"""
         print("🚀 Starting Backend API Tests for Consortium Simulation System")
