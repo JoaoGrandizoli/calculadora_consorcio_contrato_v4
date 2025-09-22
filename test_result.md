@@ -283,6 +283,18 @@ frontend:
         - agent: "testing"
         - comment: "✅ PDF CORRECTIONS TESTED AND WORKING: 1) PDF generation successful with /api/gerar-relatorio-pdf endpoint using specified parameters (valor_carta=100000, prazo_meses=120, mes_contemplacao=17), 2) PDF size: 175.2KB indicating proper content generation, 3) Graph corrections implemented: only solid hazard lines (no dashed cumulative probability lines), Y-axis 0-100%, two lines 'Com Lance — hazard' and 'Sem Lance — hazard', 4) Table corrections implemented: first 24 months detailed + annual months (36, 48, 60, 72, 84, 96, 108, 120), 5) Both /api/gerar-relatorio and /api/gerar-relatorio-pdf endpoints tested successfully. All PDF correction requirements from review request validated and working correctly."
 
+  - task: "BUG FIX: Saldo devedor zerando antes do prazo final devido a correção anual"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+        - agent: "main"
+        - comment: "PROBLEMA IDENTIFICADO: Saldo devedor estava zerando no mês 99 ao invés de durar até o mês 120. CAUSA: Saldo devedor inicial estava sendo calculado com base_contrato fixa (R$124.000), mas as parcelas crescem 5% a.a. com correção anual. CORREÇÃO: Saldo devedor inicial agora é calculado como valor presente de todas as parcelas futuras com correção anual, garantindo que o saldo dure exatamente até o prazo final."
+
 metadata:
   created_by: "main_agent"
   version: "1.0"
