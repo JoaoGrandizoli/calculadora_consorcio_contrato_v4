@@ -541,7 +541,7 @@ def criar_grafico_probabilidades(num_participantes: int, lance_livre_perc: float
         S_sem = 1.0  # Sobrevivência sem lance
         S_com = 1.0  # Sobrevivência com lance
         
-        for mes in range(1, min(meses_total + 1, 101)):  # Limitar a 100 meses para o gráfico
+        for mes in range(1, meses_total + 1):  # TODOS os meses até o final
             meses.append(mes)
             
             if n_atual > 0:
