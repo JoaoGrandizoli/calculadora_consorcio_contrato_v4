@@ -574,31 +574,51 @@ function App() {
                               </tr>
                             </thead>
                             <tbody>
-                              {resultados.detalhamento.slice(0, 24).map((item, index) => (
-                                <tr key={index} className={`border-b border-gray-100 ${item.eh_contemplacao ? 'bg-green-50' : ''}`}>
-                                  <td className="p-2 md:p-3 text-primary-accent font-medium text-xs md:text-sm">{item.mes}</td>
-                                  <td className="p-2 md:p-3 text-primary-accent text-xs md:text-sm">{item.data}</td>
-                                  <td className="p-2 md:p-3 text-right font-mono text-neutral-dark text-xs md:text-sm">
-                                    {formatarMoeda(item.parcela_corrigida)}
-                                  </td>
-                                  <td className="p-2 md:p-3 text-right font-mono text-neutral-dark text-xs md:text-sm">
-                                    {formatarMoeda(item.valor_carta_corrigido)}
-                                  </td>
-                                  <td className={`p-2 md:p-3 text-right font-mono text-xs md:text-sm ${item.fluxo_liquido > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                    {formatarMoeda(item.fluxo_liquido)}
-                                  </td>
-                                  <td className="p-2 md:p-3 text-right font-mono text-neutral-dark text-xs md:text-sm">
-                                    {formatarMoeda(item.saldo_devedor)}
-                                  </td>
-                                  <td className="p-2 md:p-3 text-center">
-                                    {item.eh_contemplacao && (
-                                      <Badge className="bg-green-100 text-green-800 border-green-200 text-xs">
-                                        Contemplação
-                                      </Badge>
-                                    )}
-                                  </td>
-                                </tr>
-                              ))}
+                              {(() => {
+                                const items = [];
+                                const detalhamento = resultados.detalhamento;
+                                
+                                // Primeiros 24 meses (completos)
+                                for (let i = 0; i < Math.min(24, detalhamento.length); i++) {
+                                  items.push(detalhamento[i]);
+                                }
+                                
+                                // Depois dos 24 meses, mostrar apenas de 12 em 12 meses (anualmente)
+                                if (detalhamento.length > 24) {
+                                  for (let mes = 36; mes <= detalhamento.length; mes += 12) {
+                                    const index = mes - 1; // Convert to 0-based index
+                                    if (index < detalhamento.length) {
+                                      items.push(detalhamento[index]);
+                                    }
+                                  }
+                                }
+                                
+                                return items.map((item, displayIndex) => (
+                                  <tr key={displayIndex} className={`border-b border-gray-100 ${item.eh_contemplacao ? 'bg-green-50' : ''}`}>
+                                    <td className="p-2 md:p-3 text-primary-accent font-medium text-xs md:text-sm">{item.mes}</td>
+                                    <td className="p-2 md:p-3 text-primary-accent text-xs md:text-sm">{item.data}</td>
+                                    <td className="p-2 md:p-3 text-right font-mono text-neutral-dark text-xs md:text-sm">
+                                      {formatarMoeda(item.parcela_corrigida)}
+                                    </td>
+                                    <td className="p-2 md:p-3 text-right font-mono text-neutral-dark text-xs md:text-sm">
+                                      {formatarMoeda(item.valor_carta_corrigido)}
+                                    </td>
+                                    <td className={`p-2 md:p-3 text-right font-mono text-xs md:text-sm ${item.fluxo_liquido > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                      {formatarMoeda(item.fluxo_liquido)}
+                                    </td>
+                                    <td className="p-2 md:p-3 text-right font-mono text-neutral-dark text-xs md:text-sm">
+                                      {formatarMoeda(item.saldo_devedor)}
+                                    </td>
+                                    <td className="p-2 md:p-3 text-center">
+                                      {item.eh_contemplacao && (
+                                        <Badge className="bg-green-100 text-green-800 border-green-200 text-xs">
+                                          Contemplação
+                                        </Badge>
+                                      )}
+                                    </td>
+                                  </tr>
+                                ));
+                              })()}
                             </tbody>
                           </table>
                         </div>
