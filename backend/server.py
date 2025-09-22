@@ -702,14 +702,29 @@ def gerar_relatorio_pdf(dados_simulacao: Dict, temp_dir: str) -> str:
             story.append(Image(grafico_prob_path, width=6*inch, height=3*inch))
             story.append(Spacer(1, 20))
         
-        # Tabela de Amortização (primeiros 36 meses para não ficar muito grande)
+        # Tabela de Amortização (primeiros 24 meses + meses anuais)
         story.append(Paragraph("Fluxo de Caixa Detalhado", heading_style))
-        story.append(Paragraph("Detalhes de cada parcela e do fluxo de caixa da operação.", styles['Normal']))
+        story.append(Paragraph("Primeiros 24 meses detalhados, depois apenas meses anuais (36, 48, 60...) para mostrar evolução do saldo devedor e parcelas.", styles['Normal']))
         story.append(Spacer(1, 10))
         
         tabela_data = [['Mês', 'Data', 'Parcela', 'Valor da Carta', 'Fluxo de Caixa', 'Saldo Devedor']]
         
-        for item in dados_simulacao['detalhamento'][:36]:
+        # Criar lista filtrada: primeiros 24 + anuais
+        detalhamento_filtrado = []
+        detalhamento_completo = dados_simulacao['detalhamento']
+        
+        # Primeiros 24 meses
+        for i in range(min(24, len(detalhamento_completo))):
+            detalhamento_filtrado.append(detalhamento_completo[i])
+        
+        # Meses anuais (36, 48, 60, 72, etc.)
+        if len(detalhamento_completo) > 24:
+            for mes in range(36, len(detalhamento_completo) + 1, 12):
+                index = mes - 1  # Convert to 0-based index
+                if index < len(detalhamento_completo):
+                    detalhamento_filtrado.append(detalhamento_completo[index])
+        
+        for item in detalhamento_filtrado:
             mes = str(item['mes'])
             data = item['data']
             parcela = f"R$ {item['parcela_corrigida']:,.2f}"
