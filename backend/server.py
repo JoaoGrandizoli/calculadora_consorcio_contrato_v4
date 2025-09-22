@@ -571,7 +571,7 @@ def criar_grafico_probabilidades(num_participantes: int, lance_livre_perc: float
         # Apenas uma legenda para as linhas de hazard
         ax1.legend(loc='upper left')
         
-        plt.title(f"Probabilidade de Contemplação — {N0} Participantes\n(hazard do mês + probabilidade acumulada)")
+        plt.title(f"Probabilidade de Contemplação — {N0} Participantes\n(hazard do mês)")
         plt.tight_layout()
         
         grafico_path = os.path.join(temp_dir, 'grafico_probabilidades.png')
