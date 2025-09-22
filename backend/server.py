@@ -147,8 +147,19 @@ class SimuladorConsorcio:
             parcela_intermediaria = 0
             ultima_parcela = 0
             
-            # O saldo devedor inicial é a base do contrato
-            saldo_devedor_atual = base_contrato
+            # CORREÇÃO: Saldo devedor inicial deve ser o valor presente de todas as parcelas futuras
+            # Como as parcelas crescem com correção anual, precisamos calcular o VP correto
+            parcela_base_mensal = base_contrato / self.params.prazo_meses
+            
+            # Calcular valor presente de todas as parcelas com correção anual
+            saldo_devedor_inicial = 0
+            for mes_futuro in range(1, self.params.prazo_meses + 1):
+                ano_futuro = (mes_futuro - 1) // 12 + 1
+                fator_correcao_futuro = (1 + self.params.taxa_reajuste_anual) ** (ano_futuro - 1)
+                parcela_futura = parcela_base_mensal * fator_correcao_futuro
+                saldo_devedor_inicial += parcela_futura
+            
+            saldo_devedor_atual = saldo_devedor_inicial
             
             # Meses em português
             meses_pt = ['', 'jan', 'fev', 'mar', 'abr', 'mai', 'jun', 
