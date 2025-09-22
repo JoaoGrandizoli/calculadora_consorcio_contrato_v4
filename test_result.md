@@ -253,6 +253,18 @@ frontend:
         - agent: "main"
         - comment: "Implementado lógica condicional para mostrar 1 ou 2 participantes baseado em lance_livre_perc"
 
+  - task: "Ajustar lógica dos gráficos de hazard - curvas independentes"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+        - agent: "main"
+        - comment: "Implementada nova lógica para gráficos de hazard conforme solicitação: SEM LANCE (1/240, 1/239, 1/238... - reduz 1 participante/mês) e COM LANCE (2/240, 2/238, 2/236... - reduz 2 participantes/mês). Função calcular_probabilidades_contemplacao_corrigido atualizada com curvas independentes."
+
 metadata:
   created_by: "main_agent"
   version: "1.0"
