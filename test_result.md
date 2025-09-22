@@ -253,20 +253,17 @@ frontend:
         - agent: "main"
         - comment: "Implementado lógica condicional para mostrar 1 ou 2 participantes baseado em lance_livre_perc"
 
-  - task: "Ajustar lógica dos gráficos de hazard - curvas independentes"
+  - task: "CORREÇÃO: Ajustar lógica dos gráficos de hazard baseado na planilha do usuário"
     implemented: true
-    working: true
+    working: "NA"
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         - working: "NA"
         - agent: "main"
-        - comment: "Implementada nova lógica para gráficos de hazard conforme solicitação: SEM LANCE (1/240, 1/239, 1/238... - reduz 1 participante/mês) e COM LANCE (2/240, 2/238, 2/236... - reduz 2 participantes/mês). Função calcular_probabilidades_contemplacao_corrigido atualizada com curvas independentes."
-        - working: true
-        - agent: "testing"
-        - comment: "✅ HAZARD CURVES INDEPENDENT LOGIC TESTED SUCCESSFULLY: 1) **Curva SEM LANCE** seguindo sequência correta: 1/240 (0.004167), 1/239 (0.004184), 1/238 (0.004202)... reduzindo 1 participante por mês (240→239→238→237...), 2) **Curva COM LANCE** seguindo sequência correta: 2/240 (0.008333), 2/238 (0.008403), 2/236 (0.008475)... reduzindo 2 participantes por mês (240→238→236→234...), 3) **Independência das curvas** confirmada: cada curva tem sua própria lógica de redução de participantes, 4) **Probabilidades acumuladas** calculadas corretamente para ambas as curvas, 5) **Primeiros 5 meses** validados com valores exatos, 6) **Sem valores NaN/infinitos** em 720 valores de array testados, 7) Testado com parâmetros sugeridos: num_participantes=240, lance_livre_perc=0.10. Taxa de sucesso: 100% (3/3 testes específicos de hazard passaram)."
+        - comment: "ERRO IDENTIFICADO E CORRIGIDO: A lógica anterior estava incorreta. Baseado na planilha do usuário, a lógica correta é: SEM LANCE = 1/(N-1) [você só compete no sorteio], COM LANCE = 2/N [você compete no sorteio E lance], REDUÇÃO = sempre 2 participantes/mês (1 sorteio + 1 lance) em ambos os cenários. Funções calcular_probabilidades_contemplacao_corrigido e criar_grafico_probabilidades atualizadas."
 
 metadata:
   created_by: "main_agent"
