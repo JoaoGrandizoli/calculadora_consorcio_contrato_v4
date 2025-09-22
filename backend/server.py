@@ -513,16 +513,10 @@ async def calcular_probabilidades(parametros: ParametrosProbabilidade):
 def criar_grafico_probabilidades(num_participantes: int, lance_livre_perc: float, temp_dir: str) -> str:
     """Cria gráfico de probabilidades de contemplação."""
     try:
-        # Calcular probabilidades usando lógica similar ao código fornecido
+        # Calcular probabilidades usando a lógica corrigida da planilha
         N0 = num_participantes
         
-        # Decidir contemplados por mês baseado no lance livre
-        if lance_livre_perc > 0:
-            contemplados_por_mes = 2  # 1 sorteio + 1 lance
-        else:
-            contemplados_por_mes = 1  # apenas sorteio
-        
-        meses_total = int(np.ceil(N0 / contemplados_por_mes))
+        meses_total = int(np.ceil(N0 / 2))
         
         # Listas para dados
         meses = []
@@ -531,21 +525,26 @@ def criar_grafico_probabilidades(num_participantes: int, lance_livre_perc: float
         prob_acum_sem = []
         prob_acum_com = []
         
-        # Inicializar
-        n_atual_sem = N0
-        n_atual_com = N0
+        # Inicializar - ambos os cenários usam a mesma redução (2 por mês)
+        n_atual = N0
         S_sem = 1.0  # Sobrevivência sem lance
         S_com = 1.0  # Sobrevivência com lance
         
         for mes in range(1, min(meses_total + 1, 101)):  # Limitar a 100 meses para o gráfico
             meses.append(mes)
             
-            # Hazard sem lance (apenas 1 contemplado por sorteio)
-            h_sem = 1.0 / n_atual_sem if n_atual_sem > 0 else 0
-            hazard_sem.append(h_sem * 100)  # Em %
+            if n_atual > 0:
+                # LÓGICA CORRIGIDA baseada na planilha:
+                # Hazard sem lance: 1/(N-1) - só compete no sorteio
+                h_sem = 1.0 / max(1, n_atual - 1)
+                
+                # Hazard com lance: 2/N - compete no sorteio E no lance
+                h_com = min(2.0 / n_atual, 1.0)
+            else:
+                h_sem = 0
+                h_com = 0
             
-            # Hazard com lance (2 contemplados: 1 sorteio + 1 lance)
-            h_com = min(2.0 / n_atual_com, 1.0) if n_atual_com > 0 else 0
+            hazard_sem.append(h_sem * 100)  # Em %
             hazard_com.append(h_com * 100)  # Em %
             
             # Atualizar sobrevivência e probabilidade acumulada
@@ -555,9 +554,8 @@ def criar_grafico_probabilidades(num_participantes: int, lance_livre_perc: float
             prob_acum_sem.append((1 - S_sem) * 100)  # F_t em %
             prob_acum_com.append((1 - S_com) * 100)  # F_t em %
             
-            # Reduzir participantes
-            n_atual_sem = max(0, n_atual_sem - 1)
-            n_atual_com = max(0, n_atual_com - 2)
+            # Reduzir participantes (sempre 2: 1 sorteio + 1 lance)
+            n_atual = max(0, n_atual - 2)
         
         # Criar gráfico
         fig, ax1 = plt.subplots(figsize=(12, 6))
