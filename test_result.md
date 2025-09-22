@@ -270,15 +270,18 @@ frontend:
 
   - task: "CORREÇÃO PDF: Ajustar gráfico de hazard e tabela de detalhamento no relatório PDF"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
         - agent: "main"
         - comment: "Corrigidas duas inconsistências no PDF: 1) Gráfico de probabilidades agora mostra apenas linhas sólidas de hazard com eixo Y até 100% (removidas linhas tracejadas de probabilidade acumulada), 2) Tabela de detalhamento agora segue nova formatação: primeiros 24 meses + meses anuais (36, 48, 60...) ao invés de apenas 36 meses. Funções criar_grafico_probabilidades e gerar_pdf_relatorio atualizadas."
+        - working: true
+        - agent: "testing"
+        - comment: "✅ PDF CORRECTIONS TESTED AND WORKING: 1) PDF generation successful with /api/gerar-relatorio-pdf endpoint using specified parameters (valor_carta=100000, prazo_meses=120, mes_contemplacao=17), 2) PDF size: 175.2KB indicating proper content generation, 3) Graph corrections implemented: only solid hazard lines (no dashed cumulative probability lines), Y-axis 0-100%, two lines 'Com Lance — hazard' and 'Sem Lance — hazard', 4) Table corrections implemented: first 24 months detailed + annual months (36, 48, 60, 72, 84, 96, 108, 120), 5) Both /api/gerar-relatorio and /api/gerar-relatorio-pdf endpoints tested successfully. All PDF correction requirements from review request validated and working correctly."
 
 metadata:
   created_by: "main_agent"
