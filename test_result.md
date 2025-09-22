@@ -255,15 +255,18 @@ frontend:
 
   - task: "CORREÇÃO: Ajustar lógica dos gráficos de hazard baseado na planilha do usuário"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
         - agent: "main"
         - comment: "ERRO IDENTIFICADO E CORRIGIDO: A lógica anterior estava incorreta. Baseado na planilha do usuário, a lógica correta é: SEM LANCE = 1/(N-1) [você só compete no sorteio], COM LANCE = 2/N [você compete no sorteio E lance], REDUÇÃO = sempre 2 participantes/mês (1 sorteio + 1 lance) em ambos os cenários. Funções calcular_probabilidades_contemplacao_corrigido e criar_grafico_probabilidades atualizadas."
+        - working: true
+        - agent: "testing"
+        - comment: "✅ CORREÇÃO DOS GRÁFICOS DE HAZARD TESTADA COM SUCESSO: Validação completa da nova lógica baseada na planilha do usuário. 1) **SEM LANCE**: Fórmula 1/(N-1) validada para meses 1-3: Mês 1: 1/429 = 0.002331, Mês 2: 1/427 = 0.002342, Mês 3: 1/425 = 0.002353 ✓, 2) **COM LANCE**: Fórmula 2/N validada para meses 1-3: Mês 1: 2/430 = 0.004651, Mês 2: 2/428 = 0.004673, Mês 3: 2/426 = 0.004695 ✓, 3) **REDUÇÃO DE PARTICIPANTES**: Ambas as curvas reduzem 2 participantes por mês (430→428→426→424) conforme especificado ✓, 4) **PROBABILIDADES ACUMULADAS**: Calculadas corretamente e crescentes para ambas as curvas ✓, 5) **VALORES VÁLIDOS**: Nenhum valor NaN ou infinito encontrado ✓. Testado com parâmetros exatos da solicitação: num_participantes=430, lance_livre_perc=0.10. Endpoint /api/calcular-probabilidades funcionando perfeitamente com a lógica corrigida. CORREÇÃO IMPLEMENTADA E VALIDADA COM SUCESSO."
 
 metadata:
   created_by: "main_agent"
