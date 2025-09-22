@@ -622,6 +622,9 @@ function App() {
                             </tbody>
                           </table>
                         </div>
+                        <div className="text-xs text-gray-600 mt-2 px-4">
+                          <p>📋 <strong>Exibição:</strong> Primeiros 24 meses detalhados, depois apenas meses anuais (36, 48, 60...) para mostrar evolução do saldo devedor e parcelas por ano.</p>
+                        </div>
                       </TabsContent>
 
                       <TabsContent value="probabilidades" className="space-y-4">
