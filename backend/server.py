@@ -752,7 +752,7 @@ def gerar_relatorio_pdf(dados_simulacao: Dict, temp_dir: str) -> str:
         ]))
         
         # Destacar linha de contemplação com fluxo positivo em verde
-        for i, item in enumerate(dados_simulacao['detalhamento'][:36]):
+        for i, item in enumerate(detalhamento_filtrado):
             if item['eh_contemplacao']:
                 tabela_amortizacao.setStyle(TableStyle([
                     ('BACKGROUND', (0, i+1), (-1, i+1), colors.HexColor('#E8F5E8')),
