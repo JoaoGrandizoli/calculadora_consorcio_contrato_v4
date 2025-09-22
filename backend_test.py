@@ -2018,6 +2018,12 @@ class ConsortiumAPITester:
         self.test_nova_logica_probabilidades()
         self.test_nova_logica_comparacao_com_anterior()
         
+        # NEW: HAZARD CURVES INDEPENDENT LOGIC TESTS (HIGH PRIORITY - Current Review Focus)
+        print("\n📊 Testing HAZARD CURVES INDEPENDENT LOGIC (Current Review Focus):")
+        self.test_hazard_curves_independent_logic()
+        self.test_hazard_curves_first_5_months_detailed()
+        self.test_hazard_curves_no_nan_infinite()
+        
         # PDF tests
         self.test_pdf_generation()
         self.test_pdf_without_cashflow_graph()
