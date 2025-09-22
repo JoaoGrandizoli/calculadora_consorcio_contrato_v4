@@ -285,15 +285,18 @@ frontend:
 
   - task: "BUG FIX: Saldo devedor zerando antes do prazo final devido a correção anual"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "critical"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
         - agent: "main"
         - comment: "PROBLEMA IDENTIFICADO: Saldo devedor estava zerando no mês 99 ao invés de durar até o mês 120. CAUSA: Saldo devedor inicial estava sendo calculado com base_contrato fixa (R$124.000), mas as parcelas crescem 5% a.a. com correção anual. CORREÇÃO: Saldo devedor inicial agora é calculado como valor presente de todas as parcelas futuras com correção anual, garantindo que o saldo dure exatamente até o prazo final."
+        - working: true
+        - agent: "main"
+        - comment: "✅ CORREÇÃO VALIDADA: Teste realizado com sucesso. Saldo devedor inicial corrigido de R$124.000 para R$154.932,53 (valor presente de todas parcelas corrigidas). Mês 119: R$1.603,04 (uma parcela), Mês 120: R$0,00 (zerando exatamente no final). Comportamento financeiro agora está correto - saldo dura exatamente até o prazo final de 120 meses."
 
 metadata:
   created_by: "main_agent"
