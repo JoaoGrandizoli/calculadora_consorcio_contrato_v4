@@ -32,11 +32,46 @@ import json
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
+# MongoDB connection
+client = AsyncIOMotorClient(os.getenv("MONGO_URL"))
+db = client.consorcio_db
+
 # Create the main app without a prefix
 app = FastAPI(title="Simulador de Consórcio API", version="1.0.0")
 
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
+
+# Models para Lead Capture
+class LeadData(BaseModel):
+    id: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str = Field(..., min_length=2, max_length=50)
+    email: EmailStr
+    phone: str = Field(..., min_length=10, max_length=20)
+    patrimonio: Optional[float] = Field(None, ge=0)
+    renda: Optional[float] = Field(None, ge=0)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    has_access: bool = True
+    access_token: Optional[str] = None
+
+class SimulationInput(BaseModel):
+    id: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()))
+    lead_id: Optional[str] = None  # Associar com o lead que fez a simulação
+    valor_carta: float
+    prazo_meses: int
+    taxa_admin: float
+    fundo_reserva: float
+    mes_contemplacao: int
+    lance_livre_perc: float
+    taxa_reajuste_anual: float
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    ip_address: Optional[str] = None
+    user_agent: Optional[str] = None
+
+class TypeformWebhook(BaseModel):
+    event_id: str
+    event_type: str
+    form_response: dict
 
 # Models
 class ParametrosConsorcio(BaseModel):
