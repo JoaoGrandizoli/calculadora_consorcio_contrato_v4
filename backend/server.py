@@ -764,12 +764,17 @@ def extract_lead_data_from_typeform(answers: list) -> LeadData:
     
     logger.info(f"DADOS FINAIS EXTRAÍDOS: {extracted_data}")
     
-    # Validar dados obrigatórios
-    if not all([extracted_data["name"], extracted_data["email"], extracted_data["phone"]]):
-        missing = [k for k, v in extracted_data.items() if k in ["name", "email", "phone"] and not v]
+    # Validar dados obrigatórios (TEMPORARIAMENTE FLEXÍVEL PARA DEBUG)
+    if not extracted_data["email"] or not extracted_data["phone"]:
+        missing = [k for k, v in extracted_data.items() if k in ["email", "phone"] and not v]
         logger.error(f"DADOS OBRIGATÓRIOS FALTANDO: {missing}")
         logger.error(f"DADOS ATUAIS: {extracted_data}")
         raise ValueError(f"Dados obrigatórios faltando: {missing}")
+    
+    # Se não temos nome, usar email como fallback temporário
+    if not extracted_data["name"]:
+        extracted_data["name"] = f"Lead {extracted_data['email'].split('@')[0]}"
+        logger.info(f"NOME FALLBACK CRIADO: {extracted_data['name']}")
     
     return LeadData(**{k: v for k, v in extracted_data.items() if v is not None})
 
