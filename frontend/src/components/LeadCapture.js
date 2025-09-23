@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Widget } from '@typeform/embed-react';
+import SimpleForm from './SimpleForm';
 
 const LeadCapture = ({ onAccessGranted }) => {
   const [showForm, setShowForm] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const [useSimpleForm, setUseSimpleForm] = useState(false);
 
   const handleFormSubmit = async (event) => {
     console.log('Typeform submitted:', event);
@@ -46,6 +48,11 @@ const LeadCapture = ({ onAccessGranted }) => {
     );
   }
 
+  // Se escolheu usar formulário simples
+  if (useSimpleForm) {
+    return <SimpleForm onAccessGranted={onAccessGranted} />;
+  }
+
   return (
     <div className="max-w-4xl mx-auto">
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
@@ -55,6 +62,16 @@ const LeadCapture = ({ onAccessGranted }) => {
         <p className="text-gray-600 text-center mb-4">
           Preencha o formulário abaixo para acessar o simulador de consórcio gratuitamente.
         </p>
+        
+        {/* Opção para usar formulário simples */}
+        <div className="text-center">
+          <button 
+            onClick={() => setUseSimpleForm(true)}
+            className="text-blue-600 hover:text-blue-800 text-sm underline"
+          >
+            Prefere um formulário mais simples? Clique aqui
+          </button>
+        </div>
       </div>
 
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
