@@ -417,13 +417,25 @@ function App() {
                 <button
                   onClick={() => {
                     const newAdminState = !showAdmin;
-                    setShowAdmin(newAdminState);
                     
-                    // 🔧 FIX: Persistir estado admin no localStorage
                     if (newAdminState) {
-                      localStorage.setItem('admin_mode', 'true');
-                      console.log('🔧 Entrando no modo admin');
+                      // Entrando no modo admin - verificar autenticação
+                      const isAuthenticated = localStorage.getItem('admin_authenticated') === 'true';
+                      if (isAuthenticated) {
+                        setAdminAuthenticated(true);
+                        setShowAdmin(true);
+                        localStorage.setItem('admin_mode', 'true');
+                        console.log('🔧 Entrando no modo admin autenticado');
+                      } else {
+                        // Não autenticado - mostrar tela de login
+                        setAdminAuthenticated(false);
+                        setShowAdmin(true);
+                        localStorage.setItem('admin_mode', 'true');
+                        console.log('🔐 Solicitando autenticação admin');
+                      }
                     } else {
+                      // Saindo do modo admin
+                      setShowAdmin(false);
                       localStorage.removeItem('admin_mode');
                       console.log('🔧 Saindo do modo admin');
                     }
