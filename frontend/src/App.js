@@ -63,6 +63,14 @@ function App() {
   });
   const [mostrarDetalheProbabilidades, setMostrarDetalheProbabilidades] = useState(false);
 
+  // Verificar acesso ao carregar a página
+  useEffect(() => {
+    const storedToken = localStorage.getItem('access_token');
+    if (storedToken) {
+      checkAccessToken(storedToken);
+    }
+  }, []);
+
   // Carregar parâmetros padrão ao inicializar
   useEffect(() => {
     const carregarParametrosPadrao = async () => {
@@ -75,6 +83,35 @@ function App() {
     };
     carregarParametrosPadrao();
   }, []);
+
+  const handleAccessGranted = (token) => {
+    setAccessToken(token);
+    setHasAccess(true);
+    localStorage.setItem('access_token', token);
+  };
+
+  const checkAccessToken = async (token) => {
+    try {
+      const response = await axios.get(`${API}/check-access/${token}`);
+      if (response.data.valid) {
+        setHasAccess(true);
+        setAccessToken(token);
+        setLeadInfo({
+          name: response.data.name,
+          created_at: response.data.created_at
+        });
+      } else {
+        localStorage.removeItem('access_token');
+        setHasAccess(false);
+        setAccessToken(null);
+      }
+    } catch (error) {
+      console.error('Erro ao verificar acesso:', error);
+      localStorage.removeItem('access_token');
+      setHasAccess(false);
+      setAccessToken(null);
+    }
+  };
 
   const handleInputChange = (field, value) => {
     setParametros(prev => ({
