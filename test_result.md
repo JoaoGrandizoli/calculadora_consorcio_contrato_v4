@@ -243,6 +243,21 @@ backend:
         - agent: "testing"
         - comment: "❌ PROBLEMA CONFIRMADO: Frontend não está enviando Authorization header. Backend está funcionando corretamente - quando header é enviado, lead é encontrado e simulação associada. Problema está no frontend que precisa implementar envio do token nas simulações."
 
+  - task: "Testar endpoint /api/gerar-relatorio-pdf para problema crítico do botão 'Baixar Relatório'"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+        - agent: "testing"
+        - comment: "🔥 TESTE CRÍTICO SOLICITADO: Usuário reporta que botão 'Baixar Relatório' não funciona no navegador. Testando endpoint /api/gerar-relatorio-pdf com parâmetros específicos: valor_carta=100000, prazo_meses=120, taxa_admin=0.21, fundo_reserva=0.03, mes_contemplacao=17, lance_livre_perc=0.10, taxa_reajuste_anual=0.05"
+        - working: true
+        - agent: "testing"
+        - comment: "✅ ENDPOINT /api/gerar-relatorio-pdf FUNCIONANDO PERFEITAMENTE: 1) ✅ Responde com HTTP 200 OK, 2) ✅ Content-Type correto: application/pdf, 3) ✅ Arquivo PDF válido com 225.5KB (não vazio), 4) ✅ Headers de download corretos (Content-Disposition: attachment), 5) ✅ PDF inicia com assinatura válida (%PDF-1.4), 6) ✅ Funciona com e sem Authorization header, 7) ✅ Logs do backend mostram múltiplas chamadas bem-sucedidas (HTTP 200), 8) ✅ Nenhum erro relacionado a PDF nos logs. CONCLUSÃO: Backend está funcionando corretamente. Se usuário não consegue baixar, problema pode estar no frontend (JavaScript, CORS, ou manipulação da resposta)."
+
 frontend:
   - task: "Configurar callbacks do Typeform para submissão"
     implemented: true
