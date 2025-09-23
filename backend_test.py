@@ -3431,7 +3431,11 @@ class ConsortiumAPITester:
         print(f"🌐 Testing API at: {self.api_url}")
         print("=" * 80)
         
-        # CRITICAL ISSUE TESTS FIRST - Lead-Simulation Association Problem
+        # CRITICAL INVESTIGATION FIRST - Lead-Simulation Association Problem
+        print("\n🔥 CRITICAL INVESTIGATION - Lead-Simulation Association Problem")
+        self.test_critical_lead_simulation_association_investigation()
+        
+        # CRITICAL ISSUE TESTS - Lead-Simulation Association Problem
         print("\n🔥 CRITICAL ISSUE TESTS - Lead-Simulation Association")
         self.test_current_database_state()
         self.test_lead_simulation_association_critical()
