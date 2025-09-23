@@ -72,6 +72,8 @@ function App() {
   useEffect(() => {
     const storedToken = localStorage.getItem('access_token');
     if (storedToken) {
+      // 🔧 FIX: Sincronizar accessToken do state imediatamente
+      setAccessToken(storedToken);
       checkAccessToken(storedToken);
     }
     
