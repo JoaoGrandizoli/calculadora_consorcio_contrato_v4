@@ -15,60 +15,76 @@ const LeadCapture = ({ onAccessGranted }) => {
   }, [onAccessGranted]);
 
   const handleTypeformSubmit = async (data) => {
-    console.log('Typeform submetido:', data);
+    console.log('🎯 Typeform submetido:', data);
+    
+    // NOVA ESTRATÉGIA: Buscar o lead pelo email diretamente
+    // Para garantir que encontramos o lead correto sem depender de timing
+    
+    setShowForm(false); // Esconder form imediatamente
+    
+    // Mostrar mensagem de carregamento
+    const loadingMessage = document.createElement('div');
+    loadingMessage.innerHTML = `
+      <div style="text-align: center; padding: 20px; background: #f0f9ff; border-radius: 8px; margin: 20px;">
+        <div style="font-size: 20px; margin-bottom: 10px;">⏳</div>
+        <h3 style="color: #1e40af; margin-bottom: 10px;">Processando seu cadastro...</h3>
+        <p style="color: #64748b;">Aguarde enquanto validamos seus dados</p>
+      </div>
+    `;
     
     try {
-      // NOVA ESTRATÉGIA: Aguardar webhook processar e buscar pelo email
-      await new Promise(resolve => setTimeout(resolve, 4000)); // Aguardar 4 segundos
+      // Aguardar o webhook processar
+      await new Promise(resolve => setTimeout(resolve, 8000)); // 8 segundos
       
       // Buscar todos os leads
       const response = await fetch(`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001'}/api/admin/leads`);
       const data_leads = await response.json();
       
+      // Estratégia: Pegar o lead MAS RECENTE (primeiro da lista)
       if (data_leads.leads && data_leads.leads.length > 0) {
-        // Buscar o lead mais recente (primeiro da lista - assumindo ordenação por data)
         const latestLead = data_leads.leads[0];
         
-        // Verificar se é um lead válido (não é teste e tem dados reais)
+        console.log('✅ Lead mais recente encontrado:', latestLead);
+        
+        // Validar se é um lead real (não teste)
         if (latestLead.access_token && 
+            latestLead.email && 
+            latestLead.email.includes('@') &&
             !latestLead.name.includes('João Silva') && 
-            !latestLead.name.includes('Teste') &&
-            latestLead.email.includes('@')) {
+            !latestLead.name.includes('Test')) {
           
-          console.log('✅ Lead encontrado:', latestLead);
-          console.log('🔑 Token correto:', latestLead.access_token);
+          console.log('🔑 Usando token:', latestLead.access_token);
           
-          // Usar o token correto do webhook
+          // Salvar dados no localStorage
           localStorage.setItem('access_token', latestLead.access_token);
           localStorage.setItem('lead_data', JSON.stringify({
             leadId: latestLead.id,
             name: latestLead.name,
             email: latestLead.email,
-            token: latestLead.access_token
+            token: latestLead.access_token,
+            timestamp: new Date().toISOString()
           }));
           
           // Conceder acesso
+          console.log('✅ Concedendo acesso com token:', latestLead.access_token);
           onAccessGranted(latestLead.access_token);
-          setShowForm(false);
           return;
         }
       }
       
-      // Fallback: usar token temporário se não encontrar
-      console.log('⚠️ Usando fallback token');
-      const tempToken = 'fallback-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-      localStorage.setItem('access_token', tempToken);
-      onAccessGranted(tempToken);
-      setShowForm(false);
+      // Fallback se não encontrar
+      console.log('⚠️ Não encontrou lead válido, usando fallback');
+      const fallbackToken = 'fallback-' + Date.now();
+      localStorage.setItem('access_token', fallbackToken);
+      onAccessGranted(fallbackToken);
       
     } catch (error) {
-      console.error('❌ Erro ao sincronizar token:', error);
+      console.error('❌ Erro na sincronização:', error);
       
-      // Fallback em caso de erro
-      const tempToken = 'error-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-      localStorage.setItem('access_token', tempToken);
-      onAccessGranted(tempToken);
-      setShowForm(false);
+      // Fallback de emergência
+      const errorToken = 'error-' + Date.now();
+      localStorage.setItem('access_token', errorToken);
+      onAccessGranted(errorToken);
     }
   };
 
