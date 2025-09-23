@@ -224,27 +224,83 @@ function App() {
     setLoadingPdf(true);
     
     try {
+      console.log('📄 Iniciando download do relatório PDF...');
+      
       const response = await axios.post(`${API}/gerar-relatorio-pdf`, parametros, {
-        responseType: 'blob'
+        responseType: 'blob',
+        headers: {
+          'Accept': 'application/pdf'
+        }
       });
       
+      console.log('📄 Resposta recebida:', response.status, response.headers['content-type']);
+      
+      // Verificar se a resposta é válida
+      if (response.status !== 200) {
+        throw new Error(`Servidor retornou status ${response.status}`);
+      }
+      
+      // Verificar se recebemos um PDF
+      const contentType = response.headers['content-type'] || '';
+      if (!contentType.includes('application/pdf')) {
+        console.error('❌ Tipo de conteúdo inválido:', contentType);
+        throw new Error('Resposta não é um PDF válido');
+      }
+      
+      // Verificar se há dados
+      if (!response.data || response.data.size === 0) {
+        throw new Error('PDF recebido está vazio');
+      }
+      
+      console.log('📄 PDF válido recebido, tamanho:', response.data.size, 'bytes');
+      
+      // 🔧 CORREÇÃO: Criar blob explicitamente com tipo PDF
+      const blob = new Blob([response.data], { 
+        type: 'application/pdf' 
+      });
+      
+      console.log('📄 Blob criado, tamanho:', blob.size, 'bytes');
+      
       // Criar URL do blob e fazer download
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
+      const url = window.URL.createObjectURL(blob);
       
       // Nome do arquivo com timestamp
       const timestamp = new Date().toISOString().slice(0, 16).replace(/[:-]/g, '');
-      link.setAttribute('download', `relatorio_consorcio_${timestamp}.pdf`);
+      const filename = `relatorio_consorcio_${timestamp}.pdf`;
       
+      // 🔧 CORREÇÃO: Método mais robusto para download
+      const link = document.createElement('a');
+      link.style.display = 'none';
+      link.href = url;
+      link.download = filename;
+      link.setAttribute('download', filename);
+      
+      // Adicionar ao DOM, clicar e remover
       document.body.appendChild(link);
+      console.log('📄 Iniciando download:', filename);
+      
+      // Tentar download
       link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
+      
+      // Cleanup
+      setTimeout(() => {
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        console.log('📄 Download concluído e recursos liberados');
+      }, 100);
       
     } catch (error) {
-      console.error('Erro ao baixar relatório:', error);
-      setErro('Erro ao gerar relatório PDF. Tente novamente.');
+      console.error('❌ Erro ao baixar relatório:', error);
+      console.error('❌ Detalhes do erro:', error.response?.data || error.message);
+      
+      // Mostrar erro mais específico
+      if (error.response?.status === 400) {
+        setErro('Erro nos parâmetros da simulação. Verifique os valores e tente novamente.');
+      } else if (error.response?.status === 500) {
+        setErro('Erro interno do servidor. Tente novamente em alguns momentos.');
+      } else {
+        setErro(`Erro ao gerar relatório PDF: ${error.message}`);
+      }
     } finally {
       setLoadingPdf(false);
     }
