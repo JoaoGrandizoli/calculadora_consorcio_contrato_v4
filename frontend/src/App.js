@@ -174,8 +174,23 @@ function App() {
     
     try {
       const headers = {};
-      if (accessToken) {
-        headers.Authorization = `Bearer ${accessToken}`;
+      
+      // 🔧 FIX DEFINITIVO: Garantir que o token seja sempre obtido
+      let tokenParaUsar = accessToken;
+      if (!tokenParaUsar) {
+        // Fallback: tentar obter do localStorage diretamente
+        tokenParaUsar = localStorage.getItem('access_token');
+        if (tokenParaUsar) {
+          setAccessToken(tokenParaUsar); // Sincronizar state
+          console.log('🔧 Token recuperado do localStorage:', tokenParaUsar);
+        }
+      }
+      
+      if (tokenParaUsar) {
+        headers.Authorization = `Bearer ${tokenParaUsar}`;
+        console.log('🎯 Enviando Authorization header:', `Bearer ${tokenParaUsar.substring(0, 8)}...`);
+      } else {
+        console.warn('⚠️ AVISO: Nenhum access_token disponível para a simulação');
       }
       
       const response = await axios.post(`${API}/simular`, parametros, { headers });
