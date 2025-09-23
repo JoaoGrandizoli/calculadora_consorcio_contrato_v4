@@ -2250,6 +2250,402 @@ class ConsortiumAPITester:
             self.log_test("Gerar Relatório Endpoint - Specific Parameters", False, str(e))
             return False
 
+    def test_typeform_webhook(self):
+        """Test Typeform webhook endpoint with provided test data"""
+        # Test data provided in the review request
+        webhook_payload = {
+            "event_id": "test123",
+            "event_type": "form_response",
+            "form_response": {
+                "form_id": "dN3w60PD",
+                "response_id": "test456",
+                "answers": [
+                    {
+                        "field": {"id": "field1", "type": "short_text"},
+                        "type": "short_text",
+                        "text": "José Silva"
+                    },
+                    {
+                        "field": {"id": "field2", "type": "phone_number"},
+                        "type": "phone_number", 
+                        "phone_number": "+5511999999999"
+                    },
+                    {
+                        "field": {"id": "field3", "type": "email"},
+                        "type": "email",
+                        "email": "jose@teste.com"
+                    }
+                ]
+            }
+        }
+        
+        try:
+            response = requests.post(f"{self.api_url}/typeform-webhook", 
+                                   json=webhook_payload, 
+                                   timeout=10)
+            success = response.status_code == 200
+            
+            if success:
+                data = response.json()
+                
+                # Validate response structure
+                required_keys = ['status', 'access_token', 'lead_id']
+                missing_keys = [key for key in required_keys if key not in data]
+                
+                if missing_keys:
+                    success = False
+                    details = f"Missing response keys: {missing_keys}"
+                elif data.get('status') != 'success':
+                    success = False
+                    details = f"Unexpected status: {data.get('status')}"
+                else:
+                    # Validate access_token is generated
+                    access_token = data.get('access_token')
+                    lead_id = data.get('lead_id')
+                    
+                    if not access_token or len(access_token) < 10:
+                        success = False
+                        details = f"Invalid access_token: {access_token}"
+                    elif not lead_id:
+                        success = False
+                        details = f"Missing lead_id: {lead_id}"
+                    else:
+                        details = f"Webhook processed successfully - Lead ID: {lead_id[:8]}..., Token: {access_token[:8]}..."
+                        # Store for later tests
+                        self.test_access_token = access_token
+                        self.test_lead_id = lead_id
+            else:
+                details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+                
+            self.log_test("Typeform Webhook", success, details)
+            return success
+            
+        except Exception as e:
+            self.log_test("Typeform Webhook", False, str(e))
+            return False
+
+    def test_save_lead_direct(self):
+        """Test direct lead saving endpoint"""
+        lead_data = {
+            "name": "Maria Santos",
+            "email": "maria@teste.com",
+            "phone": "+5511888888888",
+            "patrimonio": 50000.0,
+            "renda": 5000.0
+        }
+        
+        try:
+            response = requests.post(f"{self.api_url}/save-lead", 
+                                   json=lead_data, 
+                                   timeout=10)
+            success = response.status_code == 200
+            
+            if success:
+                data = response.json()
+                
+                # Validate response structure
+                if data.get('status') != 'success':
+                    success = False
+                    details = f"Unexpected status: {data.get('status')}"
+                elif not data.get('lead_id'):
+                    success = False
+                    details = f"Missing lead_id in response"
+                else:
+                    details = f"Lead saved successfully - ID: {data.get('lead_id')[:8]}..."
+                    # Store for later tests
+                    self.test_direct_lead_id = data.get('lead_id')
+            else:
+                details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+                
+            self.log_test("Save Lead Direct", success, details)
+            return success
+            
+        except Exception as e:
+            self.log_test("Save Lead Direct", False, str(e))
+            return False
+
+    def test_check_access_token(self):
+        """Test access token validation endpoint"""
+        # Use token from webhook test if available
+        if not hasattr(self, 'test_access_token'):
+            self.log_test("Check Access Token", False, "No access token available from webhook test")
+            return False
+        
+        try:
+            response = requests.get(f"{self.api_url}/check-access/{self.test_access_token}", 
+                                  timeout=10)
+            success = response.status_code == 200
+            
+            if success:
+                data = response.json()
+                
+                # Validate response structure
+                if not data.get('valid'):
+                    success = False
+                    details = f"Token should be valid but got: {data.get('valid')}"
+                elif not data.get('lead_id'):
+                    success = False
+                    details = f"Missing lead_id in valid token response"
+                elif not data.get('name'):
+                    success = False
+                    details = f"Missing name in valid token response"
+                else:
+                    details = f"Token valid - Lead: {data.get('name')}, ID: {data.get('lead_id')[:8]}..."
+            else:
+                details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+                
+            self.log_test("Check Access Token", success, details)
+            return success
+            
+        except Exception as e:
+            self.log_test("Check Access Token", False, str(e))
+            return False
+
+    def test_check_invalid_access_token(self):
+        """Test access token validation with invalid token"""
+        invalid_token = "invalid-token-12345"
+        
+        try:
+            response = requests.get(f"{self.api_url}/check-access/{invalid_token}", 
+                                  timeout=10)
+            success = response.status_code == 200
+            
+            if success:
+                data = response.json()
+                
+                # Should return valid: false for invalid token
+                if data.get('valid') != False:
+                    success = False
+                    details = f"Invalid token should return valid=false, got: {data.get('valid')}"
+                else:
+                    details = f"Invalid token correctly rejected"
+            else:
+                details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+                
+            self.log_test("Check Invalid Access Token", success, details)
+            return success
+            
+        except Exception as e:
+            self.log_test("Check Invalid Access Token", False, str(e))
+            return False
+
+    def test_admin_leads_endpoint(self):
+        """Test admin leads endpoint"""
+        try:
+            response = requests.get(f"{self.api_url}/admin/leads", timeout=10)
+            success = response.status_code == 200
+            
+            if success:
+                data = response.json()
+                
+                # Validate response structure
+                if 'leads' not in data or 'total' not in data:
+                    success = False
+                    details = f"Missing required keys in response: {list(data.keys())}"
+                elif not isinstance(data['leads'], list):
+                    success = False
+                    details = f"Leads should be a list, got: {type(data['leads'])}"
+                elif data['total'] != len(data['leads']):
+                    success = False
+                    details = f"Total count mismatch: total={data['total']}, actual={len(data['leads'])}"
+                else:
+                    # Check for ObjectId serialization issues
+                    has_objectid_issues = False
+                    for lead in data['leads']:
+                        if '_id' in lead:
+                            has_objectid_issues = True
+                            break
+                    
+                    if has_objectid_issues:
+                        success = False
+                        details = f"ObjectId serialization issue - _id field present in leads"
+                    else:
+                        details = f"Admin leads endpoint working - {data['total']} leads found"
+            else:
+                details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+                
+            self.log_test("Admin Leads Endpoint", success, details)
+            return success
+            
+        except Exception as e:
+            self.log_test("Admin Leads Endpoint", False, str(e))
+            return False
+
+    def test_admin_simulations_endpoint(self):
+        """Test admin simulations endpoint"""
+        try:
+            response = requests.get(f"{self.api_url}/admin/simulations", timeout=10)
+            success = response.status_code == 200
+            
+            if success:
+                data = response.json()
+                
+                # Validate response structure
+                if 'simulations' not in data or 'total' not in data:
+                    success = False
+                    details = f"Missing required keys in response: {list(data.keys())}"
+                elif not isinstance(data['simulations'], list):
+                    success = False
+                    details = f"Simulations should be a list, got: {type(data['simulations'])}"
+                elif data['total'] != len(data['simulations']):
+                    success = False
+                    details = f"Total count mismatch: total={data['total']}, actual={len(data['simulations'])}"
+                else:
+                    # Check for ObjectId serialization issues
+                    has_objectid_issues = False
+                    for sim in data['simulations']:
+                        if '_id' in sim:
+                            has_objectid_issues = True
+                            break
+                    
+                    if has_objectid_issues:
+                        success = False
+                        details = f"ObjectId serialization issue - _id field present in simulations"
+                    else:
+                        details = f"Admin simulations endpoint working - {data['total']} simulations found"
+            else:
+                details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+                
+            self.log_test("Admin Simulations Endpoint", success, details)
+            return success
+            
+        except Exception as e:
+            self.log_test("Admin Simulations Endpoint", False, str(e))
+            return False
+
+    def test_typeform_webhook_data_extraction(self):
+        """Test Typeform webhook data extraction with different field types"""
+        # Test with more complex data including number fields
+        webhook_payload = {
+            "event_id": "test789",
+            "event_type": "form_response",
+            "form_response": {
+                "form_id": "dN3w60PD",
+                "response_id": "test789",
+                "answers": [
+                    {
+                        "field": {"id": "field1", "type": "short_text"},
+                        "type": "short_text",
+                        "text": "Ana Costa"
+                    },
+                    {
+                        "field": {"id": "field2", "type": "email"},
+                        "type": "email",
+                        "email": "ana@teste.com"
+                    },
+                    {
+                        "field": {"id": "field3", "type": "phone_number"},
+                        "type": "phone_number", 
+                        "phone_number": "+5511777777777"
+                    },
+                    {
+                        "field": {"id": "field4", "type": "number"},
+                        "type": "number",
+                        "number": 75000
+                    },
+                    {
+                        "field": {"id": "field5", "type": "number"},
+                        "type": "number",
+                        "number": 8000
+                    }
+                ]
+            }
+        }
+        
+        try:
+            response = requests.post(f"{self.api_url}/typeform-webhook", 
+                                   json=webhook_payload, 
+                                   timeout=10)
+            success = response.status_code == 200
+            
+            if success:
+                data = response.json()
+                
+                if data.get('status') != 'success':
+                    success = False
+                    details = f"Webhook failed: {data}"
+                else:
+                    # Verify data was extracted correctly by checking the lead
+                    access_token = data.get('access_token')
+                    if access_token:
+                        # Check the saved lead data
+                        check_response = requests.get(f"{self.api_url}/check-access/{access_token}", timeout=10)
+                        if check_response.status_code == 200:
+                            lead_data = check_response.json()
+                            if lead_data.get('valid') and lead_data.get('name') == 'Ana Costa':
+                                details = f"Data extraction successful - Name: {lead_data.get('name')}"
+                            else:
+                                success = False
+                                details = f"Data extraction failed - Lead data: {lead_data}"
+                        else:
+                            success = False
+                            details = f"Could not verify extracted data - Check access failed"
+                    else:
+                        success = False
+                        details = f"No access token generated"
+            else:
+                details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+                
+            self.log_test("Typeform Data Extraction", success, details)
+            return success
+            
+        except Exception as e:
+            self.log_test("Typeform Data Extraction", False, str(e))
+            return False
+
+    def test_typeform_webhook_missing_data(self):
+        """Test Typeform webhook with missing required data"""
+        # Test with missing email (required field)
+        webhook_payload = {
+            "event_id": "test_missing",
+            "event_type": "form_response",
+            "form_response": {
+                "form_id": "dN3w60PD",
+                "response_id": "test_missing",
+                "answers": [
+                    {
+                        "field": {"id": "field1", "type": "short_text"},
+                        "type": "short_text",
+                        "text": "João Teste"
+                    },
+                    {
+                        "field": {"id": "field2", "type": "phone_number"},
+                        "type": "phone_number", 
+                        "phone_number": "+5511666666666"
+                    }
+                    # Missing email field
+                ]
+            }
+        }
+        
+        try:
+            response = requests.post(f"{self.api_url}/typeform-webhook", 
+                                   json=webhook_payload, 
+                                   timeout=10)
+            
+            # Should return error for missing required data
+            if response.status_code == 500:
+                success = True
+                details = f"Correctly rejected webhook with missing required data"
+            elif response.status_code == 200:
+                data = response.json()
+                if data.get('status') == 'success':
+                    success = False
+                    details = f"Should have rejected missing data but succeeded: {data}"
+                else:
+                    success = True
+                    details = f"Correctly handled missing data with error response"
+            else:
+                success = False
+                details = f"Unexpected status: {response.status_code}, Response: {response.text[:200]}"
+                
+            self.log_test("Typeform Missing Data Validation", success, details)
+            return success
+            
+        except Exception as e:
+            self.log_test("Typeform Missing Data Validation", False, str(e))
+            return False
+
     def run_all_tests(self):
         """Run all backend tests"""
         print("🚀 Starting Backend API Tests for Consortium Simulation System")
