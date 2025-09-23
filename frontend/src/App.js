@@ -103,24 +103,59 @@ function App() {
 
   const checkAccessToken = async (token) => {
     try {
+      // Verificar se o token não é muito antigo (evitar tokens de teste)
+      const tokenData = localStorage.getItem('lead_data');
+      if (tokenData) {
+        const leadData = JSON.parse(tokenData);
+        const tokenAge = Date.now() - new Date(leadData.timestamp || 0).getTime();
+        
+        // Se token tem mais de 24 horas, considerar inválido
+        if (tokenAge > 24 * 60 * 60 * 1000) {
+          console.log('🕒 Token expirado (>24h), limpando...');
+          localStorage.removeItem('access_token');
+          localStorage.removeItem('lead_data');
+          setHasAccess(false);
+          return;
+        }
+      }
+      
+      // Validar token no servidor
       const response = await axios.get(`${API}/check-access/${token}`);
       if (response.data.valid) {
-        setHasAccess(true);
-        setAccessToken(token);
-        setLeadInfo({
-          name: response.data.name,
-          created_at: response.data.created_at
-        });
+        // Verificar se não é um lead de teste
+        const leadName = response.data.name || '';
+        if (!leadName.includes('Teste') && 
+            !leadName.includes('João Silva') && 
+            !leadName.includes('Test') &&
+            !token.startsWith('temp-') &&
+            !token.startsWith('fallback-') &&
+            !token.startsWith('error-')) {
+          
+          console.log('✅ Token válido:', token);
+          setHasAccess(true);
+          setAccessToken(token);
+          setLeadInfo({
+            name: response.data.name,
+            created_at: response.data.created_at
+          });
+        } else {
+          console.log('🚮 Token de teste detectado, limpando...');
+          localStorage.removeItem('access_token');
+          localStorage.removeItem('lead_data');
+          setHasAccess(false);
+        }
       } else {
+        console.log('❌ Token inválido no servidor');
         localStorage.removeItem('access_token');
+        localStorage.removeItem('lead_data');
         setHasAccess(false);
-        setAccessToken(null);
       }
     } catch (error) {
-      console.error('Erro ao verificar acesso:', error);
+      console.error('Erro ao verificar token:', error);
+      // Em caso de erro, limpar token para segurança
       localStorage.removeItem('access_token');
+      localStorage.removeItem('lead_data');
       setHasAccess(false);
-      setAccessToken(null);
     }
   };
 
