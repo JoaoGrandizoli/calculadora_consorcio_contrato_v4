@@ -195,6 +195,7 @@ function App() {
       if (response.data.valid) {
         // 🔧 CORREÇÃO TEMPORÁRIA: Permitir tokens fallback para debug
         // TODO: Remover após webhook do Typeform estar funcionando
+        const leadName = response.data.name || '';
         if (!leadName.includes('Teste') && 
             !leadName.includes('João Silva') && 
             !leadName.includes('Test') &&
