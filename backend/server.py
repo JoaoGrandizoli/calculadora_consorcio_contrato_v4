@@ -204,13 +204,14 @@ class SimuladorConsorcio:
                        'jul', 'ago', 'set', 'out', 'nov', 'dez']
             
             for mes in range(1, self.params.prazo_meses + 1):
-                # 1. PRIMEIRO: Corrigir o saldo devedor pela taxa mensal
-                if mes > 1:  # A partir do segundo mês
-                    saldo_devedor_atual = saldo_devedor_atual * (1 + taxa_correcao_mensal)
-                
-                # 2. Calcular correção anual para as parcelas (sistema atual)
+                # 1. Calcular ano atual e fator de correção
                 ano_atual = (mes - 1) // 12 + 1
                 fator_correcao = (1 + self.params.taxa_reajuste_anual) ** (ano_atual - 1)
+                
+                # 2. Corrigir o saldo devedor pela mesma lógica das parcelas (no início de cada ano)
+                if mes > 1 and ((mes - 1) % 12 == 0):  # Início de novo ano
+                    # Aplicar correção anual ao saldo devedor
+                    saldo_devedor_atual = saldo_devedor_atual * (1 + self.params.taxa_reajuste_anual)
                 
                 # Data formatada (set/25, out/25, etc.)
                 mes_calendario = ((mes - 1) % 12) + 1
@@ -220,7 +221,7 @@ class SimuladorConsorcio:
                 # Valores corrigidos
                 valor_carta_corrigido = self.params.valor_carta * fator_correcao
                 
-                # CORREÇÃO: Parcela sempre igual (só muda com correção anual)
+                # Parcela corrigida pela correção anual
                 parcela_corrigida = parcela_base_mensal * fator_correcao
                 
                 if mes == self.params.mes_contemplacao:
