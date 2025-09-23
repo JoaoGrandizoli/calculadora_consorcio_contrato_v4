@@ -109,14 +109,19 @@ const LeadCapture = ({ onAccessGranted }) => {
   if (!showForm) {
     return (
       <div className="text-center py-8">
-        <div className="bg-green-50 border border-green-200 rounded-lg p-6 max-w-md mx-auto">
-          <div className="text-green-600 text-4xl mb-3">✅</div>
-          <h3 className="text-xl font-semibold text-green-800 mb-2">
-            Perfeito!
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 max-w-md mx-auto">
+          <div className="text-blue-600 text-4xl mb-3">
+            <div className="animate-spin inline-block">⏳</div>
+          </div>
+          <h3 className="text-xl font-semibold text-blue-800 mb-2">
+            Processando cadastro...
           </h3>
-          <p className="text-green-700">
-            Agora você pode usar o simulador de consórcio.
+          <p className="text-blue-700 text-sm">
+            Aguarde enquanto validamos seus dados
           </p>
+          <div className="mt-3 text-xs text-blue-600">
+            Em alguns segundos você terá acesso ao simulador
+          </div>
         </div>
       </div>
     );
