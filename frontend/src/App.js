@@ -42,6 +42,9 @@ function App() {
   const [accessToken, setAccessToken] = useState(null);
   const [leadInfo, setLeadInfo] = useState(null);
   const [showAdmin, setShowAdmin] = useState(false);
+  const [adminAuthenticated, setAdminAuthenticated] = useState(false);
+  const [adminPassword, setAdminPassword] = useState('');
+  const [adminLoginError, setAdminLoginError] = useState('');
 
   // 🔧 FIX: Verificar se é acesso admin e persistir no localStorage
   const isAdminAccess = window.location.pathname === '/admin' || 
