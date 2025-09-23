@@ -3425,6 +3425,434 @@ class ConsortiumAPITester:
         
         return success
 
+    def test_typeform_webhook_critical_investigation(self):
+        """
+        🔥 CRITICAL INVESTIGATION: TYPEFORM WEBHOOK LEADS NOT BEING SAVED
+        
+        PROBLEM REPORTED BY USER:
+        - Users fill out Typeform but leads don't appear in admin
+        - This is a critical issue that needs complete investigation
+        
+        INVESTIGATION PHASES:
+        1. WEBHOOK VERIFICATION - Check if /api/typeform-webhook is being called
+        2. DATA PROCESSING - Verify Typeform data parsing
+        3. MONGODB SAVING - Verify leads are being inserted
+        4. ACCESS_TOKEN GENERATION - Verify tokens are generated correctly
+        5. WEBHOOK RESPONSE - Verify correct response to Typeform
+        
+        This test will simulate a real Typeform webhook call and investigate each phase.
+        """
+        print(f"\n🔥 CRITICAL INVESTIGATION: TYPEFORM WEBHOOK LEADS NOT BEING SAVED")
+        print(f"   Investigating why leads from Typeform are not appearing in admin...")
+        
+        # PHASE 1: Check current leads in database
+        print(f"\n📊 PHASE 1: CHECKING CURRENT LEADS IN DATABASE")
+        try:
+            response = requests.get(f"{self.api_url}/admin/leads", timeout=10)
+            if response.status_code == 200:
+                leads_data = response.json()
+                current_leads_count = leads_data.get('total', 0)
+                print(f"   Current leads in database: {current_leads_count}")
+                
+                # Show recent leads if any
+                if current_leads_count > 0:
+                    recent_leads = leads_data.get('leads', [])[:3]
+                    print(f"   Recent leads:")
+                    for lead in recent_leads:
+                        created_at = lead.get('created_at', 'Unknown')
+                        name = lead.get('name', 'Unknown')
+                        email = lead.get('email', 'Unknown')
+                        access_token = lead.get('access_token', 'None')[:8] + '...' if lead.get('access_token') else 'None'
+                        print(f"     - {name} ({email}) - Token: {access_token} - Created: {created_at}")
+            else:
+                print(f"   ❌ Failed to get current leads: HTTP {response.status_code}")
+                current_leads_count = 0
+        except Exception as e:
+            print(f"   ❌ Error getting current leads: {e}")
+            current_leads_count = 0
+        
+        # PHASE 2: Simulate realistic Typeform webhook payload
+        print(f"\n📝 PHASE 2: SIMULATING TYPEFORM WEBHOOK CALL")
+        
+        # Create realistic Typeform webhook payload based on the actual form structure
+        typeform_payload = {
+            "event_id": "test_event_" + str(int(datetime.now().timestamp())),
+            "event_type": "form_response",
+            "form_response": {
+                "form_id": "dN3w60PD",
+                "token": "test_response_token_" + str(int(datetime.now().timestamp())),
+                "submitted_at": datetime.now().isoformat() + "Z",
+                "answers": [
+                    {
+                        "type": "short_text",
+                        "text": "João",
+                        "field": {
+                            "id": "field_nome",
+                            "ref": "nome",
+                            "type": "short_text"
+                        }
+                    },
+                    {
+                        "type": "short_text", 
+                        "text": "Silva",
+                        "field": {
+                            "id": "field_sobrenome",
+                            "ref": "sobrenome",
+                            "type": "short_text"
+                        }
+                    },
+                    {
+                        "type": "email",
+                        "email": f"joao.silva.test.{int(datetime.now().timestamp())}@teste.com",
+                        "field": {
+                            "id": "field_email",
+                            "ref": "email",
+                            "type": "email"
+                        }
+                    },
+                    {
+                        "type": "phone_number",
+                        "phone_number": "+5511987654321",
+                        "field": {
+                            "id": "field_telefone",
+                            "ref": "telefone", 
+                            "type": "phone_number"
+                        }
+                    }
+                ]
+            }
+        }
+        
+        print(f"   Payload created with:")
+        print(f"     - Nome: João Silva")
+        print(f"     - Email: {typeform_payload['form_response']['answers'][2]['email']}")
+        print(f"     - Telefone: +5511987654321")
+        print(f"     - Event ID: {typeform_payload['event_id']}")
+        
+        # PHASE 3: Send webhook request and analyze response
+        print(f"\n🌐 PHASE 3: SENDING WEBHOOK REQUEST TO BACKEND")
+        
+        webhook_success = False
+        webhook_response_data = None
+        access_token_generated = None
+        lead_id_generated = None
+        
+        try:
+            # Send POST request to webhook endpoint
+            response = requests.post(
+                f"{self.api_url}/typeform-webhook",
+                json=typeform_payload,
+                headers={"Content-Type": "application/json"},
+                timeout=30
+            )
+            
+            print(f"   Webhook Response Status: {response.status_code}")
+            print(f"   Response Headers: {dict(response.headers)}")
+            
+            if response.status_code == 200:
+                webhook_response_data = response.json()
+                print(f"   Response Body: {webhook_response_data}")
+                
+                # Check response structure
+                if webhook_response_data.get('status') == 'success':
+                    access_token_generated = webhook_response_data.get('access_token')
+                    lead_id_generated = webhook_response_data.get('lead_id')
+                    webhook_success = True
+                    
+                    print(f"   ✅ Webhook processed successfully!")
+                    print(f"   ✅ Access Token Generated: {access_token_generated}")
+                    print(f"   ✅ Lead ID Generated: {lead_id_generated}")
+                else:
+                    print(f"   ❌ Webhook returned error status: {webhook_response_data}")
+            else:
+                print(f"   ❌ Webhook failed with HTTP {response.status_code}")
+                print(f"   Response: {response.text[:500]}")
+                
+        except Exception as e:
+            print(f"   ❌ Exception during webhook call: {e}")
+        
+        # PHASE 4: Verify lead was saved in database
+        print(f"\n💾 PHASE 4: VERIFYING LEAD WAS SAVED IN DATABASE")
+        
+        lead_saved_successfully = False
+        saved_lead_data = None
+        
+        try:
+            # Wait a moment for database write
+            import time
+            time.sleep(1)
+            
+            # Get updated leads count
+            response = requests.get(f"{self.api_url}/admin/leads", timeout=10)
+            if response.status_code == 200:
+                updated_leads_data = response.json()
+                updated_leads_count = updated_leads_data.get('total', 0)
+                
+                print(f"   Leads count before webhook: {current_leads_count}")
+                print(f"   Leads count after webhook: {updated_leads_count}")
+                
+                if updated_leads_count > current_leads_count:
+                    print(f"   ✅ New lead(s) detected! Count increased by {updated_leads_count - current_leads_count}")
+                    
+                    # Find the new lead
+                    all_leads = updated_leads_data.get('leads', [])
+                    for lead in all_leads:
+                        if lead.get('id') == lead_id_generated or lead.get('access_token') == access_token_generated:
+                            saved_lead_data = lead
+                            lead_saved_successfully = True
+                            print(f"   ✅ Found saved lead:")
+                            print(f"     - ID: {lead.get('id')}")
+                            print(f"     - Name: {lead.get('name')}")
+                            print(f"     - Email: {lead.get('email')}")
+                            print(f"     - Phone: {lead.get('phone')}")
+                            print(f"     - Access Token: {lead.get('access_token')}")
+                            print(f"     - Created At: {lead.get('created_at')}")
+                            break
+                    
+                    if not saved_lead_data:
+                        print(f"   ⚠️ Lead count increased but couldn't find the specific lead we created")
+                        print(f"   This might indicate the lead was saved but with different ID/token")
+                else:
+                    print(f"   ❌ Lead count did not increase - lead was NOT saved!")
+            else:
+                print(f"   ❌ Failed to get updated leads: HTTP {response.status_code}")
+                
+        except Exception as e:
+            print(f"   ❌ Error verifying saved lead: {e}")
+        
+        # PHASE 5: Test access token validation
+        print(f"\n🔑 PHASE 5: TESTING ACCESS TOKEN VALIDATION")
+        
+        token_validation_success = False
+        
+        if access_token_generated:
+            try:
+                response = requests.get(f"{self.api_url}/check-access/{access_token_generated}", timeout=10)
+                
+                if response.status_code == 200:
+                    token_data = response.json()
+                    print(f"   Token validation response: {token_data}")
+                    
+                    if token_data.get('valid') == True:
+                        token_validation_success = True
+                        print(f"   ✅ Access token is valid!")
+                        print(f"   ✅ Lead ID from token: {token_data.get('lead_id')}")
+                        print(f"   ✅ Lead name from token: {token_data.get('name')}")
+                    else:
+                        print(f"   ❌ Access token is invalid!")
+                else:
+                    print(f"   ❌ Token validation failed: HTTP {response.status_code}")
+                    
+            except Exception as e:
+                print(f"   ❌ Error validating access token: {e}")
+        else:
+            print(f"   ⚠️ No access token to validate (webhook failed)")
+        
+        # PHASE 6: Check backend logs for errors
+        print(f"\n📋 PHASE 6: CHECKING BACKEND LOGS FOR ERRORS")
+        
+        try:
+            import subprocess
+            log_result = subprocess.run(['tail', '-n', '20', '/var/log/supervisor/backend.err.log'], 
+                                      capture_output=True, text=True, timeout=5)
+            
+            if log_result.returncode == 0:
+                log_content = log_result.stdout
+                if log_content.strip():
+                    print(f"   Recent backend error logs:")
+                    for line in log_content.split('\n')[-10:]:  # Last 10 lines
+                        if line.strip():
+                            print(f"     {line}")
+                else:
+                    print(f"   ✅ No recent errors in backend logs")
+            else:
+                print(f"   ⚠️ Could not read backend error logs")
+                
+        except Exception as e:
+            print(f"   ⚠️ Error reading backend logs: {e}")
+        
+        # FINAL ASSESSMENT
+        print(f"\n🎯 FINAL ASSESSMENT - TYPEFORM WEBHOOK INVESTIGATION")
+        
+        overall_success = webhook_success and lead_saved_successfully and token_validation_success
+        
+        issues_found = []
+        if not webhook_success:
+            issues_found.append("Webhook processing failed")
+        if not lead_saved_successfully:
+            issues_found.append("Lead not saved to database")
+        if not token_validation_success:
+            issues_found.append("Access token validation failed")
+        
+        if overall_success:
+            details = (f"✅ TYPEFORM WEBHOOK WORKING CORRECTLY: "
+                      f"Webhook processed, lead saved (ID: {lead_id_generated}), "
+                      f"token valid ({access_token_generated[:8]}...)")
+        else:
+            details = f"❌ CRITICAL ISSUES FOUND: {'; '.join(issues_found)}"
+        
+        self.log_test("CRITICAL: Typeform Webhook Investigation", overall_success, details)
+        return overall_success
+
+    def test_admin_endpoints_for_leads(self):
+        """
+        Test admin endpoints to verify leads are accessible and properly formatted
+        """
+        print(f"\n👨‍💼 TESTING ADMIN ENDPOINTS FOR LEADS VISIBILITY")
+        
+        all_tests_passed = True
+        
+        # Test 1: /api/admin/leads endpoint
+        try:
+            response = requests.get(f"{self.api_url}/admin/leads", timeout=10)
+            success = response.status_code == 200
+            
+            if success:
+                data = response.json()
+                
+                # Validate response structure
+                if 'leads' in data and 'total' in data:
+                    leads = data['leads']
+                    total = data['total']
+                    
+                    print(f"   ✅ Admin leads endpoint working")
+                    print(f"   📊 Total leads: {total}")
+                    print(f"   📊 Leads returned: {len(leads)}")
+                    
+                    # Check lead structure
+                    if leads:
+                        sample_lead = leads[0]
+                        required_fields = ['id', 'name', 'email', 'phone', 'created_at', 'access_token']
+                        missing_fields = [field for field in required_fields if field not in sample_lead]
+                        
+                        if missing_fields:
+                            success = False
+                            details = f"Missing fields in lead data: {missing_fields}"
+                        else:
+                            details = f"Leads structure valid - Sample: {sample_lead['name']} ({sample_lead['email']})"
+                    else:
+                        details = "No leads found in database"
+                else:
+                    success = False
+                    details = f"Invalid response structure: {list(data.keys())}"
+            else:
+                details = f"HTTP {response.status_code}: {response.text[:200]}"
+                
+            self.log_test("Admin Leads Endpoint", success, details)
+            if not success:
+                all_tests_passed = False
+                
+        except Exception as e:
+            self.log_test("Admin Leads Endpoint", False, str(e))
+            all_tests_passed = False
+        
+        # Test 2: /api/admin/simulations endpoint
+        try:
+            response = requests.get(f"{self.api_url}/admin/simulations", timeout=10)
+            success = response.status_code == 200
+            
+            if success:
+                data = response.json()
+                
+                if 'simulations' in data and 'total' in data:
+                    simulations = data['simulations']
+                    total = data['total']
+                    
+                    print(f"   ✅ Admin simulations endpoint working")
+                    print(f"   📊 Total simulations: {total}")
+                    print(f"   📊 Simulations returned: {len(simulations)}")
+                    
+                    # Check how many simulations have lead_id
+                    simulations_with_leads = [s for s in simulations if s.get('lead_id')]
+                    simulations_without_leads = [s for s in simulations if not s.get('lead_id')]
+                    
+                    print(f"   📊 Simulations with lead_id: {len(simulations_with_leads)}")
+                    print(f"   📊 Simulations without lead_id: {len(simulations_without_leads)}")
+                    
+                    if simulations_without_leads:
+                        print(f"   ⚠️ {len(simulations_without_leads)} simulations are orphaned (no lead association)")
+                    
+                    details = f"Simulations: {total} total, {len(simulations_with_leads)} associated with leads"
+                else:
+                    success = False
+                    details = f"Invalid response structure: {list(data.keys())}"
+            else:
+                details = f"HTTP {response.status_code}: {response.text[:200]}"
+                
+            self.log_test("Admin Simulations Endpoint", success, details)
+            if not success:
+                all_tests_passed = False
+                
+        except Exception as e:
+            self.log_test("Admin Simulations Endpoint", False, str(e))
+            all_tests_passed = False
+        
+        return all_tests_passed
+
+    def test_save_lead_direct_endpoint(self):
+        """
+        Test the direct save-lead endpoint to ensure it works correctly
+        """
+        print(f"\n💾 TESTING DIRECT SAVE-LEAD ENDPOINT")
+        
+        # Create test lead data
+        test_lead = {
+            "name": f"Test User Direct {int(datetime.now().timestamp())}",
+            "email": f"test.direct.{int(datetime.now().timestamp())}@teste.com",
+            "phone": "+5511999888777",
+            "patrimonio": 50000.0,
+            "renda": 5000.0
+        }
+        
+        try:
+            response = requests.post(f"{self.api_url}/save-lead", 
+                                   json=test_lead, 
+                                   timeout=10)
+            success = response.status_code == 200
+            
+            if success:
+                data = response.json()
+                
+                if data.get('status') == 'success' and data.get('lead_id'):
+                    lead_id = data['lead_id']
+                    
+                    # Verify lead was saved by checking admin endpoint
+                    import time
+                    time.sleep(1)  # Wait for database write
+                    
+                    admin_response = requests.get(f"{self.api_url}/admin/leads", timeout=10)
+                    if admin_response.status_code == 200:
+                        admin_data = admin_response.json()
+                        saved_leads = admin_data.get('leads', [])
+                        
+                        # Find our lead
+                        our_lead = None
+                        for lead in saved_leads:
+                            if lead.get('id') == lead_id:
+                                our_lead = lead
+                                break
+                        
+                        if our_lead:
+                            details = f"Lead saved successfully - ID: {lead_id}, Name: {our_lead['name']}, Email: {our_lead['email']}"
+                        else:
+                            success = False
+                            details = f"Lead ID returned but not found in database: {lead_id}"
+                    else:
+                        success = False
+                        details = f"Could not verify lead was saved (admin endpoint failed)"
+                else:
+                    success = False
+                    details = f"Invalid response: {data}"
+            else:
+                details = f"HTTP {response.status_code}: {response.text[:200]}"
+                
+            self.log_test("Direct Save Lead Endpoint", success, details)
+            return success
+            
+        except Exception as e:
+            self.log_test("Direct Save Lead Endpoint", False, str(e))
+            return False
+
     def run_all_tests(self):
         """Run all backend tests"""
         print(f"\n🚀 Starting Consortium API Tests - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
