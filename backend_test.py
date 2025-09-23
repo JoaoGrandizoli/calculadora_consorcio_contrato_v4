@@ -2646,9 +2646,349 @@ class ConsortiumAPITester:
             self.log_test("Typeform Missing Data Validation", False, str(e))
             return False
 
+    def test_lead_simulation_association_critical(self):
+        """
+        CRITICAL TEST: Test the main issue - simulations not being associated with leads
+        
+        This test focuses on the specific problem reported:
+        - 19 leads captured and 58 simulations, but simulations are NOT being associated to correct leads
+        - Suspect access_token is not being sent from frontend or is being cleared/invalidated
+        
+        Test flow:
+        1. Create a lead via Typeform webhook
+        2. Get the access_token from the response
+        3. Use that token to make a simulation
+        4. Verify the simulation is associated with the lead
+        5. Check MongoDB data to see lead_id association
+        """
+        print("\n🔍 TESTING CRITICAL ISSUE: Lead-Simulation Association")
+        
+        # Step 1: Create a lead via Typeform webhook
+        typeform_payload = {
+            "event_id": "test_event_123",
+            "event_type": "form_response",
+            "form_response": {
+                "form_id": "dN3w60PD",
+                "token": "test_token_123",
+                "submitted_at": "2024-01-15T10:30:00Z",
+                "answers": [
+                    {
+                        "type": "short_text",
+                        "field": {"id": "field_1", "ref": "nome", "type": "short_text"},
+                        "text": "João"
+                    },
+                    {
+                        "type": "short_text", 
+                        "field": {"id": "field_2", "ref": "sobrenome", "type": "short_text"},
+                        "text": "Silva"
+                    },
+                    {
+                        "type": "email",
+                        "field": {"id": "field_3", "ref": "email", "type": "email"},
+                        "email": "joao.silva@test.com"
+                    },
+                    {
+                        "type": "phone_number",
+                        "field": {"id": "field_4", "ref": "telefone", "type": "phone_number"},
+                        "phone_number": "+5511999887766"
+                    }
+                ]
+            }
+        }
+        
+        try:
+            # Create lead via webhook
+            webhook_response = requests.post(f"{self.api_url}/typeform-webhook", 
+                                           json=typeform_payload, 
+                                           timeout=10)
+            
+            if webhook_response.status_code != 200:
+                self.log_test("Lead-Simulation Association - Webhook Creation", False, 
+                            f"Webhook failed: {webhook_response.status_code} - {webhook_response.text[:200]}")
+                return False
+            
+            webhook_data = webhook_response.json()
+            if webhook_data.get('status') != 'success':
+                self.log_test("Lead-Simulation Association - Webhook Creation", False, 
+                            f"Webhook unsuccessful: {webhook_data}")
+                return False
+            
+            access_token = webhook_data.get('access_token')
+            lead_id = webhook_data.get('lead_id')
+            
+            if not access_token or not lead_id:
+                self.log_test("Lead-Simulation Association - Webhook Creation", False, 
+                            f"Missing access_token or lead_id: token={access_token}, lead_id={lead_id}")
+                return False
+            
+            print(f"   ✅ Lead created: ID={lead_id}, Token={access_token}")
+            
+            # Step 2: Verify access token works
+            check_response = requests.get(f"{self.api_url}/check-access/{access_token}", timeout=10)
+            if check_response.status_code != 200:
+                self.log_test("Lead-Simulation Association - Token Check", False, 
+                            f"Token check failed: {check_response.status_code}")
+                return False
+            
+            check_data = check_response.json()
+            if not check_data.get('valid'):
+                self.log_test("Lead-Simulation Association - Token Check", False, 
+                            f"Token invalid: {check_data}")
+                return False
+            
+            print(f"   ✅ Token validated: {check_data}")
+            
+            # Step 3: Make simulation WITH access token in Authorization header
+            simulation_params = {
+                "valor_carta": 100000,
+                "prazo_meses": 120,
+                "taxa_admin": 0.21,
+                "fundo_reserva": 0.03,
+                "mes_contemplacao": 17,
+                "lance_livre_perc": 0.10,
+                "taxa_reajuste_anual": 0.05
+            }
+            
+            headers = {
+                "Authorization": f"Bearer {access_token}",
+                "Content-Type": "application/json"
+            }
+            
+            print(f"   🔑 Making simulation with Authorization header: Bearer {access_token}")
+            
+            sim_response = requests.post(f"{self.api_url}/simular", 
+                                       json=simulation_params,
+                                       headers=headers,
+                                       timeout=30)
+            
+            if sim_response.status_code != 200:
+                self.log_test("Lead-Simulation Association - Simulation", False, 
+                            f"Simulation failed: {sim_response.status_code} - {sim_response.text[:200]}")
+                return False
+            
+            sim_data = sim_response.json()
+            if sim_data.get('erro'):
+                self.log_test("Lead-Simulation Association - Simulation", False, 
+                            f"Simulation error: {sim_data.get('mensagem')}")
+                return False
+            
+            print(f"   ✅ Simulation completed successfully")
+            
+            # Step 4: Check admin endpoints to verify association
+            admin_response = requests.get(f"{self.api_url}/admin/dados-completos", timeout=10)
+            if admin_response.status_code != 200:
+                self.log_test("Lead-Simulation Association - Admin Check", False, 
+                            f"Admin endpoint failed: {admin_response.status_code}")
+                return False
+            
+            admin_data = admin_response.json()
+            
+            # Find our lead and check if it has simulations
+            our_lead = None
+            for lead_data in admin_data.get('leads_com_simulacoes', []):
+                if lead_data['lead']['id'] == lead_id:
+                    our_lead = lead_data
+                    break
+            
+            if not our_lead:
+                self.log_test("Lead-Simulation Association - Association Check", False, 
+                            f"Lead {lead_id} not found in admin data")
+                return False
+            
+            simulation_count = our_lead['total_simulacoes']
+            if simulation_count == 0:
+                self.log_test("Lead-Simulation Association - Association Check", False, 
+                            f"Lead {lead_id} has 0 simulations associated (should have 1)")
+                return False
+            
+            print(f"   ✅ Lead has {simulation_count} simulation(s) associated")
+            
+            # Step 5: Check for orphaned simulations (without lead_id)
+            orphaned_simulations = admin_data.get('simulacoes_sem_cadastro', [])
+            total_simulations = admin_data.get('resumo', {}).get('total_simulacoes', 0)
+            total_leads = admin_data.get('resumo', {}).get('total_leads', 0)
+            
+            details = (f"✅ ASSOCIATION WORKING: Lead {lead_id} has {simulation_count} simulation(s). "
+                      f"Total: {total_leads} leads, {total_simulations} simulations, "
+                      f"{len(orphaned_simulations)} orphaned simulations")
+            
+            self.log_test("Lead-Simulation Association - CRITICAL TEST", True, details)
+            return True
+            
+        except Exception as e:
+            self.log_test("Lead-Simulation Association - CRITICAL TEST", False, str(e))
+            return False
+
+    def test_current_database_state(self):
+        """
+        Check current database state to understand the reported issue:
+        - 19 leads captured and 58 simulations
+        - How many simulations have lead_id null vs filled
+        """
+        try:
+            admin_response = requests.get(f"{self.api_url}/admin/dados-completos", timeout=10)
+            
+            if admin_response.status_code != 200:
+                self.log_test("Database State Check", False, 
+                            f"Admin endpoint failed: {admin_response.status_code}")
+                return False
+            
+            admin_data = admin_response.json()
+            resumo = admin_data.get('resumo', {})
+            
+            total_leads = resumo.get('total_leads', 0)
+            total_simulations = resumo.get('total_simulacoes', 0)
+            orphaned_simulations = resumo.get('simulacoes_sem_cadastro', 0)
+            leads_that_simulated = resumo.get('leads_que_simularam', 0)
+            
+            # Calculate association rate
+            associated_simulations = total_simulations - orphaned_simulations
+            association_rate = (associated_simulations / total_simulations * 100) if total_simulations > 0 else 0
+            
+            # Check if this matches the reported issue
+            issue_matches = (total_leads == 19 and total_simulations == 58)
+            
+            details = (f"Current DB state: {total_leads} leads, {total_simulations} simulations, "
+                      f"{orphaned_simulations} orphaned ({association_rate:.1f}% associated). "
+                      f"Leads that simulated: {leads_that_simulated}. "
+                      f"Matches reported issue (19 leads, 58 sims): {issue_matches}")
+            
+            # Consider it a problem if more than 50% of simulations are orphaned
+            success = association_rate >= 50.0
+            
+            self.log_test("Database State Check", success, details)
+            return success
+            
+        except Exception as e:
+            self.log_test("Database State Check", False, str(e))
+            return False
+
+    def test_simulation_without_token(self):
+        """
+        Test simulation without access token to see if it creates orphaned simulation
+        """
+        try:
+            simulation_params = {
+                "valor_carta": 100000,
+                "prazo_meses": 120,
+                "taxa_admin": 0.21,
+                "fundo_reserva": 0.03,
+                "mes_contemplacao": 17,
+                "lance_livre_perc": 0.10,
+                "taxa_reajuste_anual": 0.05
+            }
+            
+            # Make simulation WITHOUT Authorization header
+            sim_response = requests.post(f"{self.api_url}/simular", 
+                                       json=simulation_params,
+                                       timeout=30)
+            
+            if sim_response.status_code != 200:
+                self.log_test("Simulation Without Token", False, 
+                            f"Simulation failed: {sim_response.status_code}")
+                return False
+            
+            sim_data = sim_response.json()
+            if sim_data.get('erro'):
+                self.log_test("Simulation Without Token", False, 
+                            f"Simulation error: {sim_data.get('mensagem')}")
+                return False
+            
+            # This should create an orphaned simulation (lead_id = null)
+            details = "✅ Simulation without token completed (should create orphaned simulation)"
+            self.log_test("Simulation Without Token", True, details)
+            return True
+            
+        except Exception as e:
+            self.log_test("Simulation Without Token", False, str(e))
+            return False
+
+    def test_backend_logs_for_token_reception(self):
+        """
+        Check backend logs to see if access_token is being received and processed
+        """
+        try:
+            # Make a simulation with token and check if it's logged
+            # First create a lead
+            typeform_payload = {
+                "event_id": "log_test_456",
+                "event_type": "form_response", 
+                "form_response": {
+                    "answers": [
+                        {"type": "short_text", "field": {"type": "short_text"}, "text": "Test"},
+                        {"type": "short_text", "field": {"type": "short_text"}, "text": "User"},
+                        {"type": "email", "field": {"type": "email"}, "email": "test.logs@example.com"},
+                        {"type": "phone_number", "field": {"type": "phone_number"}, "phone_number": "+5511888777666"}
+                    ]
+                }
+            }
+            
+            webhook_response = requests.post(f"{self.api_url}/typeform-webhook", 
+                                           json=typeform_payload, timeout=10)
+            
+            if webhook_response.status_code == 200:
+                webhook_data = webhook_response.json()
+                access_token = webhook_data.get('access_token')
+                
+                if access_token:
+                    # Make simulation with this token
+                    headers = {"Authorization": f"Bearer {access_token}"}
+                    simulation_params = {
+                        "valor_carta": 100000,
+                        "prazo_meses": 120,
+                        "taxa_admin": 0.21,
+                        "fundo_reserva": 0.03,
+                        "mes_contemplacao": 17,
+                        "lance_livre_perc": 0.10,
+                        "taxa_reajuste_anual": 0.05
+                    }
+                    
+                    requests.post(f"{self.api_url}/simular", 
+                                json=simulation_params, 
+                                headers=headers, 
+                                timeout=30)
+                    
+                    # Check logs for token processing
+                    import subprocess
+                    try:
+                        log_output = subprocess.check_output(
+                            ["tail", "-n", "20", "/var/log/supervisor/backend.out.log"], 
+                            stderr=subprocess.STDOUT, 
+                            universal_newlines=True
+                        )
+                        
+                        # Look for token-related log entries
+                        token_logged = access_token in log_output
+                        auth_logged = "AUTHORIZATION HEADER" in log_output
+                        token_extracted = "ACCESS_TOKEN EXTRAÍDO" in log_output
+                        lead_found = "Lead encontrado" in log_output
+                        
+                        details = (f"Token in logs: {token_logged}, "
+                                 f"Auth header logged: {auth_logged}, "
+                                 f"Token extracted: {token_extracted}, "
+                                 f"Lead found: {lead_found}")
+                        
+                        success = token_logged or auth_logged or token_extracted
+                        
+                    except subprocess.CalledProcessError:
+                        details = "Could not read backend logs"
+                        success = False
+                else:
+                    details = "No access_token received from webhook"
+                    success = False
+            else:
+                details = f"Webhook failed: {webhook_response.status_code}"
+                success = False
+            
+            self.log_test("Backend Logs Token Reception", success, details)
+            return success
+            
+        except Exception as e:
+            self.log_test("Backend Logs Token Reception", False, str(e))
+            return False
+
     def run_all_tests(self):
         """Run all backend tests"""
-    def run_all_tests(self):
         """Run all backend tests"""
         print("🚀 Starting Backend API Tests for Consortium Simulation System")
         print(f"📍 Testing endpoint: {self.base_url}")
