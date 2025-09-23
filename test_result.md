@@ -228,6 +228,21 @@ backend:
         - agent: "testing"
         - comment: "✅ ENDPOINTS ADMIN FUNCIONANDO: 1) /api/admin/leads retorna lista de leads com total correto, 2) /api/admin/simulations retorna lista de simulações com total correto, 3) Sem problemas de serialização ObjectId (campo _id excluído corretamente), 4) Estrutura de resposta válida com arrays e contadores"
 
+  - task: "Investigar problema de associação lead-simulação"
+    implemented: true
+    working: false
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+        - agent: "testing"
+        - comment: "🔥 PROBLEMA CRÍTICO IDENTIFICADO: Backend funciona corretamente quando Authorization header é enviado, mas frontend NÃO está enviando o header. Estado atual: 19 leads, 58 simulações, 52 órfãs (10.3% associadas). Logs confirmam que maioria das simulações recebe 'AUTHORIZATION HEADER: '''. Quando token é enviado corretamente, associação funciona. SOLUÇÃO: Frontend deve enviar Authorization: Bearer {access_token} nas chamadas para /api/simular."
+        - working: false
+        - agent: "testing"
+        - comment: "❌ PROBLEMA CONFIRMADO: Frontend não está enviando Authorization header. Backend está funcionando corretamente - quando header é enviado, lead é encontrado e simulação associada. Problema está no frontend que precisa implementar envio do token nas simulações."
+
 frontend:
   - task: "Configurar callbacks do Typeform para submissão"
     implemented: true
