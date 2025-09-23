@@ -18,45 +18,54 @@ const LeadCapture = ({ onAccessGranted }) => {
     console.log('Typeform submetido:', data);
     
     try {
-      // Aguardar um pouco para o webhook processar
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      // NOVA ESTRATÉGIA: Aguardar webhook processar e buscar pelo email
+      await new Promise(resolve => setTimeout(resolve, 4000)); // Aguardar 4 segundos
       
-      // Buscar o lead mais recente (que deve ser o que acabou de ser criado pelo webhook)
+      // Buscar todos os leads
       const response = await fetch(`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001'}/api/admin/leads`);
       const data_leads = await response.json();
       
       if (data_leads.leads && data_leads.leads.length > 0) {
-        // Pegar o lead mais recente (primeiro da lista, assumindo que está ordenado por data)
+        // Buscar o lead mais recente (primeiro da lista - assumindo ordenação por data)
         const latestLead = data_leads.leads[0];
-        const correctToken = latestLead.access_token;
         
-        console.log('Token correto do webhook:', correctToken);
-        
-        // Usar o token correto do webhook
-        localStorage.setItem('access_token', correctToken);
-        localStorage.setItem('typeform_submission', JSON.stringify({
-          formId: data.form_id || typeformId,
-          responseId: data.response_id,
-          timestamp: new Date().toISOString(),
-          leadId: latestLead.id
-        }));
-        
-        // Conceder acesso
-        onAccessGranted(correctToken);
-      } else {
-        // Fallback: usar token temporário
-        const tempToken = 'temp-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-        localStorage.setItem('access_token', tempToken);
-        onAccessGranted(tempToken);
+        // Verificar se é um lead válido (não é teste e tem dados reais)
+        if (latestLead.access_token && 
+            !latestLead.name.includes('João Silva') && 
+            !latestLead.name.includes('Teste') &&
+            latestLead.email.includes('@')) {
+          
+          console.log('✅ Lead encontrado:', latestLead);
+          console.log('🔑 Token correto:', latestLead.access_token);
+          
+          // Usar o token correto do webhook
+          localStorage.setItem('access_token', latestLead.access_token);
+          localStorage.setItem('lead_data', JSON.stringify({
+            leadId: latestLead.id,
+            name: latestLead.name,
+            email: latestLead.email,
+            token: latestLead.access_token
+          }));
+          
+          // Conceder acesso
+          onAccessGranted(latestLead.access_token);
+          setShowForm(false);
+          return;
+        }
       }
       
+      // Fallback: usar token temporário se não encontrar
+      console.log('⚠️ Usando fallback token');
+      const tempToken = 'fallback-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+      localStorage.setItem('access_token', tempToken);
+      onAccessGranted(tempToken);
       setShowForm(false);
       
     } catch (error) {
-      console.error('Erro ao sincronizar token:', error);
+      console.error('❌ Erro ao sincronizar token:', error);
       
       // Fallback em caso de erro
-      const tempToken = 'temp-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+      const tempToken = 'error-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
       localStorage.setItem('access_token', tempToken);
       onAccessGranted(tempToken);
       setShowForm(false);
