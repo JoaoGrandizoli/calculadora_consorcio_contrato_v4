@@ -701,6 +701,80 @@ def extract_lead_data_from_typeform(answers: list) -> LeadData:
     
     return LeadData(**{k: v for k, v in extracted_data.items() if v is not None})
 
+@api_router.get("/admin/saldo-devedor-detalhes")
+async def get_saldo_devedor_detalhes():
+    """Endpoint para visualizar detalhes do saldo devedor (admin)"""
+    try:
+        # Simular com parâmetros padrão para mostrar a lógica
+        parametros = ParametrosConsorcio(
+            valor_carta=100000,
+            prazo_meses=120,
+            taxa_admin=0.21,
+            fundo_reserva=0.03,
+            mes_contemplacao=17,
+            lance_livre_perc=0.10,
+            taxa_reajuste_anual=0.05
+        )
+        
+        simulador = SimuladorConsorcio(parametros)
+        resultado = simulador.simular_cenario_completo()
+        
+        if resultado['erro']:
+            return {"erro": True, "mensagem": resultado.get('mensagem', 'Erro na simulação')}
+        
+        # Extrair informações específicas do saldo devedor
+        detalhamento = resultado['detalhamento']
+        
+        # Pontos chave para análise
+        pontos_chave = []
+        meses_importantes = [1, 12, 13, 24, 25, 36, 37, 60, 119, 120]
+        
+        for mes in meses_importantes:
+            if mes <= len(detalhamento):
+                item = detalhamento[mes-1]
+                ponto = {
+                    "mes": mes,
+                    "ano": item['ano'],
+                    "saldo_devedor": item['saldo_devedor'],
+                    "parcela_corrigida": item['parcela_corrigida'],
+                    "data": item['data'],
+                    "observacao": ""
+                }
+                
+                if mes == 1:
+                    ponto["observacao"] = "Saldo inicial após primeira parcela"
+                elif mes in [12, 24, 36, 48, 60]:
+                    ponto["observacao"] = "Final do ano"
+                elif mes in [13, 25, 37]:
+                    ponto["observacao"] = "Início novo ano - saldo corrigido"
+                elif mes == 120:
+                    ponto["observacao"] = "Saldo final (deve ser zero)"
+                
+                pontos_chave.append(ponto)
+        
+        # Cálculos de validação
+        base_contrato = parametros.valor_carta * (1 + parametros.taxa_admin + parametros.fundo_reserva)
+        
+        return {
+            "erro": False,
+            "logica_implementada": {
+                "saldo_inicial": base_contrato,
+                "correcao_anual": parametros.taxa_reajuste_anual,
+                "descricao": "Saldo inicial = Carta + Taxas. Correção anual no início de cada ano. Abatimento mensal da parcela."
+            },
+            "pontos_chave": pontos_chave,
+            "resumo": {
+                "saldo_inicial_teorico": base_contrato,
+                "saldo_inicial_pos_primeira_parcela": pontos_chave[0]["saldo_devedor"] if pontos_chave else 0,
+                "saldo_final": pontos_chave[-1]["saldo_devedor"] if pontos_chave else 0,
+                "total_meses": len(detalhamento)
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"Erro ao buscar detalhes do saldo devedor: {e}")
+        raise HTTPException(status_code=500, detail="Erro interno do servidor")
+
 @api_router.get("/admin/leads")
 async def get_leads():
     """Endpoint para visualizar leads capturados (admin)"""
