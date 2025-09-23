@@ -574,9 +574,15 @@ async def handle_typeform_webhook(request: Request):
         # Parse do payload
         payload = json.loads(body)
         
+        # DEBUG: Log do payload completo para entender o formato
+        logger.info(f"TYPEFORM PAYLOAD RECEBIDO: {json.dumps(payload, indent=2)}")
+        
         # Extrair dados do formulário
         form_response = payload.get("form_response", {})
         answers = form_response.get("answers", [])
+        
+        # DEBUG: Log das answers para debug
+        logger.info(f"TYPEFORM ANSWERS: {json.dumps(answers, indent=2)}")
         
         # Mapear respostas para dados do lead
         lead_data = extract_lead_data_from_typeform(answers)
@@ -588,6 +594,8 @@ async def handle_typeform_webhook(request: Request):
         # Salvar no MongoDB
         await db.leads.insert_one(lead_data.dict())
         
+        logger.info(f"LEAD SALVO COM SUCESSO: {lead_data.dict()}")
+        
         return {
             "status": "success", 
             "access_token": access_token,
@@ -596,7 +604,10 @@ async def handle_typeform_webhook(request: Request):
         
     except Exception as e:
         logger.error(f"Erro no webhook do Typeform: {e}")
-        raise HTTPException(status_code=500, detail="Erro interno do servidor")
+        # DEBUG: Log do erro detalhado
+        import traceback
+        logger.error(f"TRACEBACK COMPLETO: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Erro: {str(e)}")
 
 @api_router.post("/save-simulation")
 async def save_simulation_input(
