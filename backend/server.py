@@ -708,7 +708,7 @@ def extract_lead_data_from_typeform(answers: list) -> LeadData:
 async def get_leads():
     """Endpoint para visualizar leads capturados (admin)"""
     try:
-        leads = await db.leads.find().to_list(length=100)
+        leads = await db.leads.find({}, {"_id": 0}).to_list(length=100)  # Excluir _id ObjectId
         return {"leads": leads, "total": len(leads)}
     except Exception as e:
         logger.error(f"Erro ao buscar leads: {e}")
@@ -718,7 +718,7 @@ async def get_leads():
 async def get_simulations():
     """Endpoint para visualizar simulações realizadas (admin)"""
     try:
-        simulations = await db.simulation_inputs.find().to_list(length=100)
+        simulations = await db.simulation_inputs.find({}, {"_id": 0}).to_list(length=100)  # Excluir _id ObjectId
         return {"simulations": simulations, "total": len(simulations)}
     except Exception as e:
         logger.error(f"Erro ao buscar simulações: {e}")
