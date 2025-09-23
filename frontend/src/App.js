@@ -19,6 +19,7 @@ import {
   Legend,
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
+import LeadCapture from './components/LeadCapture';
 import './App.css';
 
 ChartJS.register(
