@@ -51,7 +51,21 @@ const AdminPanel = () => {
   }, []);
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleString('pt-BR');
+    if (!dateString) return 'N/A';
+    
+    // Converter para timezone de Brasília (UTC-3)
+    const date = new Date(dateString);
+    const brasiliaDate = new Date(date.getTime() - (3 * 60 * 60 * 1000)); // UTC-3
+    
+    return brasiliaDate.toLocaleString('pt-BR', {
+      timeZone: 'America/Sao_Paulo',
+      day: '2-digit',
+      month: '2-digit', 
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
   };
 
   const formatCurrency = (value) => {
