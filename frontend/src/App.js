@@ -213,21 +213,47 @@ function App() {
       {/* Header */}
       <div className="bg-primary-accent text-light border-b border-moonstone">
         <div className="container mx-auto px-6 py-6">
-          <div className="flex items-center gap-3">
-            <Calculator className="h-8 w-8 text-accent-warm" />
-            <div>
-              <h1 className="text-2xl font-bold">Simulador de Consórcio</h1>
-              <p className="text-neutral-light opacity-90">Análise completa de lance livre e fluxos de caixa</p>
+          <div className="flex items-center gap-3 justify-between">
+            <div className="flex items-center gap-3">
+              <Calculator className="h-8 w-8 text-accent-warm" />
+              <div>
+                <h1 className="text-2xl font-bold">Simulador de Consórcio</h1>
+                <p className="text-neutral-light opacity-90">Análise completa de lance livre e fluxos de caixa</p>
+              </div>
             </div>
+            
+            {hasAccess && leadInfo && (
+              <div className="text-right">
+                <p className="text-sm text-accent-warm">Bem-vindo, {leadInfo.name}</p>
+                <button 
+                  onClick={() => {
+                    localStorage.removeItem('access_token');
+                    setHasAccess(false);
+                    setAccessToken(null);
+                    setLeadInfo(null);
+                  }}
+                  className="text-xs text-neutral-light opacity-75 hover:opacity-100"
+                >
+                  Sair
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 md:px-6 py-4 md:py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 md:gap-8">
-          {/* Painel de Parâmetros */}
-          <div className="lg:col-span-2">
-            <Card className="border-moonstone shadow-sm">
+      {!hasAccess ? (
+        /* Mostrar tela de Lead Capture */
+        <div className="container mx-auto px-4 md:px-6 py-8">
+          <LeadCapture onAccessGranted={handleAccessGranted} />
+        </div>
+      ) : (
+        /* Mostrar Simulador */
+        <div className="container mx-auto px-4 md:px-6 py-4 md:py-8">
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 md:gap-8">
+            {/* Painel de Parâmetros */}
+            <div className="lg:col-span-2">
+              <Card className="border-moonstone shadow-sm">
               <CardHeader className="bg-neutral-light border-b border-moonstone">
                 <CardTitle className="text-primary-accent flex items-center gap-2 text-lg md:text-xl">
                   <TrendingUp className="h-5 w-5" />
