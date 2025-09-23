@@ -259,6 +259,9 @@ function App() {
         <div className="container mx-auto px-4 md:px-6 py-8">
           <LeadCapture onAccessGranted={handleAccessGranted} />
         </div>
+      ) : showAdmin ? (
+        /* Mostrar Painel Administrativo */
+        <AdminPanel />
       ) : (
         /* Mostrar Simulador */
         <div className="container mx-auto px-4 md:px-6 py-4 md:py-8">
