@@ -2989,10 +2989,91 @@ class ConsortiumAPITester:
 
     def run_all_tests(self):
         """Run all backend tests"""
-        """Run all backend tests"""
-        print("🚀 Starting Backend API Tests for Consortium Simulation System")
-        print(f"📍 Testing endpoint: {self.base_url}")
-        print("=" * 70)
+        print(f"\n🚀 Starting Consortium API Tests - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        print(f"🌐 Testing API at: {self.api_url}")
+        print("=" * 80)
+        
+        # CRITICAL ISSUE TESTS FIRST - Lead-Simulation Association Problem
+        print("\n🔥 CRITICAL ISSUE TESTS - Lead-Simulation Association")
+        self.test_current_database_state()
+        self.test_lead_simulation_association_critical()
+        self.test_simulation_without_token()
+        self.test_backend_logs_for_token_reception()
+        
+        # Core functionality tests
+        print("\n📋 CORE FUNCTIONALITY TESTS")
+        self.test_root_endpoint()
+        success, default_params = self.test_parametros_padrao()
+        
+        if success:
+            self.test_simulacao_basica(default_params)
+        else:
+            self.test_simulacao_basica()  # Use hardcoded defaults
+            
+        self.test_validacao_parametros()
+        self.test_detailed_calculations()
+        
+        # TYPEFORM INTEGRATION TESTS (HIGH PRIORITY)
+        print("\n📝 TYPEFORM INTEGRATION TESTS")
+        self.test_typeform_webhook()
+        self.test_typeform_webhook_data_extraction()
+        self.test_typeform_webhook_missing_data()
+        self.test_save_lead_direct()
+        self.test_check_access_token()
+        self.test_check_invalid_access_token()
+        self.test_admin_leads_endpoint()
+        self.test_admin_simulations_endpoint()
+        
+        # Lance livre functionality tests
+        print("\n🎯 LANCE LIVRE FUNCTIONALITY TESTS")
+        self.test_lance_livre_zero()
+        self.test_lance_livre_positivo()
+        self.test_calcular_probabilidades_endpoint()
+        
+        # Bug fix verification tests
+        print("\n🐛 BUG FIX VERIFICATION TESTS")
+        self.test_valor_carta_corrigido_bug_fix()
+        self.test_saldo_devedor_pos_contemplacao()
+        
+        # VPL functionality tests
+        print("\n📊 VPL FUNCTIONALITY TESTS")
+        self.test_vpl_when_cet_converges()
+        self.test_vpl_when_cet_not_converges()
+        self.test_vpl_calculation_accuracy()
+        self.test_vpl_always_calculated()
+        self.test_negative_cet_detection()
+        self.test_negative_cet_vs_non_convergence_comparison()
+        
+        # PDF generation tests
+        print("\n📄 PDF GENERATION TESTS")
+        self.test_pdf_generation()
+        self.test_pdf_with_corrected_card_values()
+        self.test_pdf_without_cashflow_graph()
+        
+        # Final summary
+        print("\n" + "=" * 80)
+        print(f"📊 TEST SUMMARY")
+        print(f"✅ Passed: {self.tests_passed}/{self.tests_run}")
+        print(f"❌ Failed: {self.tests_run - self.tests_passed}/{self.tests_run}")
+        
+        if self.errors:
+            print(f"\n🔍 FAILED TESTS:")
+            for error in self.errors:
+                print(f"   • {error}")
+        
+        success_rate = (self.tests_passed / self.tests_run * 100) if self.tests_run > 0 else 0
+        print(f"\n🎯 Success Rate: {success_rate:.1f}%")
+        
+        if success_rate >= 90:
+            print("🎉 EXCELLENT! All critical functionality working properly.")
+        elif success_rate >= 75:
+            print("✅ GOOD! Most functionality working, minor issues detected.")
+        elif success_rate >= 50:
+            print("⚠️  MODERATE! Several issues need attention.")
+        else:
+            print("🚨 CRITICAL! Major issues detected, immediate attention required.")
+        
+        return success_rate >= 75
         
         # Core functionality tests
         self.test_root_endpoint()
