@@ -845,6 +845,8 @@ async def get_simulations():
     except Exception as e:
         logger.error(f"Erro ao buscar simulações: {e}")
         raise HTTPException(status_code=500, detail="Erro interno do servidor")
+
+@api_router.get("/parametros-padrao")
 async def get_parametros_padrao():
     """Retorna os parâmetros padrão para simulação."""
     return ParametrosConsorcio()
