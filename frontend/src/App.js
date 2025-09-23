@@ -43,6 +43,9 @@ function App() {
   const [leadInfo, setLeadInfo] = useState(null);
   const [showAdmin, setShowAdmin] = useState(false);
 
+  // Verificar se é acesso direto ao admin via URL
+  const isAdminAccess = window.location.pathname === '/admin' || window.location.hash === '#admin';
+
   const [parametros, setParametros] = useState({
     valor_carta: 100000,
     prazo_meses: 120,
