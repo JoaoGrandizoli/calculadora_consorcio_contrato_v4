@@ -20,6 +20,7 @@ import {
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import LeadCapture from './components/LeadCapture';
+import AdminPanel from './components/AdminPanel';
 import './App.css';
 
 ChartJS.register(
