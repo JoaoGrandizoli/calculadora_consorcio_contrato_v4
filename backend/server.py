@@ -701,6 +701,44 @@ def extract_lead_data_from_typeform(answers: list) -> LeadData:
     
     return LeadData(**{k: v for k, v in extracted_data.items() if v is not None})
 
+@api_router.get("/admin/dados-completos")
+async def get_dados_completos():
+    """Endpoint para visualizar leads + simulações associadas (admin)"""
+    try:
+        # Buscar leads e simulações
+        leads = await db.leads.find({}, {"_id": 0}).to_list(length=100)
+        simulations = await db.simulation_inputs.find({}, {"_id": 0}).to_list(length=100)
+        
+        # Criar associações
+        dados_completos = []
+        
+        # Para cada lead, buscar simulações associadas
+        for lead in leads:
+            lead_data = {
+                "lead": lead,
+                "simulacoes": [sim for sim in simulations if sim.get('lead_id') == lead['id']],
+                "total_simulacoes": len([sim for sim in simulations if sim.get('lead_id') == lead['id']])
+            }
+            dados_completos.append(lead_data)
+        
+        # Simulações sem lead associado (usuários que pularam o cadastro)
+        simulacoes_sem_lead = [sim for sim in simulations if not sim.get('lead_id')]
+        
+        return {
+            "leads_com_simulacoes": dados_completos,
+            "simulacoes_sem_cadastro": simulacoes_sem_lead,
+            "resumo": {
+                "total_leads": len(leads),
+                "total_simulacoes": len(simulations),
+                "simulacoes_sem_cadastro": len(simulacoes_sem_lead),
+                "leads_que_simularam": len([l for l in dados_completos if l['total_simulacoes'] > 0])
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"Erro ao buscar dados completos: {e}")
+        raise HTTPException(status_code=500, detail="Erro interno do servidor")
+
 @api_router.get("/admin/saldo-devedor-detalhes")
 async def get_saldo_devedor_detalhes():
     """Endpoint para visualizar detalhes do saldo devedor (admin)"""
