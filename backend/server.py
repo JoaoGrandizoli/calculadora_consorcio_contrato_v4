@@ -1,11 +1,11 @@
-from fastapi import FastAPI, APIRouter, HTTPException
+from fastapi import FastAPI, APIRouter, HTTPException, Request, Depends
 from fastapi.responses import FileResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 import os
 import logging
 from pathlib import Path
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr, Field
 from typing import List, Dict, Optional
 import numpy as np
 from scipy.optimize import fsolve
@@ -22,6 +22,12 @@ from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
 import matplotlib.pyplot as plt
 import matplotlib
 matplotlib.use('Agg')  # Use non-interactive backend
+from motor.motor_asyncio import AsyncIOMotorClient
+import uuid
+import hmac
+import hashlib
+import base64
+import json
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
