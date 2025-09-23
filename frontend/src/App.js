@@ -79,19 +79,31 @@ function App() {
     
     const storedToken = localStorage.getItem('access_token');
     const adminMode = localStorage.getItem('admin_mode') === 'true';
+    const adminAuth = localStorage.getItem('admin_authenticated') === 'true';
     
-    console.log('🔧 Estado inicial:', { storedToken: !!storedToken, adminMode, isAdminAccess });
+    console.log('🔧 Estado inicial:', { storedToken: !!storedToken, adminMode, adminAuth, isAdminAccess });
     
     if (storedToken) {
-      // 🔧 FIX: Sincronizar accessToken do state imediatamente
       setAccessToken(storedToken);
       checkAccessToken(storedToken);
     }
     
-    // 🔧 FIX: Restaurar estado admin persistido ou detectar novo acesso
-    if (isAdminAccess || adminMode) {
-      console.log('🔧 Ativando modo admin');
-      localStorage.setItem('admin_mode', 'true');
+    // 🔐 SEGURANÇA: Verificar autenticação admin
+    if (isAdminAccess) {
+      if (adminAuth) {
+        console.log('🔐 Admin já autenticado - ativando modo admin');
+        setAdminAuthenticated(true);
+        setShowAdmin(true);
+        setHasAccess(true);
+        localStorage.setItem('admin_mode', 'true');
+      } else {
+        console.log('🔐 Acesso admin detectado - solicitando autenticação');
+        setHasAccess(true); // Permite mostrar tela de login
+      }
+    } else if (adminMode && adminAuth) {
+      // Restaurar estado admin se estava ativo
+      console.log('🔐 Restaurando sessão admin autenticada');
+      setAdminAuthenticated(true);
       setShowAdmin(true);
       setHasAccess(true);
     }
