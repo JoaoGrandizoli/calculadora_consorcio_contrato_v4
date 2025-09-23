@@ -702,6 +702,9 @@ def extract_lead_data_from_typeform(answers: list) -> LeadData:
     # DEBUG: Log para entender a estrutura
     logger.info(f"PROCESSANDO {len(answers)} ANSWERS")
     
+    # Coletar todos os campos de texto primeiro
+    text_fields = []
+    
     for i, answer in enumerate(answers):
         logger.info(f"ANSWER {i}: {json.dumps(answer, indent=2)}")
         
@@ -709,29 +712,23 @@ def extract_lead_data_from_typeform(answers: list) -> LeadData:
         field_type = answer.get("type", "")
         field_ref = field.get("ref", "")
         
-        # Tentar extrair texto de diferentes campos possíveis
-        text_value = (
-            answer.get("text") or 
-            answer.get("choice", {}).get("label") if answer.get("choice") else None or
-            str(answer.get("number")) if answer.get("number") is not None else None
-        )
-        
-        email_value = answer.get("email")
-        phone_value = answer.get("phone_number")
+        # Extrair valores
+        text_value = answer.get("text", "").strip() if answer.get("text") else None
+        email_value = answer.get("email", "").strip() if answer.get("email") else None
+        phone_value = answer.get("phone_number", "").strip() if answer.get("phone_number") else None
         
         logger.info(f"FIELD TYPE: {field_type}, REF: {field_ref}")
         logger.info(f"VALUES - text: {text_value}, email: {email_value}, phone: {phone_value}")
         
-        # Mapear por tipo de campo OU por posição
-        if field_type in ["short_text", "long_text"] and text_value and not extracted_data["name"]:
-            extracted_data["name"] = text_value.strip()
-            logger.info(f"NOME EXTRAÍDO: {extracted_data['name']}")
-        elif field_type == "email" and email_value:
-            extracted_data["email"] = email_value.strip()
+        # Mapear campos específicos (IGNORAR choices, multiple_choice, etc.)
+        if field_type == "email" and email_value:
+            extracted_data["email"] = email_value
             logger.info(f"EMAIL EXTRAÍDO: {extracted_data['email']}")
+        
         elif field_type == "phone_number" and phone_value:
-            extracted_data["phone"] = phone_value.strip()
+            extracted_data["phone"] = phone_value
             logger.info(f"TELEFONE EXTRAÍDO: {extracted_data['phone']}")
+        
         elif field_type == "number" and answer.get("number") is not None:
             # Primeira ocorrência vai para patrimônio, segunda para renda
             value = answer.get("number")
@@ -741,32 +738,31 @@ def extract_lead_data_from_typeform(answers: list) -> LeadData:
                 elif extracted_data["renda"] is None:
                     extracted_data["renda"] = float(value)
         
-        # Fallback: se não conseguiu mapear e há text_value, usar para nome se ainda não tiver
-        elif text_value and not extracted_data["name"]:
-            extracted_data["name"] = text_value.strip()
-            logger.info(f"NOME (FALLBACK) EXTRAÍDO: {extracted_data['name']}")
+        # APENAS campos de texto simples para nome (IGNORAR choices, dropdown, etc.)
+        elif field_type in ["short_text", "long_text"] and text_value:
+            text_fields.append({
+                "text": text_value,
+                "type": field_type,
+                "ref": field_ref,
+                "index": i
+            })
+            logger.info(f"CAMPO DE TEXTO COLETADO: {text_value}")
+    
+    # Construir nome a partir dos campos de texto (assumindo que os primeiros são nome/sobrenome)
+    if text_fields:
+        if len(text_fields) == 1:
+            # Só um campo de texto
+            extracted_data["name"] = text_fields[0]["text"]
+            logger.info(f"NOME ÚNICO EXTRAÍDO: {extracted_data['name']}")
+        
+        elif len(text_fields) >= 2:
+            # Múltiplos campos - assumir que os dois primeiros são nome e sobrenome
+            first_name = text_fields[0]["text"]
+            last_name = text_fields[1]["text"]
+            extracted_data["name"] = f"{first_name} {last_name}"
+            logger.info(f"NOME COMPLETO EXTRAÍDO: {extracted_data['name']} (de {first_name} + {last_name})")
     
     logger.info(f"DADOS FINAIS EXTRAÍDOS: {extracted_data}")
-    
-    # Criar nome composto se possível (primeiro + segundo campo de texto)
-    if not extracted_data["name"] and len(answers) >= 2:
-        first_text = None
-        second_text = None
-        for answer in answers:
-            text_val = answer.get("text", "").strip()
-            if text_val:
-                if not first_text:
-                    first_text = text_val
-                elif not second_text:
-                    second_text = text_val
-                    break
-        
-        if first_text and second_text:
-            extracted_data["name"] = f"{first_text} {second_text}"
-            logger.info(f"NOME COMPOSTO CRIADO: {extracted_data['name']}")
-        elif first_text:
-            extracted_data["name"] = first_text
-            logger.info(f"NOME ÚNICO USADO: {extracted_data['name']}")
     
     # Validar dados obrigatórios
     if not all([extracted_data["name"], extracted_data["email"], extracted_data["phone"]]):
