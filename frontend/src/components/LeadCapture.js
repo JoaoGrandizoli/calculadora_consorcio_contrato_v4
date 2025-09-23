@@ -17,20 +17,26 @@ const LeadCapture = ({ onAccessGranted }) => {
   const handleTypeformSubmit = (data) => {
     console.log('Typeform submetido:', data);
     
-    // Gerar access token único
-    const accessToken = 'typeform-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+    // IMPORTANTE: Não gerar token aqui, aguardar o webhook processar
+    // O webhook do Typeform já está gerando e salvando o access_token correto
     
-    // Salvar no localStorage
-    localStorage.setItem('access_token', accessToken);
-    localStorage.setItem('typeform_submission', JSON.stringify({
-      formId: data.form_id || typeformId,
-      responseId: data.response_id,
-      timestamp: new Date().toISOString()
-    }));
-    
-    // Conceder acesso
-    onAccessGranted(accessToken);
-    setShowForm(false);
+    // Aguardar um pouco para o webhook processar
+    setTimeout(() => {
+      // Buscar o token mais recente (do webhook)
+      // Por enquanto, gerar um temporário e depois sincronizar
+      const tempToken = 'temp-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+      
+      localStorage.setItem('access_token', tempToken);
+      localStorage.setItem('typeform_submission', JSON.stringify({
+        formId: data.form_id || typeformId,
+        responseId: data.response_id,
+        timestamp: new Date().toISOString()
+      }));
+      
+      // Conceder acesso
+      onAccessGranted(tempToken);
+      setShowForm(false);
+    }, 2000); // Aguardar 2 segundos para o webhook processar
   };
 
   const handleTypeformReady = () => {
