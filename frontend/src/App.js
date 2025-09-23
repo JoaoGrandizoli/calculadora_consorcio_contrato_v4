@@ -74,7 +74,13 @@ function App() {
     if (storedToken) {
       checkAccessToken(storedToken);
     }
-  }, []);
+    
+    // Verificar acesso direto ao admin
+    if (isAdminAccess) {
+      setShowAdmin(true);
+      setHasAccess(true);
+    }
+  }, [isAdminAccess]);
 
   // Carregar parâmetros padrão ao inicializar
   useEffect(() => {
