@@ -1,22 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Widget } from '@typeform/embed-react';
 
 const LeadCapture = ({ onAccessGranted }) => {
   const [showForm, setShowForm] = useState(true);
   const typeformId = process.env.REACT_APP_TYPEFORM_ID || 'dN3w60PD';
 
+  useEffect(() => {
+    // Verificar se há um token de acesso no localStorage
+    const existingToken = localStorage.getItem('access_token');
+    if (existingToken) {
+      onAccessGranted(existingToken);
+      setShowForm(false);
+    }
+  }, [onAccessGranted]);
+
   const handleTypeformSubmit = (data) => {
     console.log('Typeform submetido:', data);
     
-    // Gerar access token
+    // Gerar access token único
     const accessToken = 'typeform-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
     
     // Salvar no localStorage
     localStorage.setItem('access_token', accessToken);
+    localStorage.setItem('typeform_submission', JSON.stringify({
+      formId: data.form_id || typeformId,
+      responseId: data.response_id,
+      timestamp: new Date().toISOString()
+    }));
     
     // Conceder acesso
     onAccessGranted(accessToken);
     setShowForm(false);
+  };
+
+  const handleTypeformReady = () => {
+    console.log('Typeform está pronto');
   };
 
   if (!showForm) {
@@ -49,9 +67,18 @@ const LeadCapture = ({ onAccessGranted }) => {
           <Widget
             id={typeformId}
             onSubmit={handleTypeformSubmit}
+            onReady={handleTypeformReady}
             style={{ width: '100%', height: '100%' }}
             className="typeform-widget"
+            hideHeaders={true}
+            hideFooter={false}
           />
+        </div>
+        
+        <div className="text-center mt-4">
+          <p className="text-xs text-gray-500">
+            🔒 Seus dados estão seguros e protegidos
+          </p>
         </div>
       </div>
     </div>
