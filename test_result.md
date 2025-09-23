@@ -164,6 +164,69 @@ backend:
         - working: true
         - agent: "main"
         - comment: "✅ ENDPOINT ADICIONADO: /api/parametros-padrao agora retorna ParametrosConsorcio() corretamente"
+        - working: true
+        - agent: "testing"
+        - comment: "✅ TESTADO COM SUCESSO: Endpoint /api/parametros-padrao retorna parâmetros padrão corretos (valor_carta=100000, prazo_meses=120, taxa_admin=0.21)"
+
+  - task: "Implementar webhook do Typeform no backend"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+        - agent: "main"
+        - comment: "Implementado endpoint POST /api/typeform-webhook para processar dados do Typeform. Inclui extração de dados (nome, email, telefone), geração de access_token UUID, e salvamento no MongoDB."
+        - working: true
+        - agent: "testing"
+        - comment: "✅ WEBHOOK FUNCIONANDO PERFEITAMENTE: 1) Processa payload do Typeform corretamente, 2) Extrai dados (nome, sobrenome, telefone, email) dos campos, 3) Gera access_token UUID válido, 4) Salva lead no MongoDB com sucesso, 5) Retorna resposta JSON com status=success, access_token e lead_id, 6) Valida dados obrigatórios e rejeita payloads incompletos"
+
+  - task: "Implementar endpoint /api/save-lead para formulário direto"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+        - agent: "main"
+        - comment: "Endpoint POST /api/save-lead implementado para salvar leads diretamente (formulário simples)"
+        - working: true
+        - agent: "testing"
+        - comment: "✅ SAVE-LEAD FUNCIONANDO: Endpoint salva leads diretamente no MongoDB e retorna status=success com lead_id"
+
+  - task: "Implementar endpoint /api/check-access/{access_token}"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+        - agent: "main"
+        - comment: "Endpoint GET /api/check-access/{access_token} implementado para verificar validade de tokens de acesso"
+        - working: true
+        - agent: "testing"
+        - comment: "✅ CHECK-ACCESS FUNCIONANDO: 1) Valida tokens corretos retornando valid=true com dados do lead (name, lead_id, created_at), 2) Rejeita tokens inválidos retornando valid=false"
+
+  - task: "Implementar endpoints admin /api/admin/leads e /api/admin/simulations"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+        - agent: "main"
+        - comment: "Endpoints GET /api/admin/leads e GET /api/admin/simulations implementados para visualização administrativa"
+        - working: true
+        - agent: "testing"
+        - comment: "✅ ENDPOINTS ADMIN FUNCIONANDO: 1) /api/admin/leads retorna lista de leads com total correto, 2) /api/admin/simulations retorna lista de simulações com total correto, 3) Sem problemas de serialização ObjectId (campo _id excluído corretamente), 4) Estrutura de resposta válida com arrays e contadores"
 
 frontend:
   - task: "Configurar callbacks do Typeform para submissão"
