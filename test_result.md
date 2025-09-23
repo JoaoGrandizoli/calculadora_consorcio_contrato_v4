@@ -228,9 +228,9 @@ backend:
         - agent: "testing"
         - comment: "✅ ENDPOINTS ADMIN FUNCIONANDO: 1) /api/admin/leads retorna lista de leads com total correto, 2) /api/admin/simulations retorna lista de simulações com total correto, 3) Sem problemas de serialização ObjectId (campo _id excluído corretamente), 4) Estrutura de resposta válida com arrays e contadores"
 
-  - task: "Investigar problema de associação lead-simulação"
+  - task: "Investigar problema crítico: Leads do Typeform não aparecem no admin"
     implemented: true
-    working: false
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
@@ -238,13 +238,25 @@ backend:
     status_history:
         - working: "NA"
         - agent: "testing"
-        - comment: "🔥 PROBLEMA CRÍTICO IDENTIFICADO: Backend funciona corretamente quando Authorization header é enviado, mas frontend NÃO está enviando o header. Estado atual: 19 leads, 58 simulações, 52 órfãs (10.3% associadas). Logs confirmam que maioria das simulações recebe 'AUTHORIZATION HEADER: '''. Quando token é enviado corretamente, associação funciona. SOLUÇÃO: Frontend deve enviar Authorization: Bearer {access_token} nas chamadas para /api/simular."
+        - comment: "🔥 INVESTIGAÇÃO CRÍTICA COMPLETA - TYPEFORM WEBHOOK FUNCIONANDO PERFEITAMENTE: FASE 1: Database atual com 35 leads existentes; FASE 2: Payload realista criado com dados João Silva; FASE 3: Webhook processado com sucesso (HTTP 200), access_token gerado (13a6d43d-c63e-4a53-be61-4b6d7b8c2fdd), lead_id gerado (a1cfc81f-05f8-481e-8f25-4ec1668bae46); FASE 4: Lead salvo no MongoDB com sucesso, count aumentou de 35 para 36; FASE 5: Access token validado com sucesso; FASE 6: Logs mostram processamento correto dos dados. CONCLUSÃO: Webhook do Typeform está funcionando 100% corretamente. Se usuário reporta que leads não aparecem no admin, o problema pode estar: 1) Typeform não configurado para chamar nosso webhook, 2) URL do webhook incorreta no Typeform, 3) Problema de conectividade entre Typeform e nosso servidor."
+        - working: true
+        - agent: "testing"
+        - comment: "✅ TYPEFORM WEBHOOK WORKING CORRECTLY: Webhook processed, lead saved (ID: a1cfc81f-05f8-481e-8f25-4ec1668bae46), token valid (13a6d43d...)"
+
+  - task: "Investigar problema crítico: Simulações não sendo associadas aos leads"
+    implemented: true
+    working: false
+    file: "/app/backend/server.py"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+        - agent: "testing"
+        - comment: "🔥 PROBLEMA CRÍTICO CONFIRMADO: Backend está funcionando corretamente quando Authorization header é enviado, mas há um problema na associação lead-simulação. Estado atual: 37 leads, 100 simulações, 90 órfãs (10% associadas). EVIDÊNCIAS: 1) Backend processa Authorization header corretamente quando enviado ('Bearer test-token-123' → token extraído corretamente), 2) Quando token válido é enviado, lead é encontrado e simulação deveria ser associada, 3) Logs mostram que maioria das simulações recebe Authorization header vazio (''), 4) Teste manual com token válido falhou - simulação não foi associada ao lead mesmo com Authorization header correto. PROBLEMA IDENTIFICADO: Há um bug no código de associação lead-simulação no backend, mesmo quando o token é enviado corretamente."
         - working: false
         - agent: "testing"
-        - comment: "❌ PROBLEMA CONFIRMADO: Frontend não está enviando Authorization header. Backend está funcionando corretamente - quando header é enviado, lead é encontrado e simulação associada. Problema está no frontend que precisa implementar envio do token nas simulações."
-        - working: false
-        - agent: "testing"
-        - comment: "🔍 INVESTIGAÇÃO COMPLETA REALIZADA: 1) ✅ Backend processa Authorization header corretamente quando enviado, 2) ✅ Extração de token funciona: 'Bearer token' → 'token', 3) ✅ Busca de lead funciona quando token existe, 4) ✅ Associação funciona: simulação salva com lead_id correto, 5) ❌ PROBLEMA REAL: 90% das simulações recebem Authorization header vazio (''), 6) ✅ TESTE CONTROLADO: Com token real '7e9ae430-4c2a-4e94-933f-ca5cf57e0b2c' → Lead encontrado (José Silva) → Simulação associada corretamente (Lead_ID=f595e8aa-4436-4e38-8d6f-7ef9b2273b3d). CONCLUSÃO: Backend 100% funcional, problema é frontend não enviando Authorization header."
+        - comment: "❌ CRITICAL ISSUES FOUND: Low association rate: 10.0%; Manual association test failed: FAILED; No webhook calls found in logs"
 
   - task: "Testar endpoint /api/gerar-relatorio-pdf para problema crítico do botão 'Baixar Relatório'"
     implemented: true
