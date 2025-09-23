@@ -312,15 +312,18 @@ frontend:
 
   - task: "CORREÇÃO SALDO DEVEDOR: Implementar lógica correta com correção mensal + abatimento"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "critical"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
         - agent: "main"
         - comment: "ERRO CONCEITUAL CORRIGIDO: Saldo devedor deve começar com valor_carta + taxas (R$124.000) e ser corrigido mensalmente ANTES de abater a parcela. Lógica antiga calculava valor presente de parcelas futuras (R$154.932). NOVA LÓGICA: 1) Corrigir saldo por taxa mensal, 2) Calcular parcela corrigida anualmente, 3) Abater parcela do saldo. Taxa mensal = (1 + 5%)^(1/12) - 1 = 0.407% a.m."
+        - working: true
+        - agent: "main"
+        - comment: "✅ CORREÇÃO VALIDADA COM SUCESSO: Saldo inicial correto R$124.000 (carta + taxas), correção anual no início de cada ano (meses 13, 25, 37...), saldo final R$0,00 no mês 120. Lógica alinhada: saldo devedor e parcelas usam mesma correção anual (5% a.a.). Testado: Ano 1 parcela R$1.033, Ano 2 R$1.085, Ano 10 R$1.603. Sistema funcionando conforme especificação do usuário."
 
 metadata:
   created_by: "main_agent"
