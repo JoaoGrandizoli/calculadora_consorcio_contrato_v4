@@ -204,7 +204,11 @@ class SimuladorConsorcio:
                        'jul', 'ago', 'set', 'out', 'nov', 'dez']
             
             for mes in range(1, self.params.prazo_meses + 1):
-                # Correção anual
+                # 1. PRIMEIRO: Corrigir o saldo devedor pela taxa mensal
+                if mes > 1:  # A partir do segundo mês
+                    saldo_devedor_atual = saldo_devedor_atual * (1 + taxa_correcao_mensal)
+                
+                # 2. Calcular correção anual para as parcelas (sistema atual)
                 ano_atual = (mes - 1) // 12 + 1
                 fator_correcao = (1 + self.params.taxa_reajuste_anual) ** (ano_atual - 1)
                 
@@ -224,10 +228,6 @@ class SimuladorConsorcio:
                     fluxo = valor_carta_corrigido - parcela_corrigida - valor_lance_livre
                     lance_mes = valor_lance_livre
                     primeira_parcela = parcela_corrigida
-                    
-                    # CORREÇÃO DO SALDO DEVEDOR: Após contemplação, apenas subtrai a parcela
-                    # O valor da carta "sai" do financiamento, mas o saldo devedor continua sendo abatido pelas parcelas
-                    saldo_devedor_atual -= parcela_corrigida
                 else:
                     # DEMAIS MESES: Só paga parcela (valor sempre igual)
                     fluxo = -parcela_corrigida
@@ -236,9 +236,12 @@ class SimuladorConsorcio:
                     # Guardar primeira parcela pós-contemplação (igual à anterior)
                     if mes == self.params.mes_contemplacao + 1:
                         primeira_parcela_pos_contemplacao = parcela_corrigida
-                    
-                    # Subtrai apenas a parcela do saldo devedor
-                    saldo_devedor_atual -= parcela_corrigida
+                
+                # 3. DEPOIS: Subtrair a parcela do saldo devedor
+                saldo_devedor_atual -= parcela_corrigida
+                
+                # Garantir que saldo não fique negativo (por questões de arredondamento)
+                saldo_devedor_atual = max(0, saldo_devedor_atual)
                 
                 # Guardar parcela intermediária (meio do prazo)
                 if mes == self.params.prazo_meses // 2:
