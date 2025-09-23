@@ -166,89 +166,29 @@ backend:
         - comment: "✅ ENDPOINT ADICIONADO: /api/parametros-padrao agora retorna ParametrosConsorcio() corretamente"
 
 frontend:
-  - task: "Atualizar display de probabilidades para mostrar 1/participantes vs 2/participantes"
+  - task: "Configurar callbacks do Typeform para submissão"
     implemented: true
     working: "NA"
-    file: "/app/frontend/src/App.js"
-    stuck_count: 0
-    priority: "medium"
-    needs_retesting: true
-    status_history:
-        - working: "NA"
-        - agent: "main"
-        - comment: "Implementado lógica condicional para mostrar 1 ou 2 participantes baseado em lance_livre_perc"
-
-  - task: "CORREÇÃO: Ajustar lógica dos gráficos de hazard baseado na planilha do usuário"
-    implemented: true
-    working: true
-    file: "/app/backend/server.py"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: false
-    status_history:
-        - working: "NA"
-        - agent: "main"
-        - comment: "ERRO IDENTIFICADO E CORRIGIDO: A lógica anterior estava incorreta. Baseado na planilha do usuário, a lógica correta é: SEM LANCE = 1/(N-1) [você só compete no sorteio], COM LANCE = 2/N [você compete no sorteio E lance], REDUÇÃO = sempre 2 participantes/mês (1 sorteio + 1 lance) em ambos os cenários. Funções calcular_probabilidades_contemplacao_corrigido e criar_grafico_probabilidades atualizadas."
-        - working: true
-        - agent: "testing"
-        - comment: "✅ CORREÇÃO VALIDADA COM SUCESSO: 1) SEM LANCE: fórmula 1/(N-1) confirmada - Mês 1: 1/429 = 0.002331, Mês 2: 1/427 = 0.002342, Mês 3: 1/425 = 0.002353 ✓, 2) COM LANCE: fórmula 2/N confirmada - Mês 1: 2/430 = 0.004651, Mês 2: 2/428 = 0.004673, Mês 3: 2/426 = 0.004695 ✓, 3) Redução de participantes: ambas as curvas reduzem 2 por mês (430→428→426→424) ✓, 4) Probabilidades acumuladas calculadas corretamente e crescentes ✓, 5) Frontend exibindo valores corretos: 0.47% (0.004651) para Com Lance no mês 1 ✓, 6) Endpoint /api/calcular-probabilidades funcionando perfeitamente. LÓGICA CORRIGIDA BASEADA NA PLANILHA DO USUÁRIO IMPLEMENTADA E TESTADA COM SUCESSO."
-
-  - task: "CORREÇÃO PDF: Ajustar gráfico de hazard e tabela de detalhamento no relatório PDF"
-    implemented: true
-    working: true
-    file: "/app/backend/server.py"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: false
-    status_history:
-        - working: "NA"
-        - agent: "main"
-        - comment: "Corrigidas duas inconsistências no PDF: 1) Gráfico de probabilidades agora mostra apenas linhas sólidas de hazard com eixo Y até 100% (removidas linhas tracejadas de probabilidade acumulada), 2) Tabela de detalhamento agora segue nova formatação: primeiros 24 meses + meses anuais (36, 48, 60...) ao invés de apenas 36 meses. Funções criar_grafico_probabilidades e gerar_pdf_relatorio atualizadas."
-        - working: true
-        - agent: "testing"
-        - comment: "✅ PDF CORRECTIONS TESTED AND WORKING: 1) PDF generation successful with /api/gerar-relatorio-pdf endpoint using specified parameters (valor_carta=100000, prazo_meses=120, mes_contemplacao=17), 2) PDF size: 175.2KB indicating proper content generation, 3) Graph corrections implemented: only solid hazard lines (no dashed cumulative probability lines), Y-axis 0-100%, two lines 'Com Lance — hazard' and 'Sem Lance — hazard', 4) Table corrections implemented: first 24 months detailed + annual months (36, 48, 60, 72, 84, 96, 108, 120), 5) Both /api/gerar-relatorio and /api/gerar-relatorio-pdf endpoints tested successfully. All PDF correction requirements from review request validated and working correctly."
-
-  - task: "BUG FIX: Saldo devedor zerando antes do prazo final devido a correção anual"
-    implemented: true
-    working: true
-    file: "/app/backend/server.py"
-    stuck_count: 0
-    priority: "critical"
-    needs_retesting: false
-    status_history:
-        - working: "NA"
-        - agent: "main"
-        - comment: "PROBLEMA IDENTIFICADO: Saldo devedor estava zerando no mês 99 ao invés de durar até o mês 120. CAUSA: Saldo devedor inicial estava sendo calculado com base_contrato fixa (R$124.000), mas as parcelas crescem 5% a.a. com correção anual. CORREÇÃO: Saldo devedor inicial agora é calculado como valor presente de todas as parcelas futuras com correção anual, garantindo que o saldo dure exatamente até o prazo final."
-        - working: true
-        - agent: "main"
-        - comment: "✅ CORREÇÃO VALIDADA: Teste realizado com sucesso. Saldo devedor inicial corrigido de R$124.000 para R$154.932,53 (valor presente de todas parcelas corrigidas). Mês 119: R$1.603,04 (uma parcela), Mês 120: R$0,00 (zerando exatamente no final). Comportamento financeiro agora está correto - saldo dura exatamente até o prazo final de 120 meses."
-
-  - task: "CORREÇÃO: Gráfico de probabilidades deve mostrar TODOS os meses até o final"
-    implemented: true
-    working: "NA"
-    file: "/app/frontend/src/App.js, /app/backend/server.py"
+    file: "/app/frontend/src/components/LeadCapture.js"
     stuck_count: 0
     priority: "high"
     needs_retesting: true
     status_history:
         - working: "NA"
         - agent: "main"
-        - comment: "PROBLEMA: Gráfico de probabilidades estava limitado a apenas 100 meses (slice(0, 100) no frontend e min(meses_total + 1, 101) no backend), não mostrando todos os meses até o final do prazo como na planilha do usuário. CORREÇÃO: Removidas limitações - frontend agora usa probabilidades.com_lance.meses (todos) e backend usa range(1, meses_total + 1) para mostrar todos os meses até o prazo final."
-
-  - task: "CORREÇÃO SALDO DEVEDOR: Implementar lógica correta com correção mensal + abatimento"
-    implemented: true
-    working: true
-    file: "/app/backend/server.py"
-    stuck_count: 0
-    priority: "critical"
-    needs_retesting: false
+        - comment: "Implementado handleTypeformSubmit para processar submissão do formulário e gerar access_token. Adicionado useEffect para verificar token existente no localStorage. Configurado persistência de dados no localStorage."
+        
+  - task: "Testar fluxo completo Typeform → Simulador"
+    implemented: false
+    working: "NA"
+    file: "/app/frontend/src/components/LeadCapture.js"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: true
     status_history:
         - working: "NA"
         - agent: "main"
-        - comment: "ERRO CONCEITUAL CORRIGIDO: Saldo devedor deve começar com valor_carta + taxas (R$124.000) e ser corrigido mensalmente ANTES de abater a parcela. Lógica antiga calculava valor presente de parcelas futuras (R$154.932). NOVA LÓGICA: 1) Corrigir saldo por taxa mensal, 2) Calcular parcela corrigida anualmente, 3) Abater parcela do saldo. Taxa mensal = (1 + 5%)^(1/12) - 1 = 0.407% a.m."
-        - working: true
-        - agent: "main"
-        - comment: "✅ CORREÇÃO VALIDADA COM SUCESSO: Saldo inicial correto R$124.000 (carta + taxas), correção anual no início de cada ano (meses 13, 25, 37...), saldo final R$0,00 no mês 120. Lógica alinhada: saldo devedor e parcelas usam mesma correção anual (5% a.a.). Testado: Ano 1 parcela R$1.033, Ano 2 R$1.085, Ano 10 R$1.603. Sistema funcionando conforme especificação do usuário."
+        - comment: "PENDENTE: Precisar testar o fluxo completo de submissão do Typeform. Atualmente o widget carrega corretamente mas ainda não foi testado o processo de submissão → geração de token → liberação de acesso ao simulador. Callback onSubmit implementado mas não verificado com submissão real."
 
 metadata:
   created_by: "main_agent"
