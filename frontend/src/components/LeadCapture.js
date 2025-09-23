@@ -20,19 +20,22 @@ const LeadCapture = ({ onAccessGranted }) => {
     setShowForm(false); // Esconder form imediatamente
     
     try {
-      // 🚀 OTIMIZAÇÃO: Estratégia de polling inteligente
-      // Ao invés de esperar 8 segundos, fazer múltiplas tentativas mais rápidas
+      // 🚀 OTIMIZAÇÃO: Estratégia de polling inteligente e progressiva
+      // Tentativas mais rápidas no início, depois intervalos maiores
       
-      const maxAttempts = 10;
-      const intervalMs = 800; // 800ms entre tentativas
-      let attempt = 0;
-      let leadEncontrado = false;
+      const attempts = [
+        { delay: 500, msg: "Processando formulário..." },
+        { delay: 800, msg: "Validando dados..." },
+        { delay: 1000, msg: "Sincronizando com o servidor..." },
+        { delay: 1200, msg: "Quase pronto..." },
+        { delay: 1500, msg: "Finalizando..." },
+        { delay: 2000, msg: "Última verificação..." }
+      ];
       
       console.log('🔄 Iniciando busca inteligente pelo lead...');
       
-      while (attempt < maxAttempts && !leadEncontrado) {
-        attempt++;
-        console.log(`🔍 Tentativa ${attempt}/${maxAttempts}...`);
+      for (let i = 0; i < attempts.length; i++) {
+        console.log(`🔍 ${attempts[i].msg} (${i + 1}/${attempts.length})`);
         
         try {
           // Buscar todos os leads
@@ -43,7 +46,7 @@ const LeadCapture = ({ onAccessGranted }) => {
           if (data_leads.leads && data_leads.leads.length > 0) {
             const latestLead = data_leads.leads[0];
             
-            // Validar se é um lead real e recente (criado nos últimos 2 minutos)
+            // Validar se é um lead real e muito recente (criado nos últimos 3 minutos)
             const leadCreatedAt = new Date(latestLead.created_at);
             const now = new Date();
             const diffMinutes = (now - leadCreatedAt) / (1000 * 60);
@@ -51,9 +54,10 @@ const LeadCapture = ({ onAccessGranted }) => {
             if (latestLead.access_token && 
                 latestLead.email && 
                 latestLead.email.includes('@') &&
-                !latestLead.name.includes('João Silva') && 
-                !latestLead.name.includes('Test') &&
-                diffMinutes <= 2) { // Lead criado nos últimos 2 minutos
+                !latestLead.name.toLowerCase().includes('joão') && 
+                !latestLead.name.toLowerCase().includes('test') &&
+                !latestLead.name.toLowerCase().includes('teste') &&
+                diffMinutes <= 3) { // Lead criado nos últimos 3 minutos
               
               console.log('✅ Lead recente encontrado:', latestLead.name, 'criado há', diffMinutes.toFixed(1), 'minutos');
               
@@ -70,19 +74,20 @@ const LeadCapture = ({ onAccessGranted }) => {
               // Conceder acesso
               console.log('🔑 Concedendo acesso com token:', latestLead.access_token);
               onAccessGranted(latestLead.access_token);
-              leadEncontrado = true;
               return;
             }
           }
           
           // Se não encontrou ainda, aguardar próxima tentativa
-          if (!leadEncontrado && attempt < maxAttempts) {
-            await new Promise(resolve => setTimeout(resolve, intervalMs));
+          if (i < attempts.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, attempts[i].delay));
           }
           
         } catch (fetchError) {
-          console.log(`⚠️ Erro na tentativa ${attempt}:`, fetchError.message);
-          await new Promise(resolve => setTimeout(resolve, intervalMs));
+          console.log(`⚠️ Erro na tentativa ${i + 1}:`, fetchError.message);
+          if (i < attempts.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, attempts[i].delay));
+          }
         }
       }
       
