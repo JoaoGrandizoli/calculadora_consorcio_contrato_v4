@@ -197,7 +197,10 @@ metadata:
   run_ui: false
 
 test_plan:
-  current_focus: []
+  current_focus:
+    - "Configurar callbacks do Typeform para submissão"
+    - "Testar fluxo completo Typeform → Simulador"
+    - "Configurar webhook do Typeform no backend"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
