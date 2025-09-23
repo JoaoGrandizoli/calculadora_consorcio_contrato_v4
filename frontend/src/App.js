@@ -450,11 +450,15 @@ function App() {
                   <button 
                     onClick={() => {
                       localStorage.removeItem('access_token');
-                      localStorage.removeItem('admin_mode'); // 🔧 FIX: Limpar modo admin ao sair
+                      localStorage.removeItem('admin_mode');
+                      localStorage.removeItem('admin_authenticated'); // 🔐 Limpar autenticação admin
                       setHasAccess(false);
                       setAccessToken(null);
                       setLeadInfo(null);
                       setShowAdmin(false);
+                      setAdminAuthenticated(false);
+                      setAdminPassword('');
+                      setAdminLoginError('');
                     }}
                     className="text-xs text-neutral-light opacity-75 hover:opacity-100"
                   >
