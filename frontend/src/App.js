@@ -7,7 +7,7 @@ import { Label } from './components/ui/label';
 import { Separator } from './components/ui/separator';
 import { Badge } from './components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
-import { AlertCircle, Calculator, TrendingUp, FileText, PieChart, Download } from 'lucide-react';
+import { AlertCircle, Calculator, TrendingUp, FileText, PieChart, Download, Settings } from 'lucide-react';
 import {
   Chart as ChartJS,
   CategoryScale,
