@@ -225,19 +225,29 @@ function App() {
             </div>
             
             {hasAccess && leadInfo && (
-              <div className="text-right">
-                <p className="text-sm text-accent-warm">Bem-vindo, {leadInfo.name}</p>
-                <button 
-                  onClick={() => {
-                    localStorage.removeItem('access_token');
-                    setHasAccess(false);
-                    setAccessToken(null);
-                    setLeadInfo(null);
-                  }}
-                  className="text-xs text-neutral-light opacity-75 hover:opacity-100"
+              <div className="text-right flex items-center gap-4">
+                <button
+                  onClick={() => setShowAdmin(!showAdmin)}
+                  className="flex items-center gap-2 px-3 py-1 bg-accent-warm text-primary-accent rounded text-sm hover:bg-opacity-90"
                 >
-                  Sair
+                  <Settings className="h-4 w-4" />
+                  {showAdmin ? 'Simulador' : 'Admin'}
                 </button>
+                <div>
+                  <p className="text-sm text-accent-warm">Bem-vindo, {leadInfo.name}</p>
+                  <button 
+                    onClick={() => {
+                      localStorage.removeItem('access_token');
+                      setHasAccess(false);
+                      setAccessToken(null);
+                      setLeadInfo(null);
+                      setShowAdmin(false);
+                    }}
+                    className="text-xs text-neutral-light opacity-75 hover:opacity-100"
+                  >
+                    Sair
+                  </button>
+                </div>
               </div>
             )}
           </div>
