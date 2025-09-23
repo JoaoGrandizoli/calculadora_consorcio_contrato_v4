@@ -72,27 +72,25 @@ function App() {
 
   // Verificar acesso ao carregar a página
   useEffect(() => {
+    console.log('🔧 Inicializando aplicação...');
+    
     const storedToken = localStorage.getItem('access_token');
+    const adminMode = localStorage.getItem('admin_mode') === 'true';
+    
+    console.log('🔧 Estado inicial:', { storedToken: !!storedToken, adminMode, isAdminAccess });
+    
     if (storedToken) {
       // 🔧 FIX: Sincronizar accessToken do state imediatamente
       setAccessToken(storedToken);
       checkAccessToken(storedToken);
     }
     
-    // 🔧 FIX: Verificar e persistir acesso admin
-    if (isAdminAccess) {
-      console.log('🔧 Acesso admin detectado - salvando no localStorage');
+    // 🔧 FIX: Restaurar estado admin persistido ou detectar novo acesso
+    if (isAdminAccess || adminMode) {
+      console.log('🔧 Ativando modo admin');
       localStorage.setItem('admin_mode', 'true');
       setShowAdmin(true);
       setHasAccess(true);
-    } else {
-      // Se não está tentando acessar admin, limpar o modo admin
-      const wasAdminMode = localStorage.getItem('admin_mode') === 'true';
-      if (wasAdminMode && !window.location.pathname.includes('admin') && !window.location.hash.includes('admin')) {
-        console.log('🔧 Saindo do modo admin');
-        localStorage.removeItem('admin_mode');
-        setShowAdmin(false);
-      }
     }
   }, [isAdminAccess]);
 
