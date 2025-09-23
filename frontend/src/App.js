@@ -263,12 +263,12 @@ function App() {
         </div>
       </div>
 
-      {!hasAccess ? (
+      {!hasAccess && !isAdminAccess ? (
         /* Mostrar tela de Lead Capture */
         <div className="container mx-auto px-4 md:px-6 py-8">
           <LeadCapture onAccessGranted={handleAccessGranted} />
         </div>
-      ) : showAdmin ? (
+      ) : showAdmin || isAdminAccess ? (
         /* Mostrar Painel Administrativo */
         <AdminPanel />
       ) : (
