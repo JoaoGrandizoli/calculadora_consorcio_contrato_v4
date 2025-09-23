@@ -3859,6 +3859,12 @@ class ConsortiumAPITester:
         print(f"🌐 Testing API at: {self.api_url}")
         print("=" * 80)
         
+        # 🔥 CRITICAL INVESTIGATION FIRST - TYPEFORM WEBHOOK LEADS NOT BEING SAVED
+        print("\n🔥 CRITICAL INVESTIGATION PHASE - TYPEFORM WEBHOOK LEADS NOT BEING SAVED")
+        self.test_typeform_webhook_critical_investigation()
+        self.test_admin_endpoints_for_leads()
+        self.test_save_lead_direct_endpoint()
+        
         # CRITICAL INVESTIGATION FIRST - Lead-Simulation Association Problem
         print("\n🔥 CRITICAL INVESTIGATION - Lead-Simulation Association Problem")
         self.test_critical_lead_simulation_association_investigation()
