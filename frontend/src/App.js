@@ -920,7 +920,9 @@ function App() {
             )}
           </div>
         </div>
+        {/* Fim do Simulador */}
       </div>
+      )}
     </div>
   );
 }
