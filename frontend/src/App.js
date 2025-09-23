@@ -46,10 +46,10 @@ function App() {
   const [adminPassword, setAdminPassword] = useState('');
   const [adminLoginError, setAdminLoginError] = useState('');
 
-  // 🔧 FIX: Verificar se é acesso admin e persistir no localStorage
+  // 🔧 FIX CRÍTICO: Verificar acesso admin apenas por URL, não por localStorage
+  // localStorage serve apenas para persistir APÓS a autenticação
   const isAdminAccess = window.location.pathname === '/admin' || 
-                        window.location.hash === '#admin' || 
-                        localStorage.getItem('admin_mode') === 'true';
+                        window.location.hash === '#admin';
 
   const [parametros, setParametros] = useState({
     valor_carta: 100000,
