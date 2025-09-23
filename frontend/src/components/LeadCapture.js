@@ -14,29 +14,53 @@ const LeadCapture = ({ onAccessGranted }) => {
     }
   }, [onAccessGranted]);
 
-  const handleTypeformSubmit = (data) => {
+  const handleTypeformSubmit = async (data) => {
     console.log('Typeform submetido:', data);
     
-    // IMPORTANTE: Não gerar token aqui, aguardar o webhook processar
-    // O webhook do Typeform já está gerando e salvando o access_token correto
-    
-    // Aguardar um pouco para o webhook processar
-    setTimeout(() => {
-      // Buscar o token mais recente (do webhook)
-      // Por enquanto, gerar um temporário e depois sincronizar
+    try {
+      // Aguardar um pouco para o webhook processar
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      
+      // Buscar o lead mais recente (que deve ser o que acabou de ser criado pelo webhook)
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001'}/api/admin/leads`);
+      const data_leads = await response.json();
+      
+      if (data_leads.leads && data_leads.leads.length > 0) {
+        // Pegar o lead mais recente (primeiro da lista, assumindo que está ordenado por data)
+        const latestLead = data_leads.leads[0];
+        const correctToken = latestLead.access_token;
+        
+        console.log('Token correto do webhook:', correctToken);
+        
+        // Usar o token correto do webhook
+        localStorage.setItem('access_token', correctToken);
+        localStorage.setItem('typeform_submission', JSON.stringify({
+          formId: data.form_id || typeformId,
+          responseId: data.response_id,
+          timestamp: new Date().toISOString(),
+          leadId: latestLead.id
+        }));
+        
+        // Conceder acesso
+        onAccessGranted(correctToken);
+      } else {
+        // Fallback: usar token temporário
+        const tempToken = 'temp-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('access_token', tempToken);
+        onAccessGranted(tempToken);
+      }
+      
+      setShowForm(false);
+      
+    } catch (error) {
+      console.error('Erro ao sincronizar token:', error);
+      
+      // Fallback em caso de erro
       const tempToken = 'temp-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-      
       localStorage.setItem('access_token', tempToken);
-      localStorage.setItem('typeform_submission', JSON.stringify({
-        formId: data.form_id || typeformId,
-        responseId: data.response_id,
-        timestamp: new Date().toISOString()
-      }));
-      
-      // Conceder acesso
       onAccessGranted(tempToken);
       setShowForm(false);
-    }, 2000); // Aguardar 2 segundos para o webhook processar
+    }
   };
 
   const handleTypeformReady = () => {
