@@ -261,9 +261,10 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Configurar callbacks do Typeform para submissão"
-    - "Testar fluxo completo Typeform → Simulador"
-    - "Configurar webhook do Typeform no backend"
+    - "Implementar webhook do Typeform no backend"
+    - "Implementar endpoint /api/save-lead para formulário direto"
+    - "Implementar endpoint /api/check-access/{access_token}"
+    - "Implementar endpoints admin /api/admin/leads e /api/admin/simulations"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -271,3 +272,5 @@ test_plan:
 agent_communication:
     - agent: "main"
     - message: "TYPEFORM EMBED IMPLEMENTADO COM SUCESSO: 1) Instalado @typeform/embed-react@4.6.0, 2) Configurado REACT_APP_TYPEFORM_ID=dN3w60PD no .env, 3) Implementado Widget do Typeform no LeadCapture.js substituindo formulário simples, 4) Widget carregando corretamente com campos Nome, Sobrenome, Telefone, 5) Callbacks onSubmit e onReady configurados, 6) Corrigido endpoint /api/parametros-padrao ausente. PRÓXIMOS PASSOS: Testar fluxo completo de submissão e configurar webhook no backend para receber dados do Typeform."
+    - agent: "testing"
+    - message: "✅ TYPEFORM BACKEND INTEGRATION TESTADO COM SUCESSO: Todos os endpoints do Typeform estão funcionando perfeitamente. RESULTADOS DOS TESTES: 1) Webhook /api/typeform-webhook: ✅ Processa payload corretamente, extrai dados (nome, email, telefone), gera access_token UUID, salva no MongoDB; 2) Save Lead /api/save-lead: ✅ Salva leads diretamente no MongoDB; 3) Check Access /api/check-access/{token}: ✅ Valida tokens corretos e rejeita inválidos; 4) Admin Endpoints: ✅ /api/admin/leads e /api/admin/simulations retornam dados sem problemas de ObjectId; 5) Endpoint /api/parametros-padrao: ✅ Retorna parâmetros padrão corretos. TOTAL: 8/8 testes do Typeform PASSARAM. Backend está preparado para receber dados do Typeform e processar leads corretamente. Não há problemas de CORS, JSON serialization ou validação Pydantic."
