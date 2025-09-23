@@ -183,6 +183,139 @@ class ConsortiumAPITester:
         
         return all_passed
 
+    def test_pdf_critical_issue(self):
+        """
+        CRITICAL TEST: Test PDF generation with exact parameters from user report
+        
+        USER ISSUE: "Baixar Relatório" button not working in browser
+        
+        Test requirements:
+        1. Test endpoint /api/gerar-relatorio-pdf with specific parameters
+        2. Verify returns valid PDF with correct headers (Content-Type: application/pdf)
+        3. Test with and without access_token
+        4. Verify file size > 0 (not empty data)
+        5. Check response headers for download
+        
+        Parameters from user report:
+        - valor_carta: 100000
+        - prazo_meses: 120
+        - taxa_admin: 0.21
+        - fundo_reserva: 0.03
+        - mes_contemplacao: 17
+        - lance_livre_perc: 0.10
+        - taxa_reajuste_anual: 0.05
+        """
+        # Exact parameters from user report
+        parametros = {
+            "valor_carta": 100000,
+            "prazo_meses": 120,
+            "taxa_admin": 0.21,
+            "fundo_reserva": 0.03,
+            "mes_contemplacao": 17,
+            "lance_livre_perc": 0.10,
+            "taxa_reajuste_anual": 0.05
+        }
+        
+        print(f"\n🔥 TESTING CRITICAL PDF ISSUE - User Report: 'Baixar Relatório' not working")
+        print(f"   Parameters: valor_carta=R${parametros['valor_carta']:,}, mes_contemplacao={parametros['mes_contemplacao']}")
+        
+        try:
+            # Test 1: PDF generation without access_token
+            print(f"   Test 1: PDF generation WITHOUT access_token...")
+            response = requests.post(f"{self.api_url}/gerar-relatorio-pdf", 
+                                   json=parametros, 
+                                   timeout=60)
+            
+            success = response.status_code == 200
+            issues = []
+            
+            if success:
+                # Check Content-Type header
+                content_type = response.headers.get('content-type', '')
+                if 'application/pdf' not in content_type:
+                    issues.append(f"Wrong Content-Type: {content_type} (expected: application/pdf)")
+                
+                # Check file size
+                content_length = len(response.content)
+                if content_length == 0:
+                    issues.append("PDF file is empty (0 bytes)")
+                elif content_length < 1000:
+                    issues.append(f"PDF file too small: {content_length} bytes (expected > 1000)")
+                
+                # Check download headers
+                content_disposition = response.headers.get('content-disposition', '')
+                if 'attachment' not in content_disposition:
+                    issues.append(f"Missing download header: {content_disposition}")
+                
+                # Check if PDF starts with PDF signature
+                if response.content[:4] != b'%PDF':
+                    issues.append("Response doesn't start with PDF signature")
+                
+                success = len(issues) == 0
+                
+                if success:
+                    details = f"✅ PDF generated successfully - Size: {content_length/1024:.1f}KB, Content-Type: {content_type}"
+                else:
+                    details = f"❌ PDF issues: {'; '.join(issues)}"
+            else:
+                details = f"❌ HTTP {response.status_code}: {response.text[:200]}"
+            
+            self.log_test("CRITICAL: PDF Generation (No Token)", success, details)
+            
+            # Test 2: PDF generation with Authorization header (simulating frontend)
+            print(f"   Test 2: PDF generation WITH Authorization header...")
+            headers = {"Authorization": "Bearer test-token-123"}
+            response2 = requests.post(f"{self.api_url}/gerar-relatorio-pdf", 
+                                    json=parametros,
+                                    headers=headers,
+                                    timeout=60)
+            
+            success2 = response2.status_code == 200
+            if success2:
+                content_type2 = response2.headers.get('content-type', '')
+                content_length2 = len(response2.content)
+                success2 = 'application/pdf' in content_type2 and content_length2 > 1000
+                details2 = f"✅ PDF with auth header - Size: {content_length2/1024:.1f}KB"
+            else:
+                details2 = f"❌ HTTP {response2.status_code}: {response2.text[:200]}"
+            
+            self.log_test("CRITICAL: PDF Generation (With Token)", success2, details2)
+            
+            # Test 3: Check backend logs for errors
+            print(f"   Test 3: Checking backend logs for PDF generation errors...")
+            try:
+                import subprocess
+                log_result = subprocess.run(['tail', '-n', '50', '/var/log/supervisor/backend.err.log'], 
+                                          capture_output=True, text=True, timeout=5)
+                
+                if log_result.returncode == 0:
+                    log_content = log_result.stdout
+                    pdf_errors = [line for line in log_content.split('\n') 
+                                if 'pdf' in line.lower() or 'relatorio' in line.lower() or 'error' in line.lower()]
+                    
+                    if pdf_errors:
+                        details3 = f"⚠️ Found {len(pdf_errors)} potential PDF-related log entries"
+                        print(f"      Recent PDF-related logs:")
+                        for error in pdf_errors[-3:]:  # Show last 3 entries
+                            print(f"        {error}")
+                    else:
+                        details3 = "✅ No PDF-related errors in recent logs"
+                else:
+                    details3 = "⚠️ Could not read backend logs"
+                
+                self.log_test("CRITICAL: Backend Logs Check", True, details3)
+                
+            except Exception as log_error:
+                self.log_test("CRITICAL: Backend Logs Check", False, f"Log check failed: {log_error}")
+            
+            # Overall result
+            overall_success = success and success2
+            return overall_success
+            
+        except Exception as e:
+            self.log_test("CRITICAL: PDF Generation Test", False, f"Exception: {str(e)}")
+            return False
+
     def test_pdf_generation(self, parametros=None):
         """Test PDF generation endpoint"""
         if parametros is None:
