@@ -244,6 +244,12 @@ function App() {
     try {
       const headers = {};
       
+      // 🔧 DEBUG: Logs detalhados do estado atual
+      console.log('🔍 ESTADO ATUAL ANTES DA SIMULAÇÃO:');
+      console.log('   - accessToken (state):', accessToken);
+      console.log('   - localStorage access_token:', localStorage.getItem('access_token'));
+      console.log('   - localStorage lead_data:', localStorage.getItem('lead_data'));
+      
       // 🔧 FIX DEFINITIVO: Garantir que o token seja sempre obtido
       let tokenParaUsar = accessToken;
       if (!tokenParaUsar) {
@@ -258,9 +264,12 @@ function App() {
       if (tokenParaUsar) {
         headers.Authorization = `Bearer ${tokenParaUsar}`;
         console.log('🎯 Enviando Authorization header:', `Bearer ${tokenParaUsar.substring(0, 8)}...`);
+        console.log('🎯 Token completo para debug:', tokenParaUsar);
       } else {
         console.warn('⚠️ AVISO: Nenhum access_token disponível para a simulação');
       }
+      
+      console.log('📡 Headers da requisição:', headers);
       
       const response = await axios.post(`${API}/simular`, parametros, { headers });
       
@@ -269,8 +278,10 @@ function App() {
         setResultados(null);
       } else {
         setResultados(response.data);
+        console.log('✅ Simulação realizada com sucesso');
       }
     } catch (error) {
+      console.error('❌ Erro na simulação:', error);
       setErro(error.response?.data?.detail || 'Erro ao simular consórcio');
       setResultados(null);
     } finally {
