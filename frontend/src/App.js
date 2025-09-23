@@ -125,7 +125,12 @@ function App() {
     setErro(null);
     
     try {
-      const response = await axios.post(`${API}/simular`, parametros);
+      const headers = {};
+      if (accessToken) {
+        headers.Authorization = `Bearer ${accessToken}`;
+      }
+      
+      const response = await axios.post(`${API}/simular`, parametros, { headers });
       
       if (response.data.erro) {
         setErro(response.data.mensagem);
