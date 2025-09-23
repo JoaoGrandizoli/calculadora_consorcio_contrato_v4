@@ -92,7 +92,7 @@ const LeadCapture = ({ onAccessGranted }) => {
       }
       
       // Se chegou aqui, não encontrou lead após todas as tentativas
-      console.log('⚠️ Não encontrou lead válido após', maxAttempts, 'tentativas');
+      console.log('⚠️ Não encontrou lead válido após todas as tentativas');
       const fallbackToken = 'fallback-' + Date.now();
       localStorage.setItem('access_token', fallbackToken);
       onAccessGranted(fallbackToken);
