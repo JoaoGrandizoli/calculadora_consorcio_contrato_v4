@@ -66,6 +66,11 @@ const LeadCapture = ({ onAccessGranted }) => {
               className="typeform-widget"
               onSubmit={handleFormSubmit}
               onReady={() => console.log('Typeform carregado')}
+              hideHeaders={true}
+              hideFooter={true}
+              opacity={100}
+              autoFocus={true}
+              enableSandbox={false}
             />
           ) : (
             <div className="flex items-center justify-center h-full bg-gray-50">
