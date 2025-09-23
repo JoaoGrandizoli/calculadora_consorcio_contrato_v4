@@ -461,8 +461,84 @@ function App() {
           <LeadCapture onAccessGranted={handleAccessGranted} />
         </div>
       ) : showAdmin || isAdminAccess ? (
-        /* Mostrar Painel Administrativo */
-        <AdminPanel />
+        /* 🔐 PROTEÇÃO ADMIN: Mostrar login ou painel conforme autenticação */
+        !adminAuthenticated ? (
+          /* Tela de Login Admin */
+          <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8">
+              <div className="text-center mb-8">
+                <div className="mx-auto h-12 w-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                  <Settings className="h-6 w-6 text-red-600" />
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900">Acesso Administrativo</h2>
+                <p className="text-gray-600 mt-2">Digite a senha para acessar o painel admin</p>
+              </div>
+              
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                const success = handleAdminLogin(adminPassword);
+                if (success) {
+                  setShowAdmin(true);
+                  localStorage.setItem('admin_mode', 'true');
+                }
+              }}>
+                <div className="mb-4">
+                  <Label htmlFor="adminPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                    Senha de Administrador
+                  </Label>
+                  <Input
+                    id="adminPassword"
+                    type="password"
+                    value={adminPassword}
+                    onChange={(e) => setAdminPassword(e.target.value)}
+                    className="w-full"
+                    placeholder="Digite a senha..."
+                    required
+                  />
+                  {adminLoginError && (
+                    <p className="mt-2 text-sm text-red-600">{adminLoginError}</p>
+                  )}
+                </div>
+                
+                <Button 
+                  type="submit"
+                  className="w-full bg-red-600 hover:bg-red-700 text-white"
+                >
+                  Entrar no Admin
+                </Button>
+              </form>
+              
+              <div className="mt-6 text-center">
+                <button 
+                  onClick={() => {
+                    setShowAdmin(false);
+                    localStorage.removeItem('admin_mode');
+                    window.location.hash = '';
+                  }}
+                  className="text-sm text-gray-500 hover:text-gray-700"
+                >
+                  Voltar ao simulador
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : (
+          /* Painel Admin Autenticado */
+          <div>
+            <div className="bg-white border-b border-gray-200 px-6 py-4">
+              <div className="flex items-center justify-between">
+                <h1 className="text-xl font-semibold text-gray-900">Painel Administrativo</h1>
+                <button
+                  onClick={handleAdminLogout}
+                  className="flex items-center gap-2 px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
+                >
+                  Sair do Admin
+                </button>
+              </div>
+            </div>
+            <AdminPanel />
+          </div>
+        )
       ) : (
         /* Mostrar Simulador */
         <div className="container mx-auto px-4 md:px-6 py-4 md:py-8">
