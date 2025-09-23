@@ -193,20 +193,19 @@ function App() {
       // Validar token no servidor
       const response = await axios.get(`${API}/check-access/${token}`);
       if (response.data.valid) {
-        // Verificar se não é um lead de teste
-        const leadName = response.data.name || '';
+        // 🔧 CORREÇÃO TEMPORÁRIA: Permitir tokens fallback para debug
+        // TODO: Remover após webhook do Typeform estar funcionando
         if (!leadName.includes('Teste') && 
             !leadName.includes('João Silva') && 
             !leadName.includes('Test') &&
             !token.startsWith('temp-') &&
-            !token.startsWith('fallback-') &&
             !token.startsWith('error-')) {
           
-          console.log('✅ Token válido:', token);
+          console.log('✅ Token válido (incluindo fallback para debug):', token);
           setHasAccess(true);
           setAccessToken(token);
           setLeadInfo({
-            name: response.data.name,
+            name: response.data.name || 'Usuario Fallback',
             created_at: response.data.created_at
           });
         } else {
