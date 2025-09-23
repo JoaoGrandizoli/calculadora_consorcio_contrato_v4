@@ -456,12 +456,26 @@ async def simular_consorcio(parametros: ParametrosConsorcio, request: Request):
         
         # Salvar input da simulação no banco de dados
         try:
-            access_token = request.headers.get("Authorization", "").replace("Bearer ", "")
+            auth_header = request.headers.get("Authorization", "")
+            logger.info(f"🔑 AUTHORIZATION HEADER: '{auth_header}'")
+            
+            access_token = auth_header.replace("Bearer ", "") if auth_header else ""
+            logger.info(f"🎯 ACCESS_TOKEN EXTRAÍDO: '{access_token}'")
+            
             lead_id = None
             if access_token:
+                logger.info(f"🔍 Buscando lead com token: '{access_token}'")
                 lead = await db.leads.find_one({"access_token": access_token})
                 if lead:
                     lead_id = lead["id"]
+                    logger.info(f"✅ Lead encontrado! ID: {lead_id}, Nome: {lead.get('name')}, Email: {lead.get('email')}")
+                else:
+                    logger.error(f"❌ Lead NÃO encontrado com token: '{access_token}'")
+                    # Debug: listar tokens disponíveis
+                    all_leads = await db.leads.find({}, {"access_token": 1, "name": 1, "email": 1}).limit(3).to_list(None)
+                    logger.info(f"🔍 Tokens disponíveis: {[{'token': l.get('access_token'), 'name': l.get('name')} for l in all_leads]}")
+            else:
+                logger.warning("⚠️ Nenhum access_token fornecido na simulação")
             
             simulation_input = SimulationInput(
                 lead_id=lead_id,
@@ -477,10 +491,12 @@ async def simular_consorcio(parametros: ParametrosConsorcio, request: Request):
             )
             
             await db.simulation_inputs.insert_one(simulation_input.dict())
-            logger.info(f"Simulação salva: {simulation_input.id}")
+            logger.info(f"💾 Simulação salva: ID={simulation_input.id}, Lead_ID={lead_id}, Token={access_token}")
             
         except Exception as e:
-            logger.error(f"Erro ao salvar simulação: {e}")
+            logger.error(f"❌ Erro ao salvar simulação: {e}")
+            import traceback
+            logger.error(f"📋 Traceback completo: {traceback.format_exc()}")
             # Não interrompe a simulação se houver erro no salvamento
         
         # Criar simulador e executar
