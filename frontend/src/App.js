@@ -261,33 +261,50 @@ function App() {
       
       console.log('📄 Blob criado, tamanho:', blob.size, 'bytes');
       
-      // Criar URL do blob e fazer download
-      const url = window.URL.createObjectURL(blob);
-      
       // Nome do arquivo com timestamp
       const timestamp = new Date().toISOString().slice(0, 16).replace(/[:-]/g, '');
       const filename = `relatorio_consorcio_${timestamp}.pdf`;
       
-      // 🔧 CORREÇÃO: Método mais robusto para download
-      const link = document.createElement('a');
-      link.style.display = 'none';
-      link.href = url;
-      link.download = filename;
-      link.setAttribute('download', filename);
-      
-      // Adicionar ao DOM, clicar e remover
-      document.body.appendChild(link);
-      console.log('📄 Iniciando download:', filename);
-      
-      // Tentar download
-      link.click();
-      
-      // Cleanup
-      setTimeout(() => {
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-        console.log('📄 Download concluído e recursos liberados');
-      }, 100);
+      // 🔧 MÉTODO PRINCIPAL: Download via link temporário
+      try {
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.style.display = 'none';
+        link.href = url;
+        link.download = filename;
+        link.setAttribute('download', filename);
+        
+        // Adicionar ao DOM, clicar e remover
+        document.body.appendChild(link);
+        console.log('📄 Iniciando download via link:', filename);
+        
+        link.click();
+        
+        // Cleanup
+        setTimeout(() => {
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(url);
+          console.log('📄 Download concluído e recursos liberados');
+        }, 100);
+        
+      } catch (linkError) {
+        console.warn('⚠️ Método de link falhou, tentando fallback:', linkError);
+        
+        // 🔧 FALLBACK: Tentar usar window.open
+        try {
+          const url = window.URL.createObjectURL(blob);
+          const newWindow = window.open(url);
+          if (newWindow) {
+            console.log('📄 PDF aberto em nova janela como fallback');
+            setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+          } else {
+            throw new Error('Pop-up bloqueado');
+          }
+        } catch (fallbackError) {
+          console.error('❌ Todos os métodos de download falharam:', fallbackError);
+          throw new Error('Seu navegador bloqueou o download. Tente permitir pop-ups ou usar outro navegador.');
+        }
+      }
       
     } catch (error) {
       console.error('❌ Erro ao baixar relatório:', error);
@@ -298,6 +315,8 @@ function App() {
         setErro('Erro nos parâmetros da simulação. Verifique os valores e tente novamente.');
       } else if (error.response?.status === 500) {
         setErro('Erro interno do servidor. Tente novamente em alguns momentos.');
+      } else if (error.message.includes('navegador bloqueou')) {
+        setErro('Download bloqueado pelo navegador. Verifique as configurações de pop-up ou tente outro navegador.');
       } else {
         setErro(`Erro ao gerar relatório PDF: ${error.message}`);
       }
