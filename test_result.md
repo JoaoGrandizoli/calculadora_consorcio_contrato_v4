@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: Testar a nova lógica de probabilidades implementada - Nova lógica implementada: Participantes = 2 × prazo_meses (exemplo: 120 meses → 240 participantes), Sempre 2 contemplados por mês (1 sorteio + 1 lance livre), Função calcular_probabilidade_mes_especifico atualizada para usar contemplados_por_mes=2 sempre, lance_livre_perc mantido para compatibilidade mas não afeta probabilidades
+user_problem_statement: Implementar integração do Typeform para captura de leads. O usuário criou um formulário no Typeform (https://caremfo.typeform.com/to/dN3w60PD) e quer substituir o formulário simples atual pelo embed do Typeform. O fluxo deve ser: usuário preenche Typeform → acesso liberado ao simulador → dados salvos no MongoDB.
 
 backend:
   - task: "Testar nova lógica de probabilidades com contemplação no mês 17"
