@@ -36,6 +36,11 @@ const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
 function App() {
+  // Estado para controle de acesso
+  const [hasAccess, setHasAccess] = useState(false);
+  const [accessToken, setAccessToken] = useState(null);
+  const [leadInfo, setLeadInfo] = useState(null);
+
   const [parametros, setParametros] = useState({
     valor_carta: 100000,
     prazo_meses: 120,
