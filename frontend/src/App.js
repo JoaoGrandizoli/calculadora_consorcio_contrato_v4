@@ -375,7 +375,19 @@ function App() {
             {hasAccess && leadInfo && (
               <div className="text-right flex items-center gap-4">
                 <button
-                  onClick={() => setShowAdmin(!showAdmin)}
+                  onClick={() => {
+                    const newAdminState = !showAdmin;
+                    setShowAdmin(newAdminState);
+                    
+                    // 🔧 FIX: Persistir estado admin no localStorage
+                    if (newAdminState) {
+                      localStorage.setItem('admin_mode', 'true');
+                      console.log('🔧 Entrando no modo admin');
+                    } else {
+                      localStorage.removeItem('admin_mode');
+                      console.log('🔧 Saindo do modo admin');
+                    }
+                  }}
                   className="flex items-center gap-2 px-3 py-1 bg-accent-warm text-primary-accent rounded text-sm hover:bg-opacity-90"
                 >
                   <Settings className="h-4 w-4" />
@@ -386,6 +398,7 @@ function App() {
                   <button 
                     onClick={() => {
                       localStorage.removeItem('access_token');
+                      localStorage.removeItem('admin_mode'); // 🔧 FIX: Limpar modo admin ao sair
                       setHasAccess(false);
                       setAccessToken(null);
                       setLeadInfo(null);
