@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
+import axios from 'axios';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
+
+const API = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
 
 const SimpleForm = ({ onAccessGranted }) => {
   const [formData, setFormData] = useState({
@@ -15,14 +18,45 @@ const SimpleForm = ({ onAccessGranted }) => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Simular delay de processamento
-    setTimeout(() => {
-      const accessToken = 'simple-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+    try {
+      // Gerar access token
+      const accessToken = 'lead-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+      
+      // Salvar lead no backend
+      const leadData = {
+        id: accessToken,
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        access_token: accessToken,
+        has_access: true
+      };
+      
+      // Salvar no localStorage para uso imediato
       localStorage.setItem('access_token', accessToken);
       localStorage.setItem('user_data', JSON.stringify(formData));
+      
+      // Tentar salvar no backend (não bloquear se falhar)
+      try {
+        await axios.post(`${API}/api/save-lead`, leadData);
+        console.log('Lead salvo no backend');
+      } catch (error) {
+        console.error('Erro ao salvar lead:', error);
+        // Continua mesmo se o backend falhar
+      }
+      
+      // Liberar acesso
       onAccessGranted(accessToken);
+      
+    } catch (error) {
+      console.error('Erro geral:', error);
+      // Em caso de erro, ainda libera o acesso
+      const fallbackToken = 'fallback-' + Date.now();
+      localStorage.setItem('access_token', fallbackToken);
+      onAccessGranted(fallbackToken);
+    } finally {
       setIsSubmitting(false);
-    }, 1500);
+    }
   };
 
   const handleChange = (field, value) => {
@@ -55,6 +89,7 @@ const SimpleForm = ({ onAccessGranted }) => {
               placeholder="Seu nome completo"
               required
               className="mt-1"
+              disabled={isSubmitting}
             />
           </div>
 
@@ -70,6 +105,7 @@ const SimpleForm = ({ onAccessGranted }) => {
               placeholder="seu@email.com"
               required
               className="mt-1"
+              disabled={isSubmitting}
             />
           </div>
 
@@ -85,6 +121,7 @@ const SimpleForm = ({ onAccessGranted }) => {
               placeholder="(11) 99999-9999"
               required
               className="mt-1"
+              disabled={isSubmitting}
             />
           </div>
 
