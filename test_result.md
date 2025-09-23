@@ -310,6 +310,18 @@ frontend:
         - agent: "main"
         - comment: "PROBLEMA: Gráfico de probabilidades estava limitado a apenas 100 meses (slice(0, 100) no frontend e min(meses_total + 1, 101) no backend), não mostrando todos os meses até o final do prazo como na planilha do usuário. CORREÇÃO: Removidas limitações - frontend agora usa probabilidades.com_lance.meses (todos) e backend usa range(1, meses_total + 1) para mostrar todos os meses até o prazo final."
 
+  - task: "CORREÇÃO SALDO DEVEDOR: Implementar lógica correta com correção mensal + abatimento"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+        - agent: "main"
+        - comment: "ERRO CONCEITUAL CORRIGIDO: Saldo devedor deve começar com valor_carta + taxas (R$124.000) e ser corrigido mensalmente ANTES de abater a parcela. Lógica antiga calculava valor presente de parcelas futuras (R$154.932). NOVA LÓGICA: 1) Corrigir saldo por taxa mensal, 2) Calcular parcela corrigida anualmente, 3) Abater parcela do saldo. Taxa mensal = (1 + 5%)^(1/12) - 1 = 0.407% a.m."
+
 metadata:
   created_by: "main_agent"
   version: "1.0"
