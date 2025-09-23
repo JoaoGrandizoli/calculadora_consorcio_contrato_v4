@@ -520,7 +520,180 @@ async def simular_consorcio(parametros: ParametrosConsorcio):
         logger.error(f"Erro na simulação: {e}")
         raise HTTPException(status_code=500, detail=f"Erro interno do servidor: {str(e)}")
 
-@api_router.get("/parametros-padrao", response_model=ParametrosConsorcio)
+@api_router.post("/typeform-webhook")
+async def handle_typeform_webhook(request: Request):
+    """Webhook do Typeform para capturar leads"""
+    try:
+        # Verificar signature (se configurado no Typeform)
+        body = await request.body()
+        signature = request.headers.get("typeform-signature")
+        
+        if signature and os.getenv("TYPEFORM_WEBHOOK_SECRET"):
+            if not verify_typeform_signature(signature, body):
+                raise HTTPException(status_code=403, detail="Invalid signature")
+        
+        # Parse do payload
+        payload = json.loads(body)
+        
+        # Extrair dados do formulário
+        form_response = payload.get("form_response", {})
+        answers = form_response.get("answers", [])
+        
+        # Mapear respostas para dados do lead
+        lead_data = extract_lead_data_from_typeform(answers)
+        
+        # Gerar token de acesso
+        access_token = str(uuid.uuid4())
+        lead_data.access_token = access_token
+        
+        # Salvar no MongoDB
+        await db.leads.insert_one(lead_data.dict())
+        
+        return {
+            "status": "success", 
+            "access_token": access_token,
+            "lead_id": lead_data.id
+        }
+        
+    except Exception as e:
+        logger.error(f"Erro no webhook do Typeform: {e}")
+        raise HTTPException(status_code=500, detail="Erro interno do servidor")
+
+@api_router.post("/save-simulation")
+async def save_simulation_input(
+    simulation: ParametrosConsorcio, 
+    request: Request,
+    access_token: Optional[str] = None
+):
+    """Salvar inputs da simulação no banco de dados"""
+    try:
+        # Buscar lead pelo access token (se fornecido)
+        lead_id = None
+        if access_token:
+            lead = await db.leads.find_one({"access_token": access_token})
+            if lead:
+                lead_id = lead["id"]
+        
+        # Criar registro da simulação
+        simulation_input = SimulationInput(
+            lead_id=lead_id,
+            valor_carta=simulation.valor_carta,
+            prazo_meses=simulation.prazo_meses,
+            taxa_admin=simulation.taxa_admin,
+            fundo_reserva=simulation.fundo_reserva,
+            mes_contemplacao=simulation.mes_contemplacao,
+            lance_livre_perc=simulation.lance_livre_perc,
+            taxa_reajuste_anual=simulation.taxa_reajuste_anual,
+            ip_address=request.client.host if request.client else None,
+            user_agent=request.headers.get("user-agent")
+        )
+        
+        # Salvar no MongoDB
+        await db.simulation_inputs.insert_one(simulation_input.dict())
+        
+        return {"status": "success", "simulation_id": simulation_input.id}
+        
+    except Exception as e:
+        logger.error(f"Erro ao salvar simulação: {e}")
+        raise HTTPException(status_code=500, detail="Erro interno do servidor")
+
+@api_router.get("/check-access/{access_token}")
+async def check_access(access_token: str):
+    """Verificar se o token de acesso é válido"""
+    try:
+        lead = await db.leads.find_one({"access_token": access_token})
+        if lead and lead.get("has_access", True):
+            return {
+                "valid": True,
+                "lead_id": lead["id"],
+                "name": lead["name"],
+                "created_at": lead["created_at"]
+            }
+        else:
+            return {"valid": False}
+    except Exception as e:
+        logger.error(f"Erro ao verificar acesso: {e}")
+        return {"valid": False}
+
+def verify_typeform_signature(received_signature: str, payload: bytes) -> bool:
+    """Verificar signature do webhook do Typeform"""
+    try:
+        webhook_secret = os.getenv("TYPEFORM_WEBHOOK_SECRET")
+        if not webhook_secret:
+            return True  # Se não tem secret configurado, aceita
+        
+        sha_name, signature = received_signature.split('=', 1)
+        if sha_name != 'sha256':
+            return False
+        
+        digest = hmac.new(
+            webhook_secret.encode('utf-8'),
+            payload,
+            hashlib.sha256
+        ).digest()
+        
+        expected_signature = base64.b64encode(digest).decode()
+        return hmac.compare_digest(expected_signature, signature)
+        
+    except Exception:
+        return False
+
+def extract_lead_data_from_typeform(answers: list) -> LeadData:
+    """Extrair dados do lead das respostas do Typeform"""
+    # Mapeamento básico - você vai precisar ajustar baseado nos IDs dos seus campos
+    extracted_data = {
+        "name": None,
+        "email": None,
+        "phone": None,
+        "patrimonio": None,
+        "renda": None
+    }
+    
+    for answer in answers:
+        field = answer.get("field", {})
+        field_type = answer.get("type", "")
+        
+        # Mapear por tipo de campo (você pode ajustar por field ID específico)
+        if field_type == "short_text" and not extracted_data["name"]:
+            extracted_data["name"] = answer.get("text", "").strip()
+        elif field_type == "email":
+            extracted_data["email"] = answer.get("email", "").strip()
+        elif field_type == "phone_number":
+            extracted_data["phone"] = answer.get("phone_number", "").strip()
+        elif field_type == "number":
+            # Primeira ocorrência vai para patrimônio, segunda para renda
+            value = answer.get("number")
+            if value is not None:
+                if extracted_data["patrimonio"] is None:
+                    extracted_data["patrimonio"] = float(value)
+                elif extracted_data["renda"] is None:
+                    extracted_data["renda"] = float(value)
+    
+    # Validar dados obrigatórios
+    if not all([extracted_data["name"], extracted_data["email"], extracted_data["phone"]]):
+        raise ValueError("Dados obrigatórios faltando")
+    
+    return LeadData(**{k: v for k, v in extracted_data.items() if v is not None})
+
+@api_router.get("/admin/leads")
+async def get_leads():
+    """Endpoint para visualizar leads capturados (admin)"""
+    try:
+        leads = await db.leads.find().to_list(length=100)
+        return {"leads": leads, "total": len(leads)}
+    except Exception as e:
+        logger.error(f"Erro ao buscar leads: {e}")
+        raise HTTPException(status_code=500, detail="Erro interno do servidor")
+
+@api_router.get("/admin/simulations")
+async def get_simulations():
+    """Endpoint para visualizar simulações realizadas (admin)"""
+    try:
+        simulations = await db.simulation_inputs.find().to_list(length=100)
+        return {"simulations": simulations, "total": len(simulations)}
+    except Exception as e:
+        logger.error(f"Erro ao buscar simulações: {e}")
+        raise HTTPException(status_code=500, detail="Erro interno do servidor")
 async def get_parametros_padrao():
     """Retorna os parâmetros padrão para simulação."""
     return ParametrosConsorcio()
