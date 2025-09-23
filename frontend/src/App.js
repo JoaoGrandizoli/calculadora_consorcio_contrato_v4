@@ -78,18 +78,26 @@ function App() {
     console.log('🔧 Inicializando aplicação...');
     
     const storedToken = localStorage.getItem('access_token');
-    const adminMode = localStorage.getItem('admin_mode') === 'true';
     const adminAuth = localStorage.getItem('admin_authenticated') === 'true';
+    const currentUrl = window.location.href;
     
-    console.log('🔧 Estado inicial:', { storedToken: !!storedToken, adminMode, adminAuth, isAdminAccess });
+    console.log('🔧 Estado inicial:', { 
+      storedToken: !!storedToken, 
+      adminAuth, 
+      isAdminAccess,
+      currentUrl
+    });
     
     if (storedToken) {
       setAccessToken(storedToken);
       checkAccessToken(storedToken);
     }
     
-    // 🔐 SEGURANÇA: Verificar autenticação admin
+    // 🔐 CORREÇÃO: Separar detecção de URL da persistência de estado
     if (isAdminAccess) {
+      // Usuário está acessando URL de admin diretamente
+      console.log('🔐 URL de admin detectada');
+      
       if (adminAuth) {
         console.log('🔐 Admin já autenticado - ativando modo admin');
         setAdminAuthenticated(true);
@@ -97,15 +105,24 @@ function App() {
         setHasAccess(true);
         localStorage.setItem('admin_mode', 'true');
       } else {
-        console.log('🔐 Acesso admin detectado - solicitando autenticação');
-        setHasAccess(true); // Permite mostrar tela de login
+        console.log('🔐 Solicitando autenticação admin');
+        setShowAdmin(true);
+        setHasAccess(true);
+        // NÃO definir admin_mode aqui - só após autenticação
       }
-    } else if (adminMode && adminAuth) {
-      // Restaurar estado admin se estava ativo
-      console.log('🔐 Restaurando sessão admin autenticada');
-      setAdminAuthenticated(true);
-      setShowAdmin(true);
-      setHasAccess(true);
+    } else {
+      // Usuário NÃO está em URL de admin
+      console.log('🔧 URL normal detectada');
+      
+      if (adminAuth && localStorage.getItem('admin_mode') === 'true') {
+        // Se estava no admin e ainda tem sessão válida, manter apenas se explicitamente solicitado
+        console.log('🔧 Sessão admin existente, mas fora da URL admin - limpando modo admin');
+        localStorage.removeItem('admin_mode');
+        setShowAdmin(false);
+      }
+      
+      // Garantir que não está em modo admin se não é URL admin
+      setShowAdmin(false);
     }
   }, [isAdminAccess]);
 
