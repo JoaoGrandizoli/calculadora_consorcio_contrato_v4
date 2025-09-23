@@ -2648,11 +2648,13 @@ class ConsortiumAPITester:
 
     def run_all_tests(self):
         """Run all backend tests"""
+    def run_all_tests(self):
+        """Run all backend tests"""
         print("🚀 Starting Backend API Tests for Consortium Simulation System")
         print(f"📍 Testing endpoint: {self.base_url}")
         print("=" * 70)
         
-        # Test sequence
+        # Core functionality tests
         self.test_root_endpoint()
         success, default_params = self.test_parametros_padrao()
         
@@ -2664,7 +2666,18 @@ class ConsortiumAPITester:
         self.test_validacao_parametros()
         self.test_detailed_calculations()
         
-        # NEW TESTS for lance_livre_perc functionality
+        # TYPEFORM INTEGRATION TESTS (NEW - HIGH PRIORITY)
+        print("\n📝 TYPEFORM INTEGRATION TESTS (HIGH PRIORITY):")
+        self.test_typeform_webhook()
+        self.test_typeform_webhook_data_extraction()
+        self.test_typeform_webhook_missing_data()
+        self.test_save_lead_direct()
+        self.test_check_access_token()
+        self.test_check_invalid_access_token()
+        self.test_admin_leads_endpoint()
+        self.test_admin_simulations_endpoint()
+        
+        # Lance livre functionality tests
         print("\n🎯 Testing Lance Livre Functionality:")
         self.test_lance_livre_zero()
         self.test_lance_livre_positivo()
