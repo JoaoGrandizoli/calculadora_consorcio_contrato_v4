@@ -546,6 +546,19 @@ async def simular_consorcio(parametros: ParametrosConsorcio, request: Request):
         logger.error(f"Erro na simulação: {e}")
         raise HTTPException(status_code=500, detail=f"Erro interno do servidor: {str(e)}")
 
+@api_router.post("/save-lead")
+async def save_lead(lead_data: LeadData):
+    """Salvar lead diretamente (formulário simples)"""
+    try:
+        # Salvar no MongoDB
+        await db.leads.insert_one(lead_data.dict())
+        
+        return {"status": "success", "lead_id": lead_data.id}
+        
+    except Exception as e:
+        logger.error(f"Erro ao salvar lead: {e}")
+        raise HTTPException(status_code=500, detail="Erro interno do servidor")
+
 @api_router.post("/typeform-webhook")
 async def handle_typeform_webhook(request: Request):
     """Webhook do Typeform para capturar leads"""
