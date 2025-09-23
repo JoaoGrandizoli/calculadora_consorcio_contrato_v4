@@ -79,10 +79,20 @@ function App() {
       checkAccessToken(storedToken);
     }
     
-    // Verificar acesso direto ao admin
+    // 🔧 FIX: Verificar e persistir acesso admin
     if (isAdminAccess) {
+      console.log('🔧 Acesso admin detectado - salvando no localStorage');
+      localStorage.setItem('admin_mode', 'true');
       setShowAdmin(true);
       setHasAccess(true);
+    } else {
+      // Se não está tentando acessar admin, limpar o modo admin
+      const wasAdminMode = localStorage.getItem('admin_mode') === 'true';
+      if (wasAdminMode && !window.location.pathname.includes('admin') && !window.location.hash.includes('admin')) {
+        console.log('🔧 Saindo do modo admin');
+        localStorage.removeItem('admin_mode');
+        setShowAdmin(false);
+      }
     }
   }, [isAdminAccess]);
 
