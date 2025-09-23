@@ -1,32 +1,37 @@
 <analysis>
-The AI engineer's work primarily focused on enhancing a consórcio simulation application by addressing several user requirements and bug reports. Initially, the engineer refined probability calculations, introducing conditional logic based on  and standardizing participant numbers. Key bug fixes included correcting  post-contemplation and dynamically updating . A significant feature was the implementation of VPL as an alternative cost metric. The trajectory highlights several iterations of graph and table adjustments, particularly for hazard probabilities and detailed financial breakdowns, ensuring alignment with the user's provided Excel spreadsheet. More recently, the engineer integrated a lead capture system, including a simple frontend form, a MongoDB backend for storing leads and simulation inputs, and an administrative panel for data visualization. The last active task involves integrating this lead capture data directly into Notion.
+The trajectory outlines the transition of work from an AI engineer to me, focusing on a consórcio simulation application. Initially, the previous engineer enhanced probability calculations, fixed financial bugs, implemented VPL, and refined graph/table displays. A significant part was integrating a lead capture system with a React frontend, MongoDB backend, and an admin panel, with Notion integration as the next pending task.
+
+However, the current trajectory (Chat Message 2 onwards) shows an immediate pivot. The user requested re-implementing Typeform for lead capture. The primary efforts shifted to integrating Typeform, debugging its webhook, ensuring data flow to MongoDB and the admin panel, correcting timezone display, and critically, synchronizing  between frontend and backend to correctly associate user simulations with their leads. This involved multiple iterations of code edits, testing, and troubleshooting database configuration and frontend token handling. The Notion integration remains unaddressed.
 </analysis>
 
 <product_requirements>
-The user requested a full-stack consórcio simulation application. Initial requirements included a web interface for parameters, CET calculation, cash flow projections, outstanding balance, PDF report generation, interactive graphs, probability of contemplation, responsive design, and no initial database.
+The application is a full-stack consórcio simulation tool with a web interface, capable of calculating CET, cash flow, outstanding balance, and generating PDF reports and interactive graphs for contemplation probabilities. It requires a responsive design and initially no database.
 
-Subsequent refinements and new feature requests were:
-*   **Probability Calculation & Graphs**: Adjust hazard graphs to show two distinct curves (with and without bid), following  for no bid and  for with bid scenarios, while reducing participants by 2 each month. Graphs should display all months up to the final term with a Y-axis scaled to 100%.
-*   **Financial Table Formatting**: Display first 24 months in detail, then annually (every 12 months) for  and .
-*   ** Correction**: Correct the initial  to be , and ensure it's corrected annually (5% a.a.) and reduces with monthly payments, reaching zero precisely at the end of the term.
-*   **Lead Capture & Data Storage**: Implement a gate for the simulator requiring basic user data (name, email, phone - mandatory; patrimony, income - optional). Store this data, along with simulation inputs, in a simple database (MongoDB).
-*   **Admin Panel**: Provide a way to view captured leads and simulation data.
-*   **Typeform Integration**: Embed a Typeform for lead capture, ensuring it's direct and doesn't require Typeform login. If Typeform proves problematic, offer a simple direct form.
-*   **Notion Integration**: Connect lead capture to Notion, saving user data directly.
+**Subsequent and Current Requirements:**
+*   **Probability & Graphs:** Hazard graphs for with bid () and no bid () scenarios, reducing participants by 2 monthly, with a Y-axis scaled to 100% for all months.
+*   **Financial Tables:** Detailed display for the first 24 months, then annual summaries for  and .
+*   ** Correction:** Initial , annual 5% correction, monthly abatement, reaching zero at term end.
+*   **Lead Capture & Storage:** Gate access to simulator requiring user data (name, email, phone - mandatory; patrimony, income - optional). Store this and simulation inputs in MongoDB.
+*   **Admin Panel:** Visualize captured leads and simulation data.
+*   **Typeform Integration:** Embed a specific Typeform (https://caremfo.typeform.com/to/dN3w60PD) for lead capture. If problematic, use a simple form (already implemented as ).
+*   **Notion Integration:** Connect captured lead data to Notion (pending).
+*   **Admin Panel Enhancements:** Display dates/times in Brasília timezone (UTC-3). Correctly display user names instead of choice options (e.g., Facebook).
+*   **Simulation Association:** Crucially, ensure all user simulations are correctly linked to their respective leads.
 </product_requirements>
 
 <key_technical_concepts>
--   **FastAPI**: Python framework for backend APIs.
--   **React**: Frontend framework for UI, managing state and API calls.
--   **Pydantic**: Data validation for API models.
--   **MongoDB & Motor**: Database for storing leads and simulation inputs.
--   **ReportLab**: PDF generation for financial reports.
--   **Chart.js**: Frontend library for interactive graphs.
--   **Consórcio Financial Logic**: Calculations for CET, cash flow, outstanding balance, , annual adjustments.
--   **Probability Hazards**: Statistical concepts for contemplation chances and hazard rate calculation.
--   **VPL (Valor Presente Líquido)**: Financial metric for cost evaluation.
--   **Typeform API**: Integration for external form submission.
--   **Notion API**: Integration for saving data to Notion databases.
+-   **FastAPI**: Python backend framework.
+-   **React**: Frontend library for UI.
+-   **Pydantic**: Data validation.
+-   **MongoDB & Motor**: Database for data storage.
+-   **ReportLab**: PDF generation.
+-   **Chart.js**: Frontend graphing.
+-   **Consórcio Financial Logic**: Core business logic.
+-   **Probability Hazards**: Contemplation calculation.
+-   ****: React component for Typeform.
+-   **Webhooks**: Real-time data push from Typeform to backend.
+-   ****: UUIDs for user session and lead-simulation association.
+-   **Timezone Handling**: Formatting dates/times for display.
 </key_technical_concepts>
 
 <code_architecture>
@@ -35,61 +40,57 @@ The application follows a standard full-stack architecture:
 
 
 -   **/app/backend/server.py**:
-    -   **Importance:** Core backend logic including FastAPI endpoints, financial calculations (), probability functions, and PDF generation.
+    -   **Importance:** Core backend logic, FastAPI endpoints, financial calculations, probability functions, PDF generation, and data handling.
     -   **Changes Made:**
-        -   Refined  to implement distinct hazard calculation for com lance () and sem lance (), both reducing N by 2 monthly.
-        -   Updated  for PDF reports to align with new hazard logic (single Y-axis 0-100%, only hazard lines, all months).
-        -   Corrected  to properly calculate  as  initially, then applying annual correction and monthly abatement.
-        -   Modified PDF table generation () to display 24 detailed months + annual summaries.
-        -   Added Pydantic models for  and .
-        -   Implemented MongoDB integration using Motor, including  and .
-        -   Created new endpoints  and  to store lead data.
-        -   Modified  endpoint to automatically save simulation inputs linked to an .
-        -   Added administrative endpoints , ,  for data retrieval.
-        -   Fixed MongoDB  serialization errors in admin endpoints.
+        -   Added  endpoint.
+        -   Modified  to log raw Typeform data, become more flexible in data parsing, then refined to accept specific text fields for name (ignoring choice fields), and later reverted to be less restrictive for debugging missing data.
+        -   Added detailed logging for the  header in the  endpoint to debug  issues.
 -   **/app/backend/requirements.txt**:
     -   **Importance:** Python dependencies.
-    -   **Changes Made:** Added  and .
+    -   **Changes Made:** No new dependencies added in this trajectory,  and  were previously added.
+-   **/app/backend/.env**:
+    -   **Importance:** Backend environment variables.
+    -   **Changes Made:** Changed  from  to  to ensure consistent database usage.
 -   **/app/frontend/src/App.js**:
     -   **Importance:** Main React component managing UI state, API calls, and rendering.
     -   **Changes Made:**
-        -   Updated Probabilidades tab graph to show hazard curves for all months with Y-axis 0-100%.
-        -   Modified Detalhamento table to display first 24 months in detail, then annual summaries.
-        -   Integrated  component for user access gating, managing  state and .
-        -   Added a new route and button for  access.
-        -   Implemented conditional rendering for  and the main simulator.
-        -   Added a  for  management.
+        -   Modified  to include token expiration (24 hours) and robust local storage cleanup, forcing re-registration when necessary.
+        -   Implemented logic for robust synchronization after Typeform submission, including hiding the Typeform, waiting for webhook processing, fetching the latest lead, saving the correct  to local storage, and then displaying the simulator.
 -   **/app/frontend/src/components/LeadCapture.js**:
-    -   **Importance:** Component responsible for displaying the lead capture form and handling access.
-    -   **Changes Made:**
-        -   Initially, attempted Typeform embedding (using ).
-        -   Refactored to support conditional rendering of either the embedded Typeform or a  component.
-        -   Removed the problematic Typeform embed, now exclusively renders .
+    -   **Importance:** Component responsible for lead capture.
+    -   **Changes Made:** Refactored to embed Typeform using the  library and handle its callback. An initial attempt was made to directly use the webhook's returned token here, which was later shifted to .
 -   **/app/frontend/src/components/SimpleForm.js**:
     -   **Importance:** Alternative, direct lead capture form.
-    -   **Changes Made:** Created to capture name, email, phone (mandatory), and send to  endpoint, generating an .
+    -   **Changes Made:** None in this trajectory, it serves as a fallback.
 -   **/app/frontend/src/components/AdminPanel.js**:
     -   **Importance:** UI for visualizing captured lead and simulation data.
-    -   **Changes Made:** Created to fetch and display leads and simulation inputs, showing associations and providing export/refresh options.
--   **/app/frontend/src/components/AdminAccess.js**:
-    -   **Importance:** Helper component to provide a direct URL for admin panel access.
-    -   **Changes Made:** Created to handle specific routing for the admin panel.
+    -   **Changes Made:** Modified the  function to display dates and times in the Brasília timezone (UTC-3).
 -   **/app/frontend/.env**:
     -   **Importance:** Frontend environment variables.
-    -   **Changes Made:** Added .
--   **/app/backend/.env**:
-    -   **Importance:** Backend environment variables.
-    -   **Changes Made:** Added  and . (Note: Notion key was discussed but not explicitly added to .env in trajectory).
+    -   **Changes Made:** None explicitly recorded in this trajectory.
+-   **/app/frontend/package.json**:
+    -   **Importance:** Frontend dependencies.
+    -   **Changes Made:**  was added.
 </code_architecture>
 
 <pending_tasks>
-- Integrate lead data directly into Notion.
+-   Integrate lead data directly into Notion (initial task from previous agent's summary).
+-   Resolve the issue where simulations are not being correctly associated with user leads due to the frontend not sending the correct  in simulation requests.
+-   Ensure correct display of user names in the admin panel, avoiding capture of choice fields (e.g., Facebook) as names.
 </pending_tasks>
 
 <current_work>
-Immediately before this summary request, the AI engineer was tasked with integrating the captured lead data directly into Notion. This involves taking the lead information (name, email, phone) and the associated simulation inputs and saving them into a Notion database. The AI engineer has just acknowledged this request, planned to implement a simplified integration, and stated Vou implementar isso agora:, indicating that the implementation phase for Notion integration has just begun. The groundwork with a simple lead capture form and backend storage in MongoDB is already in place.
+Immediately before this summary request, the AI engineer was actively debugging a critical issue: user simulations are not being correctly associated with their respective leads. The backend receives simulation data, but the  and  fields are often , indicating a failure in the frontend to transmit the correct .
+
+Previous attempts to fix this included:
+1.  **Frontend  synchronization:** Trying to synchronize the  generated by the Typeform webhook with the frontend's state, initially by having  handle it, then shifting logic to .
+2.  **Database Name Correction:** A  identified that the backend was incorrectly searching for leads in  instead of , which was corrected in . However, this did not fully resolve the association issue.
+3.  **Robust Frontend Synchronization:** Implemented a robust synchronization mechanism in  to forcefully hide the Typeform, wait for webhook processing, fetch the latest valid lead, and save its  to localStorage before enabling the simulator.
+4.  **Admin Panel Fixes:** Addressed minor issues like displaying dates in Brasília timezone and attempted to fix the  to correctly parse user names.
+
+Despite these efforts, the core problem persists. The current step involves adding detailed logging to the backend's  endpoint to capture the  header and the  being sent (or not sent) by the frontend during a simulation request. The user has just been asked to perform a new simulation so these new logs can be analyzed.
 </current_work>
 
 <optional_next_step>
-Implement the Notion integration by creating a backend function to send lead data to the Notion API.
+Analyze the backend logs after a user simulation to identify why the  is not being sent or processed.
 </optional_next_step>
