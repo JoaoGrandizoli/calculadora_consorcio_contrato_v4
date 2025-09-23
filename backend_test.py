@@ -3120,6 +3120,311 @@ class ConsortiumAPITester:
             self.log_test("Backend Logs Token Reception", False, str(e))
             return False
 
+    def test_critical_lead_simulation_association_investigation(self):
+        """
+        🔥 CRITICAL INVESTIGATION: Users not being associated with simulations
+        
+        PROBLEM STATEMENT:
+        - Users fill out Typeform but simulations are not being associated with leads
+        - System is creating "fallback-" tokens instead of real webhook tokens
+        - Webhook tested manually works, but not being called by real Typeform
+        
+        INVESTIGATION TASKS:
+        1. Check webhook logs for /api/typeform-webhook calls in last 2 hours
+        2. Analyze current tokens: list recent leads and check access_token types (UUID vs fallback)
+        3. Test manual association: simulate with valid token and verify association works
+        4. Check /api/simular endpoint: verify it processes Authorization header correctly
+        5. Investigate complete data: check how many simulations have lead_id null vs filled
+        """
+        print(f"\n🔥 CRITICAL INVESTIGATION: Lead-Simulation Association Problem")
+        print(f"   Problem: Users not being associated with simulations")
+        print(f"   Focus: Webhook tokens vs fallback tokens, Authorization header processing")
+        
+        investigation_results = {
+            "webhook_logs": None,
+            "current_leads": [],
+            "current_simulations": [],
+            "association_test": None,
+            "authorization_header_test": None,
+            "data_analysis": {}
+        }
+        
+        # 1. CHECK WEBHOOK LOGS
+        print(f"\n   📋 Task 1: Checking webhook logs for recent calls...")
+        try:
+            import subprocess
+            # Check backend logs for webhook calls
+            log_result = subprocess.run(['grep', '-i', 'typeform-webhook', '/var/log/supervisor/backend.*.log'], 
+                                      capture_output=True, text=True, timeout=10)
+            
+            if log_result.returncode == 0:
+                webhook_calls = log_result.stdout.strip().split('\n')
+                recent_calls = [call for call in webhook_calls if call.strip()][-10:]  # Last 10 calls
+                investigation_results["webhook_logs"] = recent_calls
+                print(f"      ✅ Found {len(recent_calls)} recent webhook calls")
+                for call in recent_calls[-3:]:  # Show last 3
+                    print(f"         {call}")
+            else:
+                investigation_results["webhook_logs"] = []
+                print(f"      ⚠️ No webhook calls found in logs")
+                
+        except Exception as e:
+            print(f"      ❌ Error checking logs: {e}")
+            investigation_results["webhook_logs"] = f"Error: {e}"
+        
+        # 2. ANALYZE CURRENT TOKENS
+        print(f"\n   📊 Task 2: Analyzing current leads and token types...")
+        try:
+            # Get current leads
+            response = requests.get(f"{self.api_url}/admin/leads", timeout=10)
+            if response.status_code == 200:
+                leads_data = response.json()
+                leads = leads_data.get('leads', [])
+                investigation_results["current_leads"] = leads
+                
+                # Analyze token types
+                uuid_tokens = []
+                fallback_tokens = []
+                no_tokens = []
+                
+                for lead in leads:
+                    token = lead.get('access_token', '')
+                    if not token:
+                        no_tokens.append(lead)
+                    elif token.startswith('fallback-'):
+                        fallback_tokens.append(lead)
+                    elif len(token) == 36 and token.count('-') == 4:  # UUID format
+                        uuid_tokens.append(lead)
+                    else:
+                        fallback_tokens.append(lead)  # Assume non-UUID is fallback
+                
+                print(f"      ✅ Leads Analysis:")
+                print(f"         Total leads: {len(leads)}")
+                print(f"         UUID tokens: {len(uuid_tokens)}")
+                print(f"         Fallback tokens: {len(fallback_tokens)}")
+                print(f"         No tokens: {len(no_tokens)}")
+                
+                # Show recent leads with token types
+                recent_leads = sorted(leads, key=lambda x: x.get('created_at', ''), reverse=True)[:5]
+                print(f"      📋 Recent 5 leads:")
+                for lead in recent_leads:
+                    token = lead.get('access_token', 'NO_TOKEN')
+                    token_type = 'UUID' if (token and len(token) == 36 and token.count('-') == 4) else 'FALLBACK/OTHER'
+                    print(f"         {lead.get('name', 'NO_NAME')[:20]} | {token_type} | {token[:20]}...")
+                
+            else:
+                print(f"      ❌ Failed to get leads: HTTP {response.status_code}")
+                
+        except Exception as e:
+            print(f"      ❌ Error analyzing leads: {e}")
+        
+        # 3. GET CURRENT SIMULATIONS
+        print(f"\n   📊 Task 3: Analyzing current simulations and associations...")
+        try:
+            response = requests.get(f"{self.api_url}/admin/simulations", timeout=10)
+            if response.status_code == 200:
+                sims_data = response.json()
+                simulations = sims_data.get('simulations', [])
+                investigation_results["current_simulations"] = simulations
+                
+                # Analyze associations
+                with_lead_id = [sim for sim in simulations if sim.get('lead_id')]
+                without_lead_id = [sim for sim in simulations if not sim.get('lead_id')]
+                
+                print(f"      ✅ Simulations Analysis:")
+                print(f"         Total simulations: {len(simulations)}")
+                print(f"         With lead_id: {len(with_lead_id)} ({len(with_lead_id)/len(simulations)*100:.1f}%)")
+                print(f"         Without lead_id (orphaned): {len(without_lead_id)} ({len(without_lead_id)/len(simulations)*100:.1f}%)")
+                
+                investigation_results["data_analysis"] = {
+                    "total_simulations": len(simulations),
+                    "associated_simulations": len(with_lead_id),
+                    "orphaned_simulations": len(without_lead_id),
+                    "association_rate": len(with_lead_id)/len(simulations)*100 if simulations else 0
+                }
+                
+            else:
+                print(f"      ❌ Failed to get simulations: HTTP {response.status_code}")
+                
+        except Exception as e:
+            print(f"      ❌ Error analyzing simulations: {e}")
+        
+        # 4. TEST MANUAL ASSOCIATION WITH VALID TOKEN
+        print(f"\n   🧪 Task 4: Testing manual association with valid token...")
+        try:
+            # Get a valid token from existing leads
+            valid_token = None
+            if investigation_results["current_leads"]:
+                for lead in investigation_results["current_leads"]:
+                    token = lead.get('access_token', '')
+                    if token and len(token) == 36 and token.count('-') == 4:  # UUID format
+                        valid_token = token
+                        break
+            
+            if valid_token:
+                print(f"      🔑 Using valid token: {valid_token[:20]}...")
+                
+                # Test simulation with Authorization header
+                parametros = {
+                    "valor_carta": 100000,
+                    "prazo_meses": 120,
+                    "taxa_admin": 0.21,
+                    "fundo_reserva": 0.03,
+                    "mes_contemplacao": 17,
+                    "lance_livre_perc": 0.10,
+                    "taxa_reajuste_anual": 0.05
+                }
+                
+                headers = {"Authorization": f"Bearer {valid_token}"}
+                response = requests.post(f"{self.api_url}/simular", 
+                                       json=parametros,
+                                       headers=headers,
+                                       timeout=30)
+                
+                if response.status_code == 200:
+                    print(f"      ✅ Simulation with valid token successful")
+                    
+                    # Check if new simulation was associated
+                    import time
+                    time.sleep(1)  # Wait for DB write
+                    response2 = requests.get(f"{self.api_url}/admin/simulations", timeout=10)
+                    if response2.status_code == 200:
+                        new_sims = response2.json().get('simulations', [])
+                        latest_sim = max(new_sims, key=lambda x: x.get('created_at', ''), default=None)
+                        
+                        if latest_sim and latest_sim.get('lead_id'):
+                            print(f"      ✅ ASSOCIATION WORKING: Latest simulation has lead_id: {latest_sim['lead_id']}")
+                            investigation_results["association_test"] = "SUCCESS"
+                        else:
+                            print(f"      ❌ ASSOCIATION FAILED: Latest simulation has no lead_id")
+                            investigation_results["association_test"] = "FAILED"
+                    
+                else:
+                    print(f"      ❌ Simulation with valid token failed: HTTP {response.status_code}")
+                    investigation_results["association_test"] = f"HTTP_ERROR_{response.status_code}"
+                    
+            else:
+                print(f"      ⚠️ No valid UUID tokens found to test association")
+                investigation_results["association_test"] = "NO_VALID_TOKENS"
+                
+        except Exception as e:
+            print(f"      ❌ Error testing manual association: {e}")
+            investigation_results["association_test"] = f"ERROR: {e}"
+        
+        # 5. TEST AUTHORIZATION HEADER PROCESSING
+        print(f"\n   🔍 Task 5: Testing Authorization header processing...")
+        try:
+            # Test with different Authorization header formats
+            test_cases = [
+                {"name": "No Authorization", "headers": {}, "expected": "no_token"},
+                {"name": "Bearer format", "headers": {"Authorization": "Bearer test-token-123"}, "expected": "token_extracted"},
+                {"name": "Invalid format", "headers": {"Authorization": "InvalidFormat"}, "expected": "token_extracted"},
+                {"name": "Empty Bearer", "headers": {"Authorization": "Bearer "}, "expected": "empty_token"}
+            ]
+            
+            parametros = {
+                "valor_carta": 100000,
+                "prazo_meses": 120,
+                "taxa_admin": 0.21,
+                "fundo_reserva": 0.03,
+                "mes_contemplacao": 1,
+                "lance_livre_perc": 0.10,
+                "taxa_reajuste_anual": 0.05
+            }
+            
+            auth_test_results = []
+            
+            for test_case in test_cases:
+                response = requests.post(f"{self.api_url}/simular", 
+                                       json=parametros,
+                                       headers=test_case["headers"],
+                                       timeout=30)
+                
+                if response.status_code == 200:
+                    result = "SUCCESS"
+                    print(f"      ✅ {test_case['name']}: Simulation successful")
+                else:
+                    result = f"HTTP_{response.status_code}"
+                    print(f"      ❌ {test_case['name']}: HTTP {response.status_code}")
+                
+                auth_test_results.append({
+                    "name": test_case["name"],
+                    "result": result,
+                    "headers": test_case["headers"]
+                })
+            
+            investigation_results["authorization_header_test"] = auth_test_results
+            
+        except Exception as e:
+            print(f"      ❌ Error testing Authorization header: {e}")
+            investigation_results["authorization_header_test"] = f"ERROR: {e}"
+        
+        # FINAL ANALYSIS AND CONCLUSIONS
+        print(f"\n   📋 INVESTIGATION SUMMARY:")
+        
+        # Webhook analysis
+        webhook_calls = investigation_results.get("webhook_logs", [])
+        if isinstance(webhook_calls, list):
+            print(f"      Webhook calls found: {len(webhook_calls)}")
+        else:
+            print(f"      Webhook logs: {webhook_calls}")
+        
+        # Token analysis
+        leads = investigation_results.get("current_leads", [])
+        if leads:
+            uuid_count = sum(1 for lead in leads 
+                           if lead.get('access_token', '') and 
+                           len(lead.get('access_token', '')) == 36 and 
+                           lead.get('access_token', '').count('-') == 4)
+            fallback_count = len(leads) - uuid_count
+            print(f"      Token analysis: {uuid_count} UUID tokens, {fallback_count} fallback/other tokens")
+        
+        # Association analysis
+        data_analysis = investigation_results.get("data_analysis", {})
+        if data_analysis:
+            print(f"      Association rate: {data_analysis.get('association_rate', 0):.1f}% "
+                  f"({data_analysis.get('associated_simulations', 0)}/{data_analysis.get('total_simulations', 0)})")
+        
+        # Manual test result
+        association_test = investigation_results.get("association_test")
+        print(f"      Manual association test: {association_test}")
+        
+        # Authorization header test
+        auth_test = investigation_results.get("authorization_header_test", [])
+        if isinstance(auth_test, list):
+            successful_auth_tests = sum(1 for test in auth_test if test.get("result") == "SUCCESS")
+            print(f"      Authorization header tests: {successful_auth_tests}/{len(auth_test)} successful")
+        
+        # DETERMINE OVERALL SUCCESS
+        critical_issues = []
+        
+        # Check if association rate is too low
+        if data_analysis.get("association_rate", 0) < 50:  # Less than 50% associated
+            critical_issues.append(f"Low association rate: {data_analysis.get('association_rate', 0):.1f}%")
+        
+        # Check if manual association failed
+        if association_test not in ["SUCCESS", "NO_VALID_TOKENS"]:
+            critical_issues.append(f"Manual association test failed: {association_test}")
+        
+        # Check if no webhook calls found
+        if isinstance(webhook_calls, list) and len(webhook_calls) == 0:
+            critical_issues.append("No webhook calls found in logs")
+        
+        success = len(critical_issues) == 0
+        
+        if success:
+            details = (f"✅ Investigation completed. Association rate: {data_analysis.get('association_rate', 0):.1f}%, "
+                      f"Manual test: {association_test}, Webhook calls: {len(webhook_calls) if isinstance(webhook_calls, list) else 'Error'}")
+        else:
+            details = f"❌ Critical issues found: {'; '.join(critical_issues)}"
+        
+        self.log_test("CRITICAL: Lead-Simulation Association Investigation", success, details)
+        
+        # Store investigation results for summary
+        self.investigation_results = investigation_results
+        
+        return success
+
     def run_all_tests(self):
         """Run all backend tests"""
         print(f"\n🚀 Starting Consortium API Tests - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
