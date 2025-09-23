@@ -28,7 +28,7 @@ def test_saldo_devedor_detailed():
     print()
     
     try:
-        response = requests.post("https://simula-credito.preview.emergentagent.com/api/simular", 
+        response = requests.post("https://leadcapture-sim.preview.emergentagent.com/api/simular", 
                                json=parametros, 
                                timeout=30)
         

@@ -1,29 +1,32 @@
 <analysis>
-The AI engineer successfully implemented several features and bug fixes across the application. The initial focus was on refining the probability of contemplation calculations, incorporating conditional logic based on  (1/N vs. 2/N contemplations), and integrating these into the frontend and PDF reports. During this, the cash flow graph was removed as requested. Two critical bugs were fixed: incorrect  calculation post-contemplation and hardcoded  in tables/PDF, now dynamically updated with monetary correction. A significant feature, VPL (Valor Presente Líquido), was introduced as an alternative cost metric when CET calculation fails to converge or is negative. Finally, the probability calculation was refined again, standardizing  to  and , with an optional frontend input for manual participant numbers. All changes were tested and confirmed.
+The AI engineer's work primarily focused on enhancing a consórcio simulation application by addressing several user requirements and bug reports. Initially, the engineer refined probability calculations, introducing conditional logic based on  and standardizing participant numbers. Key bug fixes included correcting  post-contemplation and dynamically updating . A significant feature was the implementation of VPL as an alternative cost metric. The trajectory highlights several iterations of graph and table adjustments, particularly for hazard probabilities and detailed financial breakdowns, ensuring alignment with the user's provided Excel spreadsheet. More recently, the engineer integrated a lead capture system, including a simple frontend form, a MongoDB backend for storing leads and simulation inputs, and an administrative panel for data visualization. The last active task involves integrating this lead capture data directly into Notion.
 </analysis>
 
 <product_requirements>
-The user initially requested a full-stack consórcio simulation application with lance livre methodology, including: a web interface for parameters, CET calculation, cash flow projections, outstanding balance, PDF report generation, interactive graphs, probability of contemplation, responsive design, no initial database, and adherence to a specific UI/UX design.
+The user requested a full-stack consórcio simulation application. Initial requirements included a web interface for parameters, CET calculation, cash flow projections, outstanding balance, PDF report generation, interactive graphs, probability of contemplation, responsive design, and no initial database.
 
-Subsequently, the following requirements and bug fixes were addressed:
-*   **Probability Calculation Refinement:** Conditional probability logic (1/N vs 2/N contemplations) based on . Later, standardization of  and , with an optional field for manual participant input.
-*   **UI/Report Adjustments:** Removal of the cash flow graph from the application and PDF.
-*   ** Correction:** Correct calculation of the outstanding balance post-contemplation, ensuring only parcel abatements reduce it and the  goes to zero.
-*   **Dynamic :** Display of the annually corrected  in both frontend tables and PDF reports.
-*   **VPL Implementation:** Introduction of Valor Presente Líquido (VPL) as an alternative cost calculation (10% discount rate) when CET fails to converge or is negative.
+Subsequent refinements and new feature requests were:
+*   **Probability Calculation & Graphs**: Adjust hazard graphs to show two distinct curves (with and without bid), following  for no bid and  for with bid scenarios, while reducing participants by 2 each month. Graphs should display all months up to the final term with a Y-axis scaled to 100%.
+*   **Financial Table Formatting**: Display first 24 months in detail, then annually (every 12 months) for  and .
+*   ** Correction**: Correct the initial  to be , and ensure it's corrected annually (5% a.a.) and reduces with monthly payments, reaching zero precisely at the end of the term.
+*   **Lead Capture & Data Storage**: Implement a gate for the simulator requiring basic user data (name, email, phone - mandatory; patrimony, income - optional). Store this data, along with simulation inputs, in a simple database (MongoDB).
+*   **Admin Panel**: Provide a way to view captured leads and simulation data.
+*   **Typeform Integration**: Embed a Typeform for lead capture, ensuring it's direct and doesn't require Typeform login. If Typeform proves problematic, offer a simple direct form.
+*   **Notion Integration**: Connect lead capture to Notion, saving user data directly.
 </product_requirements>
 
 <key_technical_concepts>
--   **FastAPI:** Python framework for backend APIs.
--   **React:** Frontend framework for the user interface.
--   **Pydantic:** Data validation and serialization for API models.
--   **NumPy & Pandas:** Libraries for numerical computations and data manipulation.
--   **ReportLab:** Python library for generating PDF documents.
--   **Chart.js:** Frontend library for interactive graphs.
--   **Shadcn UI:** Component library for modern UI elements.
--   **Consórcio Financial Logic:** Calculations for CET, cash flow, outstanding balance, , annual adjustments.
--   **Probability Hazards:** Statistical concepts for contemplation chances.
--   **VPL (Valor Presente Líquido):** Financial metric for cost evaluation.
+-   **FastAPI**: Python framework for backend APIs.
+-   **React**: Frontend framework for UI, managing state and API calls.
+-   **Pydantic**: Data validation for API models.
+-   **MongoDB & Motor**: Database for storing leads and simulation inputs.
+-   **ReportLab**: PDF generation for financial reports.
+-   **Chart.js**: Frontend library for interactive graphs.
+-   **Consórcio Financial Logic**: Calculations for CET, cash flow, outstanding balance, , annual adjustments.
+-   **Probability Hazards**: Statistical concepts for contemplation chances and hazard rate calculation.
+-   **VPL (Valor Presente Líquido)**: Financial metric for cost evaluation.
+-   **Typeform API**: Integration for external form submission.
+-   **Notion API**: Integration for saving data to Notion databases.
 </key_technical_concepts>
 
 <code_architecture>
@@ -32,43 +35,61 @@ The application follows a standard full-stack architecture:
 
 
 -   **/app/backend/server.py**:
-    -   **Importance:** Contains all FastAPI endpoints, financial calculation logic (), probability functions, and PDF generation.
+    -   **Importance:** Core backend logic including FastAPI endpoints, financial calculations (), probability functions, and PDF generation.
     -   **Changes Made:**
-        -   : Corrected  logic post-contemplation to subtract only the .
-        -   : Updated PDF generation to display the dynamically corrected  in the cash flow table instead of a hardcoded value.
-        -   Removed the  function and its calls.
-        -   Added  function and integrated its call into  to be used when CET doesn't converge or is negative.
-        -   Updated  and  to implement conditional probability based on , and later to standardize  as  with .
-        -   Modified Pydantic models (, , ) to support new probability inputs and VPL outputs.
-        -   Adjusted  logic for PDF to reflect updated probability calculations.
+        -   Refined  to implement distinct hazard calculation for com lance () and sem lance (), both reducing N by 2 monthly.
+        -   Updated  for PDF reports to align with new hazard logic (single Y-axis 0-100%, only hazard lines, all months).
+        -   Corrected  to properly calculate  as  initially, then applying annual correction and monthly abatement.
+        -   Modified PDF table generation () to display 24 detailed months + annual summaries.
+        -   Added Pydantic models for  and .
+        -   Implemented MongoDB integration using Motor, including  and .
+        -   Created new endpoints  and  to store lead data.
+        -   Modified  endpoint to automatically save simulation inputs linked to an .
+        -   Added administrative endpoints , ,  for data retrieval.
+        -   Fixed MongoDB  serialization errors in admin endpoints.
 -   **/app/backend/requirements.txt**:
-    -   **Importance:** Python dependencies for the backend.
-    -   **Changes Made:** No new dependencies added during this trajectory.
+    -   **Importance:** Python dependencies.
+    -   **Changes Made:** Added  and .
 -   **/app/frontend/src/App.js**:
-    -   **Importance:** The main React component, managing UI, state, API calls, and rendering.
+    -   **Importance:** Main React component managing UI state, API calls, and rendering.
     -   **Changes Made:**
-        -   Removed the display of the cash flow graph.
-        -   Updated the Detalhamento table to display the dynamically corrected .
-        -   Modified result cards and the Resumo Financeiro section to conditionally show VPL and relevant messages when CET fails.
-        -   Refactored the Resumo Financeiro section for cleaner VPL/CET display and fixed JSX syntax errors.
-        -   Updated the Probabilidades tab to show the new standardized logic for participants and contemplations, including a new state  and a button to reveal an optional input field for manual participant count.
-        -   Ensured API calls to backend probability endpoints pass  or  correctly.
--   **/app/frontend/src/App.css & /app/frontend/src/index.css**:
-    -   **Importance:** CSS files for styling.
-    -   **Changes Made:** No explicit changes mentioned in the trajectory.
--   **/app/frontend/package.json**:
-    -   **Importance:** Node.js dependencies for the frontend.
-    -   **Changes Made:** No new dependencies added during this trajectory.
+        -   Updated Probabilidades tab graph to show hazard curves for all months with Y-axis 0-100%.
+        -   Modified Detalhamento table to display first 24 months in detail, then annual summaries.
+        -   Integrated  component for user access gating, managing  state and .
+        -   Added a new route and button for  access.
+        -   Implemented conditional rendering for  and the main simulator.
+        -   Added a  for  management.
+-   **/app/frontend/src/components/LeadCapture.js**:
+    -   **Importance:** Component responsible for displaying the lead capture form and handling access.
+    -   **Changes Made:**
+        -   Initially, attempted Typeform embedding (using ).
+        -   Refactored to support conditional rendering of either the embedded Typeform or a  component.
+        -   Removed the problematic Typeform embed, now exclusively renders .
+-   **/app/frontend/src/components/SimpleForm.js**:
+    -   **Importance:** Alternative, direct lead capture form.
+    -   **Changes Made:** Created to capture name, email, phone (mandatory), and send to  endpoint, generating an .
+-   **/app/frontend/src/components/AdminPanel.js**:
+    -   **Importance:** UI for visualizing captured lead and simulation data.
+    -   **Changes Made:** Created to fetch and display leads and simulation inputs, showing associations and providing export/refresh options.
+-   **/app/frontend/src/components/AdminAccess.js**:
+    -   **Importance:** Helper component to provide a direct URL for admin panel access.
+    -   **Changes Made:** Created to handle specific routing for the admin panel.
+-   **/app/frontend/.env**:
+    -   **Importance:** Frontend environment variables.
+    -   **Changes Made:** Added .
+-   **/app/backend/.env**:
+    -   **Importance:** Backend environment variables.
+    -   **Changes Made:** Added  and . (Note: Notion key was discussed but not explicitly added to .env in trajectory).
 </code_architecture>
 
 <pending_tasks>
-There are no explicitly pending tasks. All user requests and bug reports from the trajectory have been implemented and tested, including the latest probability refinements.
+- Integrate lead data directly into Notion.
 </pending_tasks>
 
 <current_work>
-Immediately before this summary request, the AI engineer completed the implementation and testing of the user's latest request regarding probability calculation refinements. This involved standardizing the number of participants for probability calculations in  to  and setting contemplations per month to  (one by draw, one by bid). On the frontend, in , the Probabilidades tab was updated to reflect this new default logic, providing an explanation to the user. An optional Detalhar Probabilidades section was introduced, controlled by a new UI state, allowing users to manually input a custom number of participants if desired. Backend changes were verified through , confirming the accurate calculation of probabilities under the new standardized logic. Frontend UI updates were confirmed via screenshots.
+Immediately before this summary request, the AI engineer was tasked with integrating the captured lead data directly into Notion. This involves taking the lead information (name, email, phone) and the associated simulation inputs and saving them into a Notion database. The AI engineer has just acknowledged this request, planned to implement a simplified integration, and stated Vou implementar isso agora:, indicating that the implementation phase for Notion integration has just begun. The groundwork with a simple lead capture form and backend storage in MongoDB is already in place.
 </current_work>
 
 <optional_next_step>
-Confirm with the user if the implemented probability refinements are satisfactory.
+Implement the Notion integration by creating a backend function to send lead data to the Notion API.
 </optional_next_step>
