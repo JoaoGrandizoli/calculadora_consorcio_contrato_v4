@@ -492,10 +492,15 @@ function App() {
               
               <form onSubmit={(e) => {
                 e.preventDefault();
+                console.log('🔐 Tentativa de login com senha:', adminPassword);
                 const success = handleAdminLogin(adminPassword);
                 if (success) {
-                  setShowAdmin(true);
-                  localStorage.setItem('admin_mode', 'true');
+                  console.log('🔐 Login bem-sucedido, atualizando estado...');
+                  // Forçar atualização do estado
+                  setTimeout(() => {
+                    setShowAdmin(true);
+                    localStorage.setItem('admin_mode', 'true');
+                  }, 100);
                 }
               }}>
                 <div className="mb-4">
