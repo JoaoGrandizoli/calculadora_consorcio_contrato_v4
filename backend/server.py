@@ -441,7 +441,7 @@ async def root():
     return {"message": "Simulador de Consórcio API - Ativo"}
 
 @api_router.post("/simular", response_model=RespostaSimulacao)
-async def simular_consorcio(parametros: ParametrosConsorcio):
+async def simular_consorcio(parametros: ParametrosConsorcio, request: Request):
     """Simula um consórcio com os parâmetros fornecidos."""
     try:
         # Validações básicas
@@ -456,6 +456,35 @@ async def simular_consorcio(parametros: ParametrosConsorcio):
         
         if parametros.mes_contemplacao <= 0:
             raise HTTPException(status_code=400, detail="Mês de contemplação deve ser positivo")
+        
+        # Salvar input da simulação no banco de dados
+        try:
+            access_token = request.headers.get("Authorization", "").replace("Bearer ", "")
+            lead_id = None
+            if access_token:
+                lead = await db.leads.find_one({"access_token": access_token})
+                if lead:
+                    lead_id = lead["id"]
+            
+            simulation_input = SimulationInput(
+                lead_id=lead_id,
+                valor_carta=parametros.valor_carta,
+                prazo_meses=parametros.prazo_meses,
+                taxa_admin=parametros.taxa_admin,
+                fundo_reserva=parametros.fundo_reserva,
+                mes_contemplacao=parametros.mes_contemplacao,
+                lance_livre_perc=parametros.lance_livre_perc,
+                taxa_reajuste_anual=parametros.taxa_reajuste_anual,
+                ip_address=request.client.host if request.client else None,
+                user_agent=request.headers.get("user-agent")
+            )
+            
+            await db.simulation_inputs.insert_one(simulation_input.dict())
+            logger.info(f"Simulação salva: {simulation_input.id}")
+            
+        except Exception as e:
+            logger.error(f"Erro ao salvar simulação: {e}")
+            # Não interrompe a simulação se houver erro no salvamento
         
         # Criar simulador e executar
         simulador = SimuladorConsorcio(parametros)
