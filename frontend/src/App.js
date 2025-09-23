@@ -116,6 +116,33 @@ function App() {
     localStorage.setItem('access_token', token);
   };
 
+  // 🔐 NOVA FUNÇÃO: Autenticação admin
+  const handleAdminLogin = (password) => {
+    const correctPassword = 'Joao@123'; // Senha definida
+    
+    if (password === correctPassword) {
+      setAdminAuthenticated(true);
+      setAdminLoginError('');
+      localStorage.setItem('admin_authenticated', 'true');
+      console.log('✅ Admin autenticado com sucesso');
+      return true;
+    } else {
+      setAdminLoginError('Senha incorreta. Tente novamente.');
+      console.log('❌ Falha na autenticação admin');
+      return false;
+    }
+  };
+
+  const handleAdminLogout = () => {
+    setAdminAuthenticated(false);
+    setShowAdmin(false);
+    localStorage.removeItem('admin_authenticated');
+    localStorage.removeItem('admin_mode');
+    setAdminPassword('');
+    setAdminLoginError('');
+    console.log('🔐 Admin logout realizado');
+  };
+
   const checkAccessToken = async (token) => {
     try {
       // Verificar se o token não é muito antigo (evitar tokens de teste)
