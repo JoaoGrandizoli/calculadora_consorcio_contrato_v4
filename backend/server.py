@@ -699,18 +699,40 @@ def extract_lead_data_from_typeform(answers: list) -> LeadData:
         "renda": None
     }
     
-    for answer in answers:
+    # DEBUG: Log para entender a estrutura
+    logger.info(f"PROCESSANDO {len(answers)} ANSWERS")
+    
+    for i, answer in enumerate(answers):
+        logger.info(f"ANSWER {i}: {json.dumps(answer, indent=2)}")
+        
         field = answer.get("field", {})
         field_type = answer.get("type", "")
+        field_ref = field.get("ref", "")
         
-        # Mapear por tipo de campo (você pode ajustar por field ID específico)
-        if field_type == "short_text" and not extracted_data["name"]:
-            extracted_data["name"] = answer.get("text", "").strip()
-        elif field_type == "email":
-            extracted_data["email"] = answer.get("email", "").strip()
-        elif field_type == "phone_number":
-            extracted_data["phone"] = answer.get("phone_number", "").strip()
-        elif field_type == "number":
+        # Tentar extrair texto de diferentes campos possíveis
+        text_value = (
+            answer.get("text") or 
+            answer.get("choice", {}).get("label") if answer.get("choice") else None or
+            str(answer.get("number")) if answer.get("number") is not None else None
+        )
+        
+        email_value = answer.get("email")
+        phone_value = answer.get("phone_number")
+        
+        logger.info(f"FIELD TYPE: {field_type}, REF: {field_ref}")
+        logger.info(f"VALUES - text: {text_value}, email: {email_value}, phone: {phone_value}")
+        
+        # Mapear por tipo de campo OU por posição
+        if field_type in ["short_text", "long_text"] and text_value and not extracted_data["name"]:
+            extracted_data["name"] = text_value.strip()
+            logger.info(f"NOME EXTRAÍDO: {extracted_data['name']}")
+        elif field_type == "email" and email_value:
+            extracted_data["email"] = email_value.strip()
+            logger.info(f"EMAIL EXTRAÍDO: {extracted_data['email']}")
+        elif field_type == "phone_number" and phone_value:
+            extracted_data["phone"] = phone_value.strip()
+            logger.info(f"TELEFONE EXTRAÍDO: {extracted_data['phone']}")
+        elif field_type == "number" and answer.get("number") is not None:
             # Primeira ocorrência vai para patrimônio, segunda para renda
             value = answer.get("number")
             if value is not None:
@@ -718,10 +740,40 @@ def extract_lead_data_from_typeform(answers: list) -> LeadData:
                     extracted_data["patrimonio"] = float(value)
                 elif extracted_data["renda"] is None:
                     extracted_data["renda"] = float(value)
+        
+        # Fallback: se não conseguiu mapear e há text_value, usar para nome se ainda não tiver
+        elif text_value and not extracted_data["name"]:
+            extracted_data["name"] = text_value.strip()
+            logger.info(f"NOME (FALLBACK) EXTRAÍDO: {extracted_data['name']}")
+    
+    logger.info(f"DADOS FINAIS EXTRAÍDOS: {extracted_data}")
+    
+    # Criar nome composto se possível (primeiro + segundo campo de texto)
+    if not extracted_data["name"] and len(answers) >= 2:
+        first_text = None
+        second_text = None
+        for answer in answers:
+            text_val = answer.get("text", "").strip()
+            if text_val:
+                if not first_text:
+                    first_text = text_val
+                elif not second_text:
+                    second_text = text_val
+                    break
+        
+        if first_text and second_text:
+            extracted_data["name"] = f"{first_text} {second_text}"
+            logger.info(f"NOME COMPOSTO CRIADO: {extracted_data['name']}")
+        elif first_text:
+            extracted_data["name"] = first_text
+            logger.info(f"NOME ÚNICO USADO: {extracted_data['name']}")
     
     # Validar dados obrigatórios
     if not all([extracted_data["name"], extracted_data["email"], extracted_data["phone"]]):
-        raise ValueError("Dados obrigatórios faltando")
+        missing = [k for k, v in extracted_data.items() if k in ["name", "email", "phone"] and not v]
+        logger.error(f"DADOS OBRIGATÓRIOS FALTANDO: {missing}")
+        logger.error(f"DADOS ATUAIS: {extracted_data}")
+        raise ValueError(f"Dados obrigatórios faltando: {missing}")
     
     return LeadData(**{k: v for k, v in extracted_data.items() if v is not None})
 
