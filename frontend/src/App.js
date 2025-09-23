@@ -43,8 +43,10 @@ function App() {
   const [leadInfo, setLeadInfo] = useState(null);
   const [showAdmin, setShowAdmin] = useState(false);
 
-  // Verificar se é acesso direto ao admin via URL
-  const isAdminAccess = window.location.pathname === '/admin' || window.location.hash === '#admin';
+  // 🔧 FIX: Verificar se é acesso admin e persistir no localStorage
+  const isAdminAccess = window.location.pathname === '/admin' || 
+                        window.location.hash === '#admin' || 
+                        localStorage.getItem('admin_mode') === 'true';
 
   const [parametros, setParametros] = useState({
     valor_carta: 100000,
