@@ -41,6 +41,7 @@ function App() {
   const [hasAccess, setHasAccess] = useState(false);
   const [accessToken, setAccessToken] = useState(null);
   const [leadInfo, setLeadInfo] = useState(null);
+  const [showAdmin, setShowAdmin] = useState(false);
 
   const [parametros, setParametros] = useState({
     valor_carta: 100000,
