@@ -436,22 +436,24 @@ function App() {
                     const newAdminState = !showAdmin;
                     
                     if (newAdminState) {
-                      // Entrando no modo admin - verificar autenticação
+                      // 🔧 CORREÇÃO: Entrando no modo admin via botão
                       const isAuthenticated = localStorage.getItem('admin_authenticated') === 'true';
+                      
+                      // Mudar URL para admin
+                      window.location.hash = '#admin';
+                      
                       if (isAuthenticated) {
                         setAdminAuthenticated(true);
                         setShowAdmin(true);
                         localStorage.setItem('admin_mode', 'true');
                         console.log('🔧 Entrando no modo admin autenticado');
                       } else {
-                        // Não autenticado - mostrar tela de login
-                        setAdminAuthenticated(false);
-                        setShowAdmin(true);
-                        localStorage.setItem('admin_mode', 'true');
-                        console.log('🔐 Solicitando autenticação admin');
+                        // Não autenticado - será tratado pelo useEffect quando URL mudar
+                        console.log('🔐 Redirecionando para tela de login admin');
                       }
                     } else {
-                      // Saindo do modo admin
+                      // 🔧 CORREÇÃO: Saindo do modo admin
+                      window.location.hash = '';
                       setShowAdmin(false);
                       localStorage.removeItem('admin_mode');
                       console.log('🔧 Saindo do modo admin');
