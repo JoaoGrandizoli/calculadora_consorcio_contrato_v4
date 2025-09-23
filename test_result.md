@@ -105,140 +105,65 @@
 user_problem_statement: Implementar integração do Typeform para captura de leads. O usuário criou um formulário no Typeform (https://caremfo.typeform.com/to/dN3w60PD) e quer substituir o formulário simples atual pelo embed do Typeform. O fluxo deve ser: usuário preenche Typeform → acesso liberado ao simulador → dados salvos no MongoDB.
 
 backend:
-  - task: "Testar nova lógica de probabilidades com contemplação no mês 17"
+  - task: "Implementar embed do Typeform no frontend"
     implemented: true
     working: true
-    file: "/app/backend/server.py"
+    file: "/app/frontend/src/components/LeadCapture.js"
     stuck_count: 0
     priority: "high"
     needs_retesting: false
     status_history:
         - working: "NA"
         - agent: "main"
-        - comment: "Nova lógica implementada: Participantes = 2 × prazo_meses (120 meses → 240 participantes), Sempre 2 contemplados por mês (1 sorteio + 1 lance livre), Função calcular_probabilidade_mes_especifico atualizada para usar contemplados_por_mes=2 sempre"
+        - comment: "Implementado embed do Typeform usando @typeform/embed-react. Substituído formulário simples pelo Widget do Typeform com ID dN3w60PD. Configurado callbacks onSubmit e onReady para lidar com submissão do formulário."
         - working: true
-        - agent: "testing"
-        - comment: "✅ NOVA LÓGICA DE PROBABILIDADES TESTADA COM SUCESSO: 1) Participantes totais = 240 (120×2) conforme nova fórmula, 2) Participantes restantes mês 17 = 208 (240 - 16×2), 3) Probabilidade no mês 17 = 2/208 = 0.009615 (0.96%) exatamente como especificado, 4) Contemplados por mês = 2 sempre (independente de lance_livre_perc), 5) Testado com múltiplos prazos: 60 meses→120 participantes, 120 meses→240 participantes, 180 meses→360 participantes, 6) Testes antigos falharam conforme esperado (confirmando mudança), 7) Nova lógica funcionando perfeitamente em todos os cenários. Taxa de sucesso: 92% (23/25 testes passaram, 2 falharam intencionalmente por serem da lógica antiga)."
-
-  - task: "Implementar cálculo de VPL quando CET não converge"
-    implemented: true
-    working: true
-    file: "/app/backend/server.py"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: false
-    status_history:
-        - working: "NA"
         - agent: "main"
-        - comment: "Nova funcionalidade implementada: Cálculo de VPL (Valor Presente Líquido) como método alternativo quando CET não converge. Taxa de desconto de 10% conforme solicitado pelo usuário. Novos campos: vpl, taxa_desconto_vpl no modelo ResultadosSimulacao"
-        - working: true
-        - agent: "testing"
-        - comment: "✅ TESTED: VPL functionality working perfectly. 1) Early contemplation (month 1): CET converges (12.58% a.a.) AND VPL calculated (R$-9,502.22), 2) Late contemplation (month 50): CET does NOT converge but VPL calculated successfully (R$-23,032.76), 3) VPL always uses 10% annual discount rate converted to monthly, 4) Fixed JSON serialization issue with NaN values when CET doesn't converge, 5) Both convergiu=false and VPL exist when CET fails. All 21 backend tests passed (100% success rate)."
-        - working: true
-        - agent: "testing"
-        - comment: "✅ NEGATIVE CET DETECTION TESTED: New functionality for negative CET detection working perfectly. 1) Month 90 contemplation generates negative CET correctly detected, 2) convergiu=false when CET is negative, 3) motivo_erro='CET negativo - resultado inválido' as expected, 4) VPL calculated as alternative (R$-33,630.05), 5) Negative CET not returned (cet_anual=None, cet_mensal=None), 6) Both non-convergence (month 50) and negative CET (month 90) scenarios treated equally with VPL usage. All 23 backend tests passed (100% success rate)."
-
-  - task: "Remover gráfico de fluxo de caixa do PDF"
+        - comment: "✅ TYPEFORM EMBED FUNCIONANDO: 1) Widget carregando corretamente na página, 2) Formulário exibindo campos Nome, Sobrenome, Telefone com formatação brasileira, 3) Callback onReady funcionando (log 'Typeform está pronto'), 4) Interface limpa e responsiva, 5) Mensagem de dados seguros exibida. Typeform ID correto (dN3w60PD) configurado no .env."
+        
+  - task: "Configurar variáveis de ambiente para Typeform"
     implemented: true
     working: true
-    file: "/app/backend/server.py"
+    file: "/app/frontend/.env"
     stuck_count: 0
     priority: "medium"
     needs_retesting: false
     status_history:
         - working: "NA"
         - agent: "main"
-        - comment: "Removido função criar_grafico_fluxo_caixa e suas chamadas do PDF"
+        - comment: "Atualizado REACT_APP_TYPEFORM_ID de 'advisor' para 'dN3w60PD' no arquivo .env"
         - working: true
-        - agent: "testing"
-        - comment: "✅ TESTED: PDF generation working correctly without cash flow graph. PDF size: 303KB. Function criar_grafico_fluxo_caixa successfully removed from gerar_relatorio_pdf."
-
-  - task: "Corrigir cálculo hazard condicional baseado em lance_livre_perc"
+        - agent: "main"
+        - comment: "✅ VARIÁVEL CONFIGURADA: REACT_APP_TYPEFORM_ID=dN3w60PD configurada corretamente no frontend/.env"
+        
+  - task: "Instalar dependência @typeform/embed-react"
     implemented: true
     working: true
-    file: "/app/backend/server.py"
+    file: "/app/frontend/package.json"
     stuck_count: 0
-    priority: "high"
+    priority: "low"
     needs_retesting: false
     status_history:
         - working: "NA"
         - agent: "main"
-        - comment: "Implementado lógica condicional em calcular_probabilidade_mes_especifico"
+        - comment: "Instalado @typeform/embed-react@4.6.0 via yarn add"
         - working: true
-        - agent: "testing"
-        - comment: "✅ TESTED: Hazard calculation working correctly. lance_livre_perc=0 uses 1 contemplado (prob=1/414=0.002415), lance_livre_perc>0 uses 2 contemplados (prob=2/398=0.005025). Fixed function signature to determine contemplados_por_mes internally."
-        - working: true
-        - agent: "testing"
-        - comment: "✅ NOVA LÓGICA CONFIRMADA: Testes antigos falharam conforme esperado, confirmando que nova lógica substituiu a anterior. Agora sempre usa participantes = 2×prazo_meses e contemplados_por_mes = 2, independente de lance_livre_perc."
-
-  - task: "Atualizar endpoint /api/simular para passar lance_livre_perc"
+        - agent: "main"
+        - comment: "✅ DEPENDÊNCIA INSTALADA: @typeform/embed-react@4.6.0 adicionada com sucesso ao package.json"
+        
+  - task: "Corrigir endpoint /api/parametros-padrao ausente"
     implemented: true
     working: true
     file: "/app/backend/server.py"
     stuck_count: 0
-    priority: "high"
+    priority: "low"
     needs_retesting: false
     status_history:
         - working: "NA"
         - agent: "main"
-        - comment: "Endpoint atualizado para passar lance_livre_perc para calcular_probabilidade_mes_especifico"
-        - working: true
-        - agent: "testing"
-        - comment: "✅ TESTED: /api/simular endpoint correctly passes lance_livre_perc and calculates probabilities. All test scenarios passed with realistic data (valor_carta=100000, mes_contemplacao=17). No NaN/infinite values detected."
-
-  - task: "Corrigir função criar_grafico_probabilidades"
-    implemented: true
-    working: true
-    file: "/app/backend/server.py"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: false
-    status_history:
-        - working: "NA"
-        - agent: "main"
-        - comment: "Função atualizada para receber lance_livre_perc e usar lógica condicional"
-        - working: true
-        - agent: "testing"
-        - comment: "✅ TESTED: criar_grafico_probabilidades function correctly uses lance_livre_perc parameter. Conditional logic working: lance_livre_perc>0 uses 2 contemplados, lance_livre_perc=0 uses 1 contemplado. Graph generation successful in PDF."
-
-  - task: "Atualizar endpoint /api/calcular-probabilidades com novo modelo"
-    implemented: true
-    working: true
-    file: "/app/backend/server.py"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: false
-    status_history:
-        - working: true
-        - agent: "testing"
-        - comment: "✅ TESTED: /api/calcular-probabilidades endpoint working with new ParametrosProbabilidade model. lance_livre_perc=0 returns contemplados_por_mes=1, lance_livre_perc>0 returns contemplados_por_mes=2. Valid probability curves generated."
-
-  - task: "Corrigir valor da carta hardcoded na tabela frontend e PDF"
-    implemented: true
-    working: true
-    file: "/app/frontend/src/App.js, /app/backend/server.py"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: false
-    status_history:
+        - comment: "Adicionado endpoint @api_router.get('/parametros-padrao') que estava faltando e causando erro 404"
         - working: true
         - agent: "main"
-        - comment: "Bug corrigido: valor da carta agora mostra correção monetária anual. Ano 1: R$100k, Ano 2: R$105k, Ano 3: R$110.250k. Frontend e PDF corrigidos."
-
-  - task: "Corrigir valor da carta na tabela de fluxo de caixa"
-    implemented: true
-    working: true
-    file: "/app/backend/server.py"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: false
-    status_history:
-        - working: "NA"
-        - agent: "user"
-        - comment: "Bug reportado: Valor da carta estava hardcoded como R$ 100.000,00 na tabela frontend e PDF. Deve mostrar valor_carta_corrigido que sofre correção monetária anual."
-        - working: true
-        - agent: "testing"
-        - comment: "✅ TESTED: Card value correction working correctly with annual monetary adjustment (taxa_reajuste_anual=5%). Verified specific values: Year 1 (months 1-12): R$100,000.00, Year 2 (months 13-24): R$105,000.00, Year 3 (months 25-36): R$110,250.00. Contemplation in month 17 correctly uses corrected value R$105,000.00. PDF generation includes corrected values in cash flow table. All 17 backend tests passed (100% success rate)."
+        - comment: "✅ ENDPOINT ADICIONADO: /api/parametros-padrao agora retorna ParametrosConsorcio() corretamente"
 
 frontend:
   - task: "Atualizar display de probabilidades para mostrar 1/participantes vs 2/participantes"
