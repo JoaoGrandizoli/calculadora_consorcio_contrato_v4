@@ -17,90 +17,102 @@ const LeadCapture = ({ onAccessGranted }) => {
   const handleTypeformSubmit = async (data) => {
     console.log('🎯 Typeform submetido:', data);
     
-    setShowForm(false); // Esconder form imediatamente
+    setShowForm(false);
     
     try {
-      // 🚀 OTIMIZAÇÃO: Estratégia de polling inteligente e progressiva
-      // Tentativas mais rápidas no início, depois intervalos maiores
+      // 🔧 NOVA ESTRATÉGIA: Capturar email do Typeform e buscar lead por email + timestamp
       
-      const attempts = [
-        { delay: 500, msg: "Processando formulário..." },
-        { delay: 800, msg: "Validando dados..." },
-        { delay: 1000, msg: "Sincronizando com o servidor..." },
-        { delay: 1200, msg: "Quase pronto..." },
-        { delay: 1500, msg: "Finalizando..." },
-        { delay: 2000, msg: "Última verificação..." }
-      ];
+      // Tentar extrair email do callback do Typeform
+      const submittedEmail = data?.formResponse?.answers?.find(
+        answer => answer.type === 'email'
+      )?.email;
       
-      console.log('🔄 Iniciando busca inteligente pelo lead...');
+      console.log('📧 Email capturado do Typeform:', submittedEmail);
       
-      for (let i = 0; i < attempts.length; i++) {
-        console.log(`🔍 ${attempts[i].msg} (${i + 1}/${attempts.length})`);
+      const maxAttempts = 8;
+      const baseDelay = 800;
+      
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        console.log(`🔍 Tentativa ${attempt}/${maxAttempts} - Buscando lead...`);
         
         try {
-          // Buscar todos os leads
           const response = await fetch(`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001'}/api/admin/leads`);
           const data_leads = await response.json();
           
-          // Estratégia: Pegar o lead MAS RECENTE (primeiro da lista)
           if (data_leads.leads && data_leads.leads.length > 0) {
-            const latestLead = data_leads.leads[0];
+            let targetLead = null;
             
-            // Validar se é um lead real e muito recente (criado nos últimos 3 minutos)
-            const leadCreatedAt = new Date(latestLead.created_at);
-            const now = new Date();
-            const diffMinutes = (now - leadCreatedAt) / (1000 * 60);
+            if (submittedEmail) {
+              // ESTRATÉGIA A: Buscar por email exato + recente (último 5 minutos)
+              const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+              
+              targetLead = data_leads.leads.find(lead => 
+                lead.email === submittedEmail && 
+                new Date(lead.created_at) > fiveMinutesAgo
+              );
+              
+              if (targetLead) {
+                console.log('✅ Lead encontrado por EMAIL + TIMESTAMP:', targetLead.name);
+              }
+            }
             
-            if (latestLead.access_token && 
-                latestLead.email && 
-                latestLead.email.includes('@') &&
-                !latestLead.name.toLowerCase().includes('joão') && 
-                !latestLead.name.toLowerCase().includes('test') &&
-                !latestLead.name.toLowerCase().includes('teste') &&
-                diffMinutes <= 3) { // Lead criado nos últimos 3 minutos
+            if (!targetLead) {
+              // ESTRATÉGIA B: Lead mais recente (últimos 2 minutos)
+              const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
               
-              console.log('✅ Lead recente encontrado:', latestLead.name, 'criado há', diffMinutes.toFixed(1), 'minutos');
+              targetLead = data_leads.leads.find(lead => {
+                const leadDate = new Date(lead.created_at);
+                return leadDate > twoMinutesAgo && 
+                       lead.access_token && 
+                       !lead.name.includes('João Silva') && 
+                       !lead.name.includes('Test');
+              });
               
-              // Salvar dados no localStorage
-              localStorage.setItem('access_token', latestLead.access_token);
+              if (targetLead) {
+                console.log('✅ Lead encontrado por TIMESTAMP:', targetLead.name);
+              }
+            }
+            
+            if (targetLead) {
+              console.log('🔑 Usando token:', targetLead.access_token);
+              
+              // Salvar dados
+              localStorage.setItem('access_token', targetLead.access_token);
               localStorage.setItem('lead_data', JSON.stringify({
-                leadId: latestLead.id,
-                name: latestLead.name,
-                email: latestLead.email,
-                token: latestLead.access_token,
+                leadId: targetLead.id,
+                name: targetLead.name,
+                email: targetLead.email,
+                token: targetLead.access_token,
                 timestamp: new Date().toISOString()
               }));
               
-              // Conceder acesso
-              console.log('🔑 Concedendo acesso com token:', latestLead.access_token);
-              onAccessGranted(latestLead.access_token);
+              onAccessGranted(targetLead.access_token);
               return;
             }
           }
           
-          // Se não encontrou ainda, aguardar próxima tentativa
-          if (i < attempts.length - 1) {
-            await new Promise(resolve => setTimeout(resolve, attempts[i].delay));
+          // Aguardar próxima tentativa
+          if (attempt < maxAttempts) {
+            const delay = baseDelay * attempt; // Delay progressivo
+            await new Promise(resolve => setTimeout(resolve, delay));
           }
           
         } catch (fetchError) {
-          console.log(`⚠️ Erro na tentativa ${i + 1}:`, fetchError.message);
-          if (i < attempts.length - 1) {
-            await new Promise(resolve => setTimeout(resolve, attempts[i].delay));
+          console.log(`⚠️ Erro na tentativa ${attempt}:`, fetchError.message);
+          if (attempt < maxAttempts) {
+            await new Promise(resolve => setTimeout(resolve, baseDelay * attempt));
           }
         }
       }
       
-      // Se chegou aqui, não encontrou lead após todas as tentativas
-      console.log('⚠️ Não encontrou lead válido após todas as tentativas');
+      // Se chegou aqui, não encontrou
+      console.log('❌ Não encontrou lead após todas as tentativas');
       const fallbackToken = 'fallback-' + Date.now();
       localStorage.setItem('access_token', fallbackToken);
       onAccessGranted(fallbackToken);
       
     } catch (error) {
       console.error('❌ Erro na sincronização:', error);
-      
-      // Fallback de emergência
       const errorToken = 'error-' + Date.now();
       localStorage.setItem('access_token', errorToken);
       onAccessGranted(errorToken);
