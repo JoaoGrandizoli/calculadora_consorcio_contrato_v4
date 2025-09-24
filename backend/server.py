@@ -57,6 +57,7 @@ class LeadData(BaseModel):
 class SimulationInput(BaseModel):
     id: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()))
     lead_id: Optional[str] = None  # Associar com o lead que fez a simulação
+    access_token_usado: Optional[str] = None  # 🔧 ADICIONAR: Token usado para debug
     valor_carta: float
     prazo_meses: int
     taxa_admin: float
