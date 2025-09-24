@@ -801,38 +801,56 @@ def extract_lead_data_from_typeform(answers: list) -> LeadData:
                         "ref": field_ref
                     })
     
-    # 🔧 MELHORIA: Montar nome completo inteligentemente
+    # 🔧 MELHORIA: Montar nome completo com base na ORDEM dos campos (sem depender de título)
     if text_fields:
-        # Ordenar por posição ou título para garantir ordem correta
-        text_fields.sort(key=lambda x: ("nome" in x["title"], x["title"]))
+        logger.info(f"📝 TEXT FIELDS ENCONTRADOS: {len(text_fields)}")
+        for i, field in enumerate(text_fields):
+            logger.info(f"   Campo {i}: '{field['text']}'")
         
+        # ESTRATÉGIA NOVA: Os 2 primeiros campos de texto são nome e sobrenome
         name_parts = []
+        
+        # Filtrar campos válidos para nome (sem números, emails, etc)
+        valid_name_fields = []
         for field in text_fields:
             text = field["text"]
-            title = field["title"]
-            
-            # Filtrar campos que claramente são nome/sobrenome
-            if any(word in title for word in ["nome", "name", "sobrenome", "surname", "primeiro", "último"]):
-                name_parts.append(text)
-            elif len(text.split()) == 1 and text.isalpha() and len(text) > 1:
-                # Texto simples que parece ser nome
-                name_parts.append(text)
+            # Validar se parece ser nome: só letras, não é email, não muito longo
+            if (text and 
+                text.replace(" ", "").replace("-", "").isalpha() and  # Só letras, espaços e hífens
+                "@" not in text and  # Não é email
+                len(text) <= 30 and  # Não muito longo
+                len(text) >= 2):  # Pelo menos 2 caracteres
+                valid_name_fields.append(text.title())  # Capitalizar
+                logger.info(f"✅ CAMPO VÁLIDO PARA NOME: '{text}' → '{text.title()}'")
         
-        if name_parts:
-            extracted_data["name"] = " ".join(name_parts)
-            logger.info(f"✅ NOME COMPLETO MONTADO: '{extracted_data['name']}'")
-        elif text_fields:
-            # Fallback: usar o primeiro campo de texto válido
-            extracted_data["name"] = text_fields[0]["text"]
-            logger.info(f"✅ NOME FALLBACK: '{extracted_data['name']}'")
+        if len(valid_name_fields) >= 2:
+            # Se temos 2 ou mais campos, usar os 2 primeiros como nome e sobrenome
+            extracted_data["name"] = f"{valid_name_fields[0]} {valid_name_fields[1]}"
+            logger.info(f"✅ NOME MONTADO (2 campos): '{extracted_data['name']}'")
+        elif len(valid_name_fields) == 1:
+            # Se temos só 1 campo válido, usar como nome
+            extracted_data["name"] = valid_name_fields[0]
+            logger.info(f"✅ NOME MONTADO (1 campo): '{extracted_data['name']}'")
+        else:
+            logger.warning(f"⚠️ Nenhum campo válido para nome encontrado")
     
-    # 🔧 Se profissão não foi capturada por choice, tentar nos text_fields
+    # 🔧 PROFISSÃO: Procurar em text_fields também (além de choices)
     if not extracted_data["profissao"]:
+        # Buscar profissão nos campos de texto (geralmente é o campo após nome/sobrenome)
         for field in text_fields:
-            title = field["title"]
-            if any(word in title for word in ["profiss", "ocupaç", "trabalh", "emprego"]):
-                extracted_data["profissao"] = field["text"]
-                logger.info(f"✅ PROFISSÃO (texto) CAPTURADA: {extracted_data['profissao']}")
+            text = field["text"].lower()
+            # Se parece ser profissão (palavras relacionadas a trabalho)
+            if any(word in text for word in ["eng", "engenheiro", "advogado", "medico", "professor", "analista", "gerente", "diretor", "coordenador", "técnico", "vendedor", "consultor"]):
+                extracted_data["profissao"] = field["text"].title()
+                logger.info(f"✅ PROFISSÃO (texto) IDENTIFICADA: {extracted_data['profissao']}")
+                break
+            # Ou se é um campo de texto curto que não é nome (provavelmente profissão)
+            elif (len(text) <= 20 and  # Não muito longo
+                  text not in [extracted_data["name"], ""] and  # Não é o nome
+                  not text.replace(" ", "").isdigit() and  # Não são só números
+                  "@" not in text):  # Não é email
+                extracted_data["profissao"] = field["text"].title()
+                logger.info(f"✅ PROFISSÃO (campo curto) CAPTURADA: {extracted_data['profissao']}")
                 break
     
     # 📊 RESULTADO FINAL
