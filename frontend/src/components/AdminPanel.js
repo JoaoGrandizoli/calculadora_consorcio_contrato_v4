@@ -295,6 +295,7 @@ const AdminPanel = () => {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nome</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Telefone</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Profissão</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Data</th>
                     </tr>
                   </thead>
@@ -304,6 +305,9 @@ const AdminPanel = () => {
                         <td className="px-6 py-4 text-sm font-medium text-gray-900">{lead.name}</td>
                         <td className="px-6 py-4 text-sm text-gray-500">{lead.email}</td>
                         <td className="px-6 py-4 text-sm text-gray-500">{lead.phone}</td>
+                        <td className="px-6 py-4 text-sm text-gray-500">
+                          {lead.profissao || 'Não informada'}
+                        </td>
                         <td className="px-6 py-4 text-sm text-gray-500">{formatDate(lead.created_at)}</td>
                       </tr>
                     ))}
