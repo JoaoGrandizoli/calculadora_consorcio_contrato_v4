@@ -3853,6 +3853,227 @@ class ConsortiumAPITester:
             self.log_test("Direct Save Lead Endpoint", False, str(e))
             return False
 
+    def test_lead_simulation_association_investigation(self):
+        """
+        🔥 CRITICAL INVESTIGATION: Lead-Simulation Association Problem
+        
+        USER REPORT: "Lead criado pelo webhook mas simulação não é associada"
+        - Lead "joaograndizoli" foi criado via Typeform
+        - Lead mostra "0 simulações" 
+        - "está pegando o lead, mas não está captando a simulação"
+        
+        INVESTIGATION STEPS:
+        1. Check if lead "joaograndizoli" exists and has valid access_token
+        2. Analyze recent simulation logs for Authorization headers
+        3. Test manual association with the lead's access_token
+        4. Verify association rate and orphaned simulations
+        5. Test simulation endpoint with proper Authorization header
+        """
+        print(f"\n🔥 CRITICAL INVESTIGATION: Lead-Simulation Association Problem")
+        print(f"   User Report: Lead 'joaograndizoli' created but simulations not associated")
+        
+        try:
+            # STEP 1: Check admin endpoints to get current state
+            print(f"   Step 1: Getting current database state...")
+            
+            leads_response = requests.get(f"{self.api_url}/admin/leads", timeout=10)
+            simulations_response = requests.get(f"{self.api_url}/admin/simulations", timeout=10)
+            
+            if leads_response.status_code != 200 or simulations_response.status_code != 200:
+                self.log_test("CRITICAL: Lead-Simulation Investigation", False, 
+                            f"Failed to get admin data. Leads: {leads_response.status_code}, Sims: {simulations_response.status_code}")
+                return False
+            
+            leads_data = leads_response.json()
+            simulations_data = simulations_response.json()
+            
+            total_leads = leads_data.get('total', 0)
+            total_simulations = simulations_data.get('total', 0)
+            leads_list = leads_data.get('leads', [])
+            simulations_list = simulations_data.get('simulations', [])
+            
+            print(f"      Current state: {total_leads} leads, {total_simulations} simulations")
+            
+            # STEP 2: Look for lead "joaograndizoli" or similar
+            target_lead = None
+            for lead in leads_list:
+                name = lead.get('name', '').lower()
+                email = lead.get('email', '').lower()
+                if 'joao' in name or 'grandizoli' in name or 'joao' in email:
+                    target_lead = lead
+                    break
+            
+            if target_lead:
+                print(f"      ✅ Found target lead: {target_lead['name']} ({target_lead['email']})")
+                print(f"         ID: {target_lead['id']}")
+                print(f"         Access Token: {target_lead.get('access_token', 'MISSING')}")
+                print(f"         Created: {target_lead.get('created_at', 'UNKNOWN')}")
+            else:
+                print(f"      ⚠️ Lead 'joaograndizoli' not found. Checking recent leads...")
+                # Show last 3 leads for reference
+                recent_leads = sorted(leads_list, key=lambda x: x.get('created_at', ''), reverse=True)[:3]
+                for i, lead in enumerate(recent_leads):
+                    print(f"         Recent lead {i+1}: {lead['name']} ({lead['email']}) - Token: {lead.get('access_token', 'MISSING')[:8]}...")
+            
+            # STEP 3: Analyze association rate
+            associated_simulations = [sim for sim in simulations_list if sim.get('lead_id')]
+            orphaned_simulations = [sim for sim in simulations_list if not sim.get('lead_id')]
+            
+            association_rate = (len(associated_simulations) / total_simulations * 100) if total_simulations > 0 else 0
+            
+            print(f"      Association Analysis:")
+            print(f"         Associated simulations: {len(associated_simulations)}")
+            print(f"         Orphaned simulations: {len(orphaned_simulations)}")
+            print(f"         Association rate: {association_rate:.1f}%")
+            
+            # STEP 4: Test manual simulation with a valid access_token
+            test_token = None
+            if target_lead and target_lead.get('access_token'):
+                test_token = target_lead['access_token']
+            elif leads_list:
+                # Use any lead with access_token
+                for lead in leads_list:
+                    if lead.get('access_token'):
+                        test_token = lead['access_token']
+                        print(f"      Using test token from lead: {lead['name']}")
+                        break
+            
+            manual_test_success = False
+            if test_token:
+                print(f"   Step 2: Testing manual simulation with access_token...")
+                
+                # Test simulation with Authorization header
+                headers = {"Authorization": f"Bearer {test_token}"}
+                simulation_params = {
+                    "valor_carta": 100000,
+                    "prazo_meses": 120,
+                    "taxa_admin": 0.21,
+                    "fundo_reserva": 0.03,
+                    "mes_contemplacao": 17,
+                    "lance_livre_perc": 0.10,
+                    "taxa_reajuste_anual": 0.05
+                }
+                
+                sim_response = requests.post(f"{self.api_url}/simular", 
+                                           json=simulation_params,
+                                           headers=headers,
+                                           timeout=30)
+                
+                if sim_response.status_code == 200:
+                    sim_data = sim_response.json()
+                    if not sim_data.get('erro'):
+                        print(f"      ✅ Manual simulation successful with Authorization header")
+                        manual_test_success = True
+                        
+                        # Check if this simulation was associated
+                        # Wait a moment and check simulations again
+                        import time
+                        time.sleep(1)
+                        
+                        new_sims_response = requests.get(f"{self.api_url}/admin/simulations", timeout=10)
+                        if new_sims_response.status_code == 200:
+                            new_sims_data = new_sims_response.json()
+                            new_simulations_list = new_sims_data.get('simulations', [])
+                            
+                            # Check if we have a new associated simulation
+                            new_associated = [sim for sim in new_simulations_list if sim.get('lead_id')]
+                            if len(new_associated) > len(associated_simulations):
+                                print(f"      ✅ New simulation was associated with lead!")
+                            else:
+                                print(f"      ❌ New simulation was NOT associated with lead")
+                    else:
+                        print(f"      ❌ Manual simulation failed: {sim_data.get('mensagem')}")
+                else:
+                    print(f"      ❌ Manual simulation HTTP error: {sim_response.status_code}")
+            else:
+                print(f"      ⚠️ No valid access_token found for manual testing")
+            
+            # STEP 5: Test simulation WITHOUT Authorization header (should be orphaned)
+            print(f"   Step 3: Testing simulation WITHOUT Authorization header...")
+            
+            sim_response_no_auth = requests.post(f"{self.api_url}/simular", 
+                                               json=simulation_params,
+                                               timeout=30)
+            
+            no_auth_test_success = False
+            if sim_response_no_auth.status_code == 200:
+                sim_data_no_auth = sim_response_no_auth.json()
+                if not sim_data_no_auth.get('erro'):
+                    print(f"      ✅ Simulation without auth header successful (should be orphaned)")
+                    no_auth_test_success = True
+                else:
+                    print(f"      ❌ Simulation without auth failed: {sim_data_no_auth.get('mensagem')}")
+            else:
+                print(f"      ❌ Simulation without auth HTTP error: {sim_response_no_auth.status_code}")
+            
+            # STEP 6: Check backend logs for Authorization header patterns
+            print(f"   Step 4: Checking backend logs for Authorization header patterns...")
+            
+            log_analysis = "No log analysis available"
+            try:
+                import subprocess
+                log_result = subprocess.run(['tail', '-n', '100', '/var/log/supervisor/backend.out.log'], 
+                                          capture_output=True, text=True, timeout=5)
+                
+                if log_result.returncode == 0:
+                    log_content = log_result.stdout
+                    auth_lines = [line for line in log_content.split('\n') 
+                                if 'AUTHORIZATION HEADER' in line or 'ACCESS_TOKEN EXTRAÍDO' in line]
+                    
+                    if auth_lines:
+                        empty_headers = len([line for line in auth_lines if "AUTHORIZATION HEADER: ''" in line])
+                        valid_headers = len([line for line in auth_lines if "Bearer " in line])
+                        
+                        log_analysis = f"Found {len(auth_lines)} auth header logs: {empty_headers} empty, {valid_headers} with Bearer token"
+                        print(f"      Log Analysis: {log_analysis}")
+                        
+                        # Show recent examples
+                        for line in auth_lines[-3:]:
+                            print(f"         {line}")
+                    else:
+                        log_analysis = "No Authorization header logs found in recent entries"
+                        print(f"      {log_analysis}")
+                
+            except Exception as log_error:
+                log_analysis = f"Log analysis failed: {log_error}"
+                print(f"      {log_analysis}")
+            
+            # OVERALL ASSESSMENT
+            issues = []
+            
+            # Critical issue: Low association rate
+            if association_rate < 50:
+                issues.append(f"Low association rate: {association_rate:.1f}% (expected >80%)")
+            
+            # Critical issue: Manual test with token failed
+            if test_token and not manual_test_success:
+                issues.append("Manual simulation with valid access_token failed")
+            
+            # Critical issue: Target lead not found
+            if not target_lead:
+                issues.append("Target lead 'joaograndizoli' not found in database")
+            
+            # Critical issue: Target lead has no access_token
+            if target_lead and not target_lead.get('access_token'):
+                issues.append("Target lead found but has no access_token")
+            
+            success = len(issues) == 0
+            
+            if success:
+                details = (f"✅ Lead-Simulation association working correctly. "
+                          f"Association rate: {association_rate:.1f}%, "
+                          f"Manual test: {'PASSED' if manual_test_success else 'N/A'}, "
+                          f"Target lead: {'FOUND' if target_lead else 'NOT FOUND'}")
+            else:
+                details = f"❌ CRITICAL ISSUES FOUND: {'; '.join(issues)}. {log_analysis}"
+            
+            self.log_test("CRITICAL: Lead-Simulation Association Investigation", success, details)
+            return success
+            
+        except Exception as e:
+            self.log_test("CRITICAL: Lead-Simulation Association Investigation", False, f"Exception: {str(e)}")
+            return False
+
     def run_all_tests(self):
         """Run all backend tests"""
         print(f"\n🚀 Starting Consortium API Tests - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
