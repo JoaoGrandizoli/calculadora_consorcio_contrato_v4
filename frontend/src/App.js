@@ -81,13 +81,34 @@ function App() {
     const adminAuth = localStorage.getItem('admin_authenticated') === 'true';
     const currentUrl = window.location.href;
     
+    // 🔧 NOVA LÓGICA: Capturar parâmetros do redirect do Typeform
+    const urlParams = new URLSearchParams(window.location.search);
+    const emailFromUrl = urlParams.get('email');
+    const timestampFromUrl = urlParams.get('t');
+    const submittedFlag = urlParams.get('submitted');
+    
     console.log('🔧 Estado inicial:', { 
       storedToken: !!storedToken, 
       adminAuth, 
       isAdminAccess,
-      currentUrl
+      currentUrl,
+      emailFromUrl,
+      timestampFromUrl,
+      submittedFlag
     });
     
+    // 🎯 PRIORIDADE 1: Se chegou do Typeform via redirect (email + timestamp na URL)
+    if (emailFromUrl && timestampFromUrl && submittedFlag === 'true') {
+      console.log('🎯 REDIRECT DO TYPEFORM DETECTADO!');
+      console.log('📧 Email da URL:', emailFromUrl);
+      console.log('⏰ Timestamp da URL:', timestampFromUrl);
+      
+      // Buscar lead específico por email e timestamp
+      findLeadByEmailAndTimestamp(emailFromUrl, timestampFromUrl);
+      return; // Não continuar com outras verificações
+    }
+    
+    // Resto da lógica original...
     if (storedToken) {
       setAccessToken(storedToken);
       checkAccessToken(storedToken);
