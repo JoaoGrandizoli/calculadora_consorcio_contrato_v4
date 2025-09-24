@@ -247,7 +247,7 @@ backend:
     implemented: true
     working: false
     file: "/app/backend/server.py"
-    stuck_count: 1
+    stuck_count: 2
     priority: "high"
     needs_retesting: false
     status_history:
@@ -257,6 +257,9 @@ backend:
         - working: false
         - agent: "testing"
         - comment: "❌ CRITICAL ISSUES FOUND: Low association rate: 10.0%; Manual association test failed: FAILED; No webhook calls found in logs"
+        - working: false
+        - agent: "testing"
+        - comment: "🔥 INVESTIGAÇÃO ESPECÍFICA CONCLUÍDA - PROBLEMA LEAD-SIMULAÇÃO CONFIRMADO: ✅ TYPEFORM WEBHOOK FUNCIONANDO: Lead 'joaograndizoli' encontrado no banco (joaograndizoli@gmail.com), access_token válido gerado. ❌ PROBLEMA CRÍTICO CONFIRMADO: 1) Taxa de associação muito baixa: 10% (90 simulações órfãs de 100 total), 2) Teste manual com token válido FALHOU - simulação não foi associada ao lead mesmo enviando Authorization header correto, 3) Backend processa Authorization header mas não salva lead_id na simulação, 4) Logs mostram que backend recebe tokens mas não os associa. DIAGNÓSTICO: Bug no código de associação no endpoint /api/simular - mesmo quando token é válido e lead é encontrado, o lead_id não é salvo na simulação. Estado atual: 45 leads, 100 simulações, 90% órfãs."
 
   - task: "Testar endpoint /api/gerar-relatorio-pdf para problema crítico do botão 'Baixar Relatório'"
     implemented: true
