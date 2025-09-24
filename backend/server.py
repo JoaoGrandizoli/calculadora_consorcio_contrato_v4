@@ -459,10 +459,21 @@ async def simular_consorcio(parametros: ParametrosConsorcio, request: Request):
             auth_header = request.headers.get("Authorization", "")
             logger.info(f"🔑 AUTHORIZATION HEADER: '{auth_header}'")
             
-            access_token = auth_header.replace("Bearer ", "") if auth_header else ""
+            # 🔧 CORREÇÃO: Extração mais robusta do token
+            access_token = ""
+            if auth_header:
+                if auth_header.startswith("Bearer "):
+                    access_token = auth_header[7:]  # Remove "Bearer "
+                elif auth_header.startswith("bearer "):
+                    access_token = auth_header[7:]  # Remove "bearer "
+                else:
+                    access_token = auth_header  # Usar como está se não tem Bearer
+                
             logger.info(f"🎯 ACCESS_TOKEN EXTRAÍDO: '{access_token}'")
             
             lead_id = None
+            access_token_usado = access_token if access_token else None  # Salvar token usado
+            
             if access_token:
                 logger.info(f"🔍 Buscando lead com token: '{access_token}'")
                 lead = await db.leads.find_one({"access_token": access_token})
@@ -479,6 +490,7 @@ async def simular_consorcio(parametros: ParametrosConsorcio, request: Request):
             
             simulation_input = SimulationInput(
                 lead_id=lead_id,
+                access_token_usado=access_token_usado,  # 🔧 ADICIONAR: Salvar token usado para debug
                 valor_carta=parametros.valor_carta,
                 prazo_meses=parametros.prazo_meses,
                 taxa_admin=parametros.taxa_admin,
@@ -490,8 +502,14 @@ async def simular_consorcio(parametros: ParametrosConsorcio, request: Request):
                 user_agent=request.headers.get("user-agent")
             )
             
+            # 🔧 DEBUG: Log antes de salvar
+            logger.info(f"📝 Dados da simulação ANTES de salvar:")
+            logger.info(f"   - ID: {simulation_input.id}")
+            logger.info(f"   - Lead_ID: {lead_id}")
+            logger.info(f"   - Access_token_usado: {access_token_usado}")
+            
             await db.simulation_inputs.insert_one(simulation_input.dict())
-            logger.info(f"💾 Simulação salva: ID={simulation_input.id}, Lead_ID={lead_id}, Token={access_token}")
+            logger.info(f"💾 Simulação salva COM SUCESSO: ID={simulation_input.id}, Lead_ID={lead_id}, Token={access_token}")
             
         except Exception as e:
             logger.error(f"❌ Erro ao salvar simulação: {e}")
