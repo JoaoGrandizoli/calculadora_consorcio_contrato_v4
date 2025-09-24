@@ -725,94 +725,133 @@ def verify_typeform_signature(received_signature: str, payload: bytes) -> bool:
         return False
 
 def extract_lead_data_from_typeform(answers: list) -> LeadData:
-    """Extrair dados do lead das respostas do Typeform"""
-    # Mapeamento básico - você vai precisar ajustar baseado nos IDs dos seus campos
+    """Extrair dados do lead das respostas do Typeform com melhoria na estrutura"""
+    
     extracted_data = {
         "name": None,
         "email": None,
         "phone": None,
         "patrimonio": None,
-        "renda": None
+        "renda": None,
+        "profissao": None  # 🔧 ADICIONAR: Profissão
     }
     
-    # DEBUG: Log para entender a estrutura
-    logger.info(f"PROCESSANDO {len(answers)} ANSWERS")
+    # 🔧 MELHORIA: Arrays para capturar múltiplos campos
+    text_fields = []  # Para nome e sobrenome
+    choice_fields = []  # Para profissão (se for dropdown)
     
-    # Coletar todos os campos de texto primeiro
-    text_fields = []
+    logger.info(f"📋 PROCESSANDO {len(answers)} RESPOSTAS DO TYPEFORM")
     
     for i, answer in enumerate(answers):
-        logger.info(f"ANSWER {i}: {json.dumps(answer, indent=2)}")
+        logger.info(f"📝 ANSWER {i}: {json.dumps(answer, indent=2)}")
         
         field = answer.get("field", {})
         field_type = answer.get("type", "")
         field_ref = field.get("ref", "")
+        field_title = field.get("title", "").lower()
         
-        # Extrair valores
-        text_value = answer.get("text", "").strip() if answer.get("text") else None
-        email_value = answer.get("email", "").strip() if answer.get("email") else None
-        phone_value = answer.get("phone_number", "").strip() if answer.get("phone_number") else None
+        # 📧 EMAIL
+        if field_type == "email" and answer.get("email"):
+            extracted_data["email"] = answer.get("email").strip()
+            logger.info(f"✅ EMAIL CAPTURADO: {extracted_data['email']}")
         
-        logger.info(f"FIELD TYPE: {field_type}, REF: {field_ref}")
-        logger.info(f"VALUES - text: {text_value}, email: {email_value}, phone: {phone_value}")
+        # 📞 TELEFONE
+        elif field_type == "phone_number" and answer.get("phone_number"):
+            extracted_data["phone"] = answer.get("phone_number").strip()
+            logger.info(f"✅ TELEFONE CAPTURADO: {extracted_data['phone']}")
         
-        # Mapear campos específicos (IGNORAR choices, multiple_choice, etc.)
-        if field_type == "email" and email_value:
-            extracted_data["email"] = email_value
-            logger.info(f"EMAIL EXTRAÍDO: {extracted_data['email']}")
-        
-        elif field_type == "phone_number" and phone_value:
-            extracted_data["phone"] = phone_value
-            logger.info(f"TELEFONE EXTRAÍDO: {extracted_data['phone']}")
-        
+        # 💰 NÚMEROS (Patrimônio e Renda)
         elif field_type == "number" and answer.get("number") is not None:
-            # Primeira ocorrência vai para patrimônio, segunda para renda
             value = answer.get("number")
-            if value is not None:
+            if "patrim" in field_title or "patrimônio" in field_title:
+                extracted_data["patrimonio"] = float(value)
+                logger.info(f"✅ PATRIMÔNIO CAPTURADO: {extracted_data['patrimonio']}")
+            elif "renda" in field_title or "salário" in field_title or "salario" in field_title:
+                extracted_data["renda"] = float(value)
+                logger.info(f"✅ RENDA CAPTURADA: {extracted_data['renda']}")
+            else:
+                # Fallback: primeira ocorrência = patrimônio, segunda = renda
                 if extracted_data["patrimonio"] is None:
                     extracted_data["patrimonio"] = float(value)
                 elif extracted_data["renda"] is None:
                     extracted_data["renda"] = float(value)
         
-        # APENAS campos de texto simples para nome (IGNORAR choices, dropdown, etc.)
-        elif field_type in ["short_text", "long_text"] and text_value:
+        # 👤 NOME (Campos de texto)
+        elif field_type in ["short_text", "long_text"] and answer.get("text"):
+            text_value = answer.get("text").strip()
             text_fields.append({
                 "text": text_value,
-                "type": field_type,
-                "ref": field_ref,
-                "index": i
+                "title": field_title,
+                "ref": field_ref
             })
-            logger.info(f"CAMPO DE TEXTO COLETADO: {text_value}")
-    
-    # Construir nome a partir dos campos de texto (assumindo que os primeiros são nome/sobrenome)
-    if text_fields:
-        if len(text_fields) == 1:
-            # Só um campo de texto
-            extracted_data["name"] = text_fields[0]["text"]
-            logger.info(f"NOME ÚNICO EXTRAÍDO: {extracted_data['name']}")
+            logger.info(f"📝 CAMPO TEXTO CAPTURADO: '{text_value}' (título: '{field_title}')")
         
-        elif len(text_fields) >= 2:
-            # Múltiplos campos - assumir que os dois primeiros são nome e sobrenome
-            first_name = text_fields[0]["text"]
-            last_name = text_fields[1]["text"]
-            extracted_data["name"] = f"{first_name} {last_name}"
-            logger.info(f"NOME COMPLETO EXTRAÍDO: {extracted_data['name']} (de {first_name} + {last_name})")
+        # 💼 PROFISSÃO (Choices/Dropdown)
+        elif field_type in ["multiple_choice", "dropdown"] and answer.get("choice"):
+            choice_value = answer.get("choice", {}).get("label", "")
+            if choice_value:
+                # Verificar se é profissão baseado no título do campo
+                if any(word in field_title for word in ["profiss", "ocupaç", "trabalh", "emprego", "carreira"]):
+                    extracted_data["profissao"] = choice_value.strip()
+                    logger.info(f"✅ PROFISSÃO CAPTURADA: {extracted_data['profissao']}")
+                else:
+                    choice_fields.append({
+                        "choice": choice_value,
+                        "title": field_title,
+                        "ref": field_ref
+                    })
     
-    logger.info(f"DADOS FINAIS EXTRAÍDOS: {extracted_data}")
+    # 🔧 MELHORIA: Montar nome completo inteligentemente
+    if text_fields:
+        # Ordenar por posição ou título para garantir ordem correta
+        text_fields.sort(key=lambda x: ("nome" in x["title"], x["title"]))
+        
+        name_parts = []
+        for field in text_fields:
+            text = field["text"]
+            title = field["title"]
+            
+            # Filtrar campos que claramente são nome/sobrenome
+            if any(word in title for word in ["nome", "name", "sobrenome", "surname", "primeiro", "último"]):
+                name_parts.append(text)
+            elif len(text.split()) == 1 and text.isalpha() and len(text) > 1:
+                # Texto simples que parece ser nome
+                name_parts.append(text)
+        
+        if name_parts:
+            extracted_data["name"] = " ".join(name_parts)
+            logger.info(f"✅ NOME COMPLETO MONTADO: '{extracted_data['name']}'")
+        elif text_fields:
+            # Fallback: usar o primeiro campo de texto válido
+            extracted_data["name"] = text_fields[0]["text"]
+            logger.info(f"✅ NOME FALLBACK: '{extracted_data['name']}'")
     
-    # Validar dados obrigatórios (TEMPORARIAMENTE FLEXÍVEL PARA DEBUG)
-    if not extracted_data["email"] or not extracted_data["phone"]:
-        missing = [k for k, v in extracted_data.items() if k in ["email", "phone"] and not v]
-        logger.error(f"DADOS OBRIGATÓRIOS FALTANDO: {missing}")
-        logger.error(f"DADOS ATUAIS: {extracted_data}")
-        raise ValueError(f"Dados obrigatórios faltando: {missing}")
+    # 🔧 Se profissão não foi capturada por choice, tentar nos text_fields
+    if not extracted_data["profissao"]:
+        for field in text_fields:
+            title = field["title"]
+            if any(word in title for word in ["profiss", "ocupaç", "trabalh", "emprego"]):
+                extracted_data["profissao"] = field["text"]
+                logger.info(f"✅ PROFISSÃO (texto) CAPTURADA: {extracted_data['profissao']}")
+                break
     
-    # Se não temos nome, usar email como fallback temporário
-    if not extracted_data["name"]:
-        extracted_data["name"] = f"Lead {extracted_data['email'].split('@')[0]}"
-        logger.info(f"NOME FALLBACK CRIADO: {extracted_data['name']}")
+    # 📊 RESULTADO FINAL
+    logger.info(f"📊 DADOS EXTRAÍDOS FINAIS:")
+    logger.info(f"   - Nome: {extracted_data['name']}")
+    logger.info(f"   - Email: {extracted_data['email']}")
+    logger.info(f"   - Telefone: {extracted_data['phone']}")
+    logger.info(f"   - Profissão: {extracted_data['profissao']}")
+    logger.info(f"   - Patrimônio: {extracted_data['patrimonio']}")
+    logger.info(f"   - Renda: {extracted_data['renda']}")
     
-    return LeadData(**{k: v for k, v in extracted_data.items() if v is not None})
+    return LeadData(
+        name=extracted_data["name"] or "Nome não informado",
+        email=extracted_data["email"] or "",
+        phone=extracted_data["phone"] or "",
+        patrimonio=extracted_data["patrimonio"],
+        renda=extracted_data["renda"],
+        profissao=extracted_data["profissao"] or "Não informada"
+    )
 
 @api_router.get("/admin/dados-completos")
 async def get_dados_completos():
