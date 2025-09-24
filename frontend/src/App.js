@@ -193,6 +193,108 @@ function App() {
     console.log('🔐 Admin logout realizado');
   };
 
+  // 🎯 NOVA FUNÇÃO: Buscar lead por email e timestamp do redirect do Typeform
+  const findLeadByEmailAndTimestamp = async (email, timestamp) => {
+    console.log('🔍 Buscando lead específico por email e timestamp...');
+    console.log('📧 Email:', email);
+    console.log('⏰ Timestamp:', timestamp);
+    
+    try {
+      // Converter timestamp para Date para comparação
+      const submissionTime = new Date(timestamp);
+      const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000); // 10 minutos de janela
+      
+      console.log('🕒 Janela de busca:', {
+        submissionTime: submissionTime.toISOString(),
+        tenMinutesAgo: tenMinutesAgo.toISOString()
+      });
+      
+      // Buscar todos os leads
+      const response = await axios.get(`${API}/admin/leads`);
+      const leads = response.data.leads || [];
+      
+      console.log(`🔍 Verificando ${leads.length} leads...`);
+      
+      // Buscar lead exato por email
+      const matchingLeads = leads.filter(lead => {
+        const leadEmail = lead.email?.toLowerCase().trim();
+        const targetEmail = email.toLowerCase().trim();
+        const leadCreatedAt = new Date(lead.created_at);
+        
+        console.log(`📋 Verificando lead: ${lead.name} - ${leadEmail} - ${leadCreatedAt.toISOString()}`);
+        
+        return leadEmail === targetEmail && leadCreatedAt > tenMinutesAgo;
+      });
+      
+      console.log(`📊 Leads compatíveis encontrados: ${matchingLeads.length}`);
+      
+      if (matchingLeads.length > 0) {
+        // Pegar o mais recente se há múltiplos
+        const selectedLead = matchingLeads.sort((a, b) => 
+          new Date(b.created_at) - new Date(a.created_at)
+        )[0];
+        
+        console.log('✅ LEAD ENCONTRADO POR EMAIL+TIMESTAMP:');
+        console.log('   - Nome:', selectedLead.name);
+        console.log('   - Email:', selectedLead.email);
+        console.log('   - Token:', selectedLead.access_token);
+        console.log('   - Criado em:', selectedLead.created_at);
+        
+        // Salvar dados no localStorage
+        localStorage.setItem('access_token', selectedLead.access_token);
+        localStorage.setItem('lead_data', JSON.stringify({
+          leadId: selectedLead.id,
+          name: selectedLead.name,
+          email: selectedLead.email,
+          token: selectedLead.access_token,
+          timestamp: new Date().toISOString(),
+          source: 'typeform_redirect'
+        }));
+        
+        // Limpar parâmetros da URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+        
+        // Conceder acesso
+        setAccessToken(selectedLead.access_token);
+        setHasAccess(true);
+        setLeadInfo({
+          name: selectedLead.name,
+          email: selectedLead.email,
+          created_at: selectedLead.created_at
+        });
+        
+        console.log('🎯 ACESSO CONCEDIDO VIA REDIRECT DO TYPEFORM');
+        
+      } else {
+        console.log('❌ Nenhum lead encontrado com esse email e timestamp');
+        console.log('🔄 Tentando busca por lead mais recente...');
+        
+        // Fallback: buscar lead mais recente
+        const recentLead = leads.find(lead => {
+          const leadCreatedAt = new Date(lead.created_at);
+          return leadCreatedAt > tenMinutesAgo && 
+                 lead.access_token && 
+                 !lead.name.includes('João Silva') &&
+                 !lead.name.includes('Test');
+        });
+        
+        if (recentLead) {
+          console.log('✅ FALLBACK - Lead recente encontrado:', recentLead.name);
+          localStorage.setItem('access_token', recentLead.access_token);
+          setAccessToken(recentLead.access_token);
+          setHasAccess(true);
+        } else {
+          console.log('❌ Nenhum lead recente encontrado - redirecionando para formulário');
+          // Não fazer nada, deixar mostrar o formulário
+        }
+      }
+      
+    } catch (error) {
+      console.error('❌ Erro ao buscar lead por email/timestamp:', error);
+      // Em caso de erro, não fazer nada e deixar o fluxo normal
+    }
+  };
+
   const checkAccessToken = async (token) => {
     try {
       // Verificar se o token não é muito antigo (evitar tokens de teste)
