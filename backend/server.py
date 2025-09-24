@@ -50,6 +50,7 @@ class LeadData(BaseModel):
     phone: str = Field(..., min_length=10, max_length=20)
     patrimonio: Optional[float] = Field(None, ge=0)
     renda: Optional[float] = Field(None, ge=0)
+    profissao: Optional[str] = Field(None, max_length=100)  # 🔧 ADICIONAR: Campo profissão
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     has_access: bool = True
     access_token: Optional[str] = None
