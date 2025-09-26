@@ -21,6 +21,7 @@ import {
 import { Line } from 'react-chartjs-2';
 import CadastroForm from './components/CadastroForm';
 import AdminPanel from './components/AdminPanel';
+import ContractAnalysis from './components/ContractAnalysis';
 import './App.css';
 
 ChartJS.register(
