@@ -852,8 +852,8 @@ function App() {
                           id="taxaReajuste"
                           type="number"
                           step="0.01"
-                          value={parametros.taxa_reajuste_anual}
-                          onChange={(e) => handleInputChange('taxa_reajuste_anual', parseFloat(e.target.value))}
+                          value={parametros.taxa_reajuste_anual * 100}
+                          onChange={(e) => handleInputChange('taxa_reajuste_anual', parseFloat(e.target.value) / 100)}
                           className="mt-1"
                         />
                       </div>
