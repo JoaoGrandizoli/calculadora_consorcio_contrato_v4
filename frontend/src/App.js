@@ -425,8 +425,6 @@ function App() {
       } else {
         setResultados(response.data);
         console.log('✅ Simulação realizada com sucesso');
-        console.log('🔍 Estrutura da resposta:', JSON.stringify(response.data, null, 2));
-        console.log('🔍 CET value:', response.data?.resultados?.cet_anual);
       }
     } catch (error) {
       console.error('❌ Erro na simulação:', error);
