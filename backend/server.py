@@ -1221,7 +1221,8 @@ def gerar_dados_grafico_probabilidade(prazo_meses: int, lance_livre_perc: float)
         num_participantes = prazo_meses * 2
         N0 = num_participantes
         
-        meses_total = min(60, int(np.ceil(N0 / 2)))  # Limitar a 60 meses para o gráfico
+        # Usar o prazo completo para o gráfico (até 120 meses conforme solicitado)
+        meses_total = min(prazo_meses, int(np.ceil(N0 / 2)))
         
         # Listas para dados
         meses = []
@@ -1232,14 +1233,20 @@ def gerar_dados_grafico_probabilidade(prazo_meses: int, lance_livre_perc: float)
         n_atual = N0
         
         for mes in range(1, meses_total + 1):
-            meses.append(f"Mês {mes}")
+            # Labels só com números (não "Mês 1, Mês 2...")
+            meses.append(mes)
             
             if n_atual > 0:
                 # Hazard sem lance: 1/(N-1) - só compete no sorteio
                 h_sem = 1.0 / max(1, n_atual - 1)
                 
-                # Hazard com lance: 2/N - compete no sorteio E no lance
-                h_com = min(2.0 / n_atual, 1.0)
+                # Hazard com lance: depende do percentual de lance livre
+                if lance_livre_perc > 0:
+                    # Se há lance livre, 2/N - compete no sorteio E no lance
+                    h_com = min(2.0 / n_atual, 1.0)
+                else:
+                    # Se não há lance livre (0%), é igual ao sem lance
+                    h_com = h_sem
             else:
                 h_sem = 0
                 h_com = 0
@@ -1252,7 +1259,7 @@ def gerar_dados_grafico_probabilidade(prazo_meses: int, lance_livre_perc: float)
         
         # Retornar formato compatível com Chart.js
         return {
-            "labels": meses,
+            "labels": meses,  # Agora só números
             "datasets": [
                 {
                     "label": "Sem Lance Livre",
@@ -1263,10 +1270,10 @@ def gerar_dados_grafico_probabilidade(prazo_meses: int, lance_livre_perc: float)
                     "fill": False
                 },
                 {
-                    "label": "Com Lance Livre",
+                    "label": "Com Lance Livre" if lance_livre_perc > 0 else "Sem Lance Livre (Lance = 0%)",
                     "data": hazard_com,
-                    "borderColor": "rgb(255, 99, 132)",
-                    "backgroundColor": "rgba(255, 99, 132, 0.2)",
+                    "borderColor": "rgb(255, 99, 132)" if lance_livre_perc > 0 else "rgb(128, 128, 128)",
+                    "backgroundColor": "rgba(255, 99, 132, 0.2)" if lance_livre_perc > 0 else "rgba(128, 128, 128, 0.2)",
                     "tension": 0.1,
                     "fill": False
                 }
