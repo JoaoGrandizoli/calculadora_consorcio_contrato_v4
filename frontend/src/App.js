@@ -184,9 +184,14 @@ function App() {
   }, []);
 
   const handleAccessGranted = (token) => {
+    console.log('🎯 handleAccessGranted chamado com token:', token);
+    console.log('🔍 Estado antes da atualização:', { hasAccess, accessToken });
+    
     setAccessToken(token);
     setHasAccess(true);
     localStorage.setItem('access_token', token);
+    
+    console.log('✅ Estados atualizados - hasAccess deveria ser true agora');
   };
 
   // 🔐 NOVA FUNÇÃO: Autenticação admin
