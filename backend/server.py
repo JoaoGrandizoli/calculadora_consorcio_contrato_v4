@@ -1952,3 +1952,6 @@ def calcular_probabilidade_mes_especifico(mes_contemplacao: int, lance_livre_per
             "prob_ate_mes": 0.0,
             "participantes_restantes": 0
         }
+
+# Include the router in the main app
+app.include_router(api_router)
