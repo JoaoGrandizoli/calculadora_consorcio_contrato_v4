@@ -1383,8 +1383,84 @@ else:
     logger.warning("⚠️ Chave API do Claude não encontrada")
 
 # ----------------------------
-# INTEGRAÇÃO COM NOTION
+# SERVIÇO DE ANÁLISE DE CONTRATOS COM CLAUDE
 # ----------------------------
+
+class ContractAnalysisService:
+    """Serviço para análise de contratos de consórcio usando Claude AI"""
+    
+    def __init__(self):
+        self.client = claude_client
+    
+    async def analyze_contract_text(self, contract_text: str) -> dict:
+        """Analisar texto de contrato de consórcio"""
+        if not self.client:
+            return {"success": False, "error": "Claude AI não configurado"}
+        
+        try:
+            prompt = f"""
+            Você é um especialista em análise de contratos de consórcio no Brasil. Analise o seguinte contrato e forneça uma análise detalhada:
+
+            CONTRATO:
+            {contract_text}
+
+            Por favor, forneça uma análise estruturada incluindo:
+
+            1. **RESUMO EXECUTIVO**
+            - Tipo de consórcio (veículo, imóvel, etc.)
+            - Administradora
+            - Valor da carta de crédito
+            - Prazo do grupo
+
+            2. **ANÁLISE FINANCEIRA**
+            - Taxa de administração
+            - Fundo de reserva
+            - Taxa de juros (se houver)
+            - Valor das parcelas
+            - Custo total do consórcio
+
+            3. **PONTOS DE ATENÇÃO**
+            - Cláusulas que o consumidor deve ficar atento
+            - Possíveis armadilhas ou taxas ocultas
+            - Condições de contemplação
+
+            4. **RECOMENDAÇÕES**
+            - Pontos positivos do contrato
+            - Sugestões para o consumidor
+            - Alertas importantes
+
+            5. **SCORE DE RECOMENDAÇÃO**
+            - Dê uma nota de 1 a 10 para este contrato
+            - Justifique a nota
+
+            Seja claro, objetivo e use linguagem acessível para o consumidor brasileiro.
+            """
+
+            message = self.client.messages.create(
+                model="claude-3-5-sonnet-20241022",
+                max_tokens=2000,
+                temperature=0.3,
+                messages=[
+                    {"role": "user", "content": prompt}
+                ]
+            )
+
+            analysis_text = message.content[0].text
+
+            logger.info("✅ Análise de contrato realizada com sucesso")
+            return {
+                "success": True,
+                "analysis": analysis_text,
+                "model_used": "claude-3-5-sonnet-20241022",
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            }
+
+        except Exception as e:
+            logger.error(f"❌ Erro na análise do contrato: {e}")
+            return {"success": False, "error": str(e)}
+
+# Instanciar serviço de análise
+contract_analysis_service = ContractAnalysisService()
 
 class NotionLeadService:
     """Serviço para gerenciar leads no Notion"""
