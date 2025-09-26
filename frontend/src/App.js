@@ -920,8 +920,10 @@ function App() {
             <AdminPanel />
           </div>
         )
-      ) : (
-        /* Mostrar Simulador */
+      )}
+    </div>
+  );
+}
         <div className="container mx-auto px-4 md:px-6 py-4 md:py-8">
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 md:gap-8">
             {/* Painel de Parâmetros */}
