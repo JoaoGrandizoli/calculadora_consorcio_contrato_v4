@@ -5250,6 +5250,10 @@ Administradora                   Consorciado"""
         print(f"🌐 Testing API at: {self.api_url}")
         print("=" * 80)
         
+        # 🔥 CRITICAL INVESTIGATION FIRST - DETALHAMENTO STRUCTURE ISSUE
+        print("\n🔥 CRITICAL INVESTIGATION PHASE - DETALHAMENTO STRUCTURE FOR CASH FLOW")
+        self.test_detalhamento_structure_critical()
+        
         # 🔥 CRITICAL INVESTIGATION FIRST - TYPEFORM WEBHOOK LEADS NOT BEING SAVED
         print("\n🔥 CRITICAL INVESTIGATION PHASE - TYPEFORM WEBHOOK LEADS NOT BEING SAVED")
         self.test_typeform_webhook_critical_investigation()
