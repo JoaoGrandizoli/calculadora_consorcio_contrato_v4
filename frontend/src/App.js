@@ -577,6 +577,17 @@ function App() {
     }
   };
 
+  // 🔧 DEBUG: Log render conditions
+  console.log('🎯 RENDER CONDITIONS DEBUG:', {
+    hasAccess,
+    accessToken,
+    showAdmin,
+    isAdminAccess,
+    shouldShowCadastro: !hasAccess && !isAdminAccess,
+    shouldShowAdmin: showAdmin || isAdminAccess,
+    shouldShowMain: hasAccess && !showAdmin && !isAdminAccess
+  });
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-dark via-primary to-secondary">
       {!hasAccess && !isAdminAccess ? (
