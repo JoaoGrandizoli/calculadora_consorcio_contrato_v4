@@ -1429,55 +1429,32 @@ class ContractAnalysisService:
         self.client = claude_client
     
     async def analyze_contract_text(self, contract_text: str) -> dict:
-        """Analisar texto de contrato de consórcio"""
+        """Analisar texto de contrato de consórcio usando prompt especializado"""
         if not self.client:
             return {"success": False, "error": "Claude AI não configurado"}
         
         try:
-            prompt = f"""
-            Você é um especialista em análise de contratos de consórcio no Brasil. Analise o seguinte contrato e forneça uma análise detalhada:
+            # Usar o prompt especializado e estruturado para análise de consórcios
+            full_prompt = f"""
+{prompt_consorcio}
 
-            CONTRATO:
-            {contract_text}
+---
 
-            Por favor, forneça uma análise estruturada incluindo:
+AGORA ANALISE O SEGUINTE CONTRATO DE CONSÓRCIO:
 
-            1. **RESUMO EXECUTIVO**
-            - Tipo de consórcio (veículo, imóvel, etc.)
-            - Administradora
-            - Valor da carta de crédito
-            - Prazo do grupo
+```
+{contract_text}
+```
 
-            2. **ANÁLISE FINANCEIRA**
-            - Taxa de administração
-            - Fundo de reserva
-            - Taxa de juros (se houver)
-            - Valor das parcelas
-            - Custo total do consórcio
-
-            3. **PONTOS DE ATENÇÃO**
-            - Cláusulas que o consumidor deve ficar atento
-            - Possíveis armadilhas ou taxas ocultas
-            - Condições de contemplação
-
-            4. **RECOMENDAÇÕES**
-            - Pontos positivos do contrato
-            - Sugestões para o consumidor
-            - Alertas importantes
-
-            5. **SCORE DE RECOMENDAÇÃO**
-            - Dê uma nota de 1 a 10 para este contrato
-            - Justifique a nota
-
-            Seja claro, objetivo e use linguagem acessível para o consumidor brasileiro.
+IMPORTANTE: Use EXATAMENTE o formato de resposta especificado nas instruções acima. Seja detalhista, cite legislação específica e use o sistema de pontuação para classificar o risco de cada cláusula encontrada.
             """
 
             message = self.client.messages.create(
                 model="claude-3-5-sonnet-20241022",
-                max_tokens=2000,
-                temperature=0.3,
+                max_tokens=4000,  # Aumentado para acomodar análise mais detalhada
+                temperature=0.1,  # Reduzido para análise mais consistente
                 messages=[
-                    {"role": "user", "content": prompt}
+                    {"role": "user", "content": full_prompt}
                 ]
             )
 
