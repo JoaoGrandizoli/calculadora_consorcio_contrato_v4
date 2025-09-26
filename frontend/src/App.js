@@ -558,12 +558,13 @@ function App() {
       {/* Header */}
       <div className="bg-primary-accent text-light border-b border-moonstone">
         <div className="container mx-auto px-6 py-6">
-          <div className="flex items-center gap-3 justify-between">
+          {/* Header Principal */}
+          <div className="flex items-center gap-3 justify-between mb-6">
             <div className="flex items-center gap-3">
               <Calculator className="h-8 w-8 text-accent-warm" />
               <div>
-                <h1 className="text-2xl font-bold">Simulador de Consórcio</h1>
-                <p className="text-neutral-light opacity-90">Análise completa de lance livre e fluxos de caixa</p>
+                <h1 className="text-2xl font-bold">Portal de Análise de Consórcio</h1>
+                <p className="text-neutral-light opacity-90">Simulações e análises inteligentes para consórcios</p>
               </div>
             </div>
             
@@ -574,7 +575,7 @@ function App() {
                     const newAdminState = !showAdmin;
                     
                     if (newAdminState) {
-                      // 🔧 CORREÇÃO: Entrando no modo admin via botão
+                      // Entrando no modo admin - verificar autenticação
                       const isAuthenticated = localStorage.getItem('admin_authenticated') === 'true';
                       
                       // Mudar URL para admin
@@ -625,6 +626,32 @@ function App() {
               </div>
             )}
           </div>
+
+          {/* Abas Principais */}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="simulador" className="flex items-center gap-2">
+                <Calculator className="h-4 w-4" />
+                Simulador
+              </TabsTrigger>
+              <TabsTrigger value="analise-contrato" className="flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Análise de Contrato
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Conteúdo das Abas */}
+            <TabsContent value="simulador" className="mt-6">
+              {/* Todo o conteúdo do simulador atual */}
+              <div className="flex items-center gap-3 justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <Calculator className="h-6 w-6 text-accent-warm" />
+                  <div>
+                    <h2 className="text-xl font-bold">Simulador de Consórcio</h2>
+                    <p className="text-neutral-light opacity-90">Análise completa de lance livre e fluxos de caixa</p>
+                  </div>
+                </div>
+              </div>
         </div>
       </div>
 
