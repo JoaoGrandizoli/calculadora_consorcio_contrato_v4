@@ -894,7 +894,7 @@ function App() {
                           </CardHeader>
                           <CardContent>
                             <div className="text-2xl font-bold text-accent-warm">
-                              {resultados.cet_anual ? `${(resultados.cet_anual * 100).toFixed(2)}%` : 'N/A'}
+                              {resultados.cet_anual !== undefined && resultados.cet_anual !== null ? `${(resultados.cet_anual * 100).toFixed(2)}%` : 'N/A'}
                             </div>
                             <p className="text-sm text-muted-foreground">Custo Efetivo Total</p>
                           </CardContent>
