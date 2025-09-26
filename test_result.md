@@ -418,7 +418,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Investigar se o backend está retornando os dados corretos de detalhamento para o fluxo de caixa"
+    - "Testar completamente a funcionalidade aprimorada de análise de contratos no frontend"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
