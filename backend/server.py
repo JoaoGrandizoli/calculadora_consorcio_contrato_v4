@@ -1355,6 +1355,21 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Configuração do Notion
+notion_api_key = os.environ.get("NOTION_API_KEY")
+notion_database_id = os.environ.get("NOTION_DATABASE_ID")
+
+# Inicializar cliente do Notion
+notion_client = None
+if notion_api_key and notion_database_id:
+    try:
+        notion_client = Client(auth=notion_api_key)
+        logger.info("✅ Cliente Notion inicializado com sucesso")
+    except Exception as e:
+        logger.error(f"❌ Erro ao inicializar cliente Notion: {e}")
+else:
+    logger.warning("⚠️ Credenciais do Notion não encontradas")
+
 # ----------------------------
 # CÁLCULOS DE PROBABILIDADE DE CONTEMPLAÇÃO
 # ----------------------------
