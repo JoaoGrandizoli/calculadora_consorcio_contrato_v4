@@ -1220,18 +1220,9 @@ def gerar_relatorio_pdf(dados_simulacao: Dict, temp_dir: str) -> str:
         
         # REMOVIDO: Gráfico de fluxo de caixa conforme solicitado pelo usuário
         
-        # Adicionar gráfico de probabilidades
-        # NOVA LÓGICA: usar participantes padrão = 2 × prazo_meses
-        participantes_grafico = dados_simulacao['parametros']['prazo_meses'] * 2
-        grafico_prob_path = criar_grafico_probabilidades(participantes_grafico, dados_simulacao['parametros']['lance_livre_perc'], temp_dir)
-        
-        if grafico_prob_path and os.path.exists(grafico_prob_path):
-            from reportlab.platypus import Image
-            story.append(Paragraph("Análise de Probabilidades de Contemplação", heading_style))
-            story.append(Paragraph("Baseado em 430 participantes com 2 contemplados por mês (1 sorteio + 1 lance livre).", styles['Normal']))
-            story.append(Spacer(1, 10))
-            story.append(Image(grafico_prob_path, width=6*inch, height=3*inch))
-            story.append(Spacer(1, 20))
+        # Adicionar gráfico de probabilidades - REMOVIDO para usar apenas dados JSON
+        # A nova função gerar_dados_grafico_probabilidade retorna dados para o frontend
+        # O PDF não incluirá mais gráficos gerados pelo matplotlib
         
         # Tabela de Amortização (primeiros 24 meses + meses anuais)
         story.append(Paragraph("Fluxo de Caixa Detalhado", heading_style))
