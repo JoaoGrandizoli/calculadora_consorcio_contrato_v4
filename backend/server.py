@@ -1377,8 +1377,11 @@ else:
 claude_client = None
 if claude_api_key:
     try:
-        claude_client = anthropic.Anthropic(api_key=claude_api_key)
+        # Remover aspas se existirem
+        cleaned_key = claude_api_key.strip('"').strip("'")
+        claude_client = anthropic.Anthropic(api_key=cleaned_key)
         logger.info("✅ Cliente Claude inicializado com sucesso")
+        logger.info(f"🔑 Chave API Claude (primeiros 20 chars): {cleaned_key[:20]}...")
     except Exception as e:
         logger.error(f"❌ Erro ao inicializar cliente Claude: {e}")
 else:
