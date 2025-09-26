@@ -425,6 +425,22 @@ function App() {
       } else {
         setResultados(response.data);
         console.log('✅ Simulação realizada com sucesso');
+        
+        // Buscar dados do gráfico de probabilidade após simulação bem-sucedida
+        try {
+          const graficoProbResponse = await axios.get(`${API}/grafico-probabilidades/${parametros.prazo_meses}?lance_livre_perc=${parametros.lance_livre_perc}`);
+          
+          // Adicionar dados do gráfico aos resultados
+          setResultados(prevResultados => ({
+            ...prevResultados,
+            grafico_probabilidade: graficoProbResponse.data
+          }));
+          
+          console.log('✅ Dados do gráfico de probabilidade carregados');
+        } catch (graficoError) {
+          console.error('⚠️ Erro ao carregar gráfico de probabilidade:', graficoError);
+          // Não falhar a simulação se o gráfico não carregar
+        }
       }
     } catch (error) {
       console.error('❌ Erro na simulação:', error);
