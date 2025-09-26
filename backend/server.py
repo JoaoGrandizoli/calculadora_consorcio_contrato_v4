@@ -1388,6 +1388,34 @@ else:
 # SERVIÇO DE ANÁLISE DE CONTRATOS COM CLAUDE
 # ----------------------------
 
+def extract_text_from_pdf(pdf_content: bytes) -> str:
+    """Extrair texto de um arquivo PDF"""
+    try:
+        pdf_reader = PyPDF2.PdfReader(BytesIO(pdf_content))
+        text = ""
+        
+        for page_num, page in enumerate(pdf_reader.pages):
+            try:
+                page_text = page.extract_text()
+                if page_text:
+                    text += f"\n--- Página {page_num + 1} ---\n"
+                    text += page_text
+            except Exception as e:
+                logger.warning(f"Erro ao extrair texto da página {page_num + 1}: {e}")
+                continue
+        
+        # Limpar texto
+        text = text.strip()
+        if not text:
+            raise Exception("Nenhum texto encontrado no PDF")
+        
+        logger.info(f"✅ Texto extraído com sucesso: {len(text)} caracteres")
+        return text
+        
+    except Exception as e:
+        logger.error(f"❌ Erro ao extrair texto do PDF: {e}")
+        raise Exception(f"Erro ao processar PDF: {str(e)}")
+
 class ContractAnalysisService:
     """Serviço para análise de contratos de consórcio usando Claude AI"""
     
