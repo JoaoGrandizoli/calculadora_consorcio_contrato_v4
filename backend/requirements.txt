@@ -18,6 +18,8 @@ fastapi==0.110.1
 flake8==7.3.0
 fonttools==4.60.0
 h11==0.16.0
+httpcore==1.0.9
+httpx==0.28.1
 idna==3.10
 iniconfig==2.1.0
 isort==6.0.1
@@ -31,6 +33,7 @@ mdurl==0.1.2
 motor==3.3.1
 mypy==1.18.1
 mypy_extensions==1.1.0
+notion-client==2.5.0
 numpy==2.3.3
 oauthlib==3.3.1
 openpyxl==3.1.5
@@ -45,6 +48,7 @@ pyasn1==0.6.1
 pycodestyle==2.14.0
 pycparser==2.23
 pydantic==2.11.7
+pydantic-settings==2.11.0
 pydantic_core==2.33.2
 pyflakes==3.4.0
 Pygments==2.19.2
