@@ -353,7 +353,6 @@ metadata:
 test_plan:
   current_focus:
     - "Corrigir bug de renderização do CadastroForm - aparecendo mesmo após acesso concedido"
-    - "Atualizar chaves API Claude e Notion no backend/.env"
     - "Testar integração Claude AI para análise de contratos"
   stuck_tasks:
     - "Corrigir bug de renderização do CadastroForm - aparecendo mesmo após acesso concedido"
