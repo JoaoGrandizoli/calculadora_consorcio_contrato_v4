@@ -4079,6 +4079,475 @@ class ConsortiumAPITester:
             self.log_test("CRITICAL: Lead-Simulation Association Investigation", False, f"Exception: {str(e)}")
             return False
 
+    def create_test_pdf(self, content_text="Contrato de Consórcio de Veículos\n\nAdministradora: Consórcio Nacional\nValor da Carta: R$ 50.000,00\nPrazo: 60 meses\nTaxa de Administração: 18%\nFundo de Reserva: 2%\n\nCláusulas:\n1. O consorciado pagará mensalmente a parcela estabelecida\n2. A contemplação ocorrerá por sorteio ou lance\n3. Taxa de juros de 1% ao mês sobre saldo devedor\n4. Multa de 2% por atraso no pagamento\n\nEste é um contrato de consórcio para análise de teste."):
+        """Create a test PDF file with consortium contract content"""
+        try:
+            # Create temporary PDF file
+            temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
+            
+            # Create PDF with reportlab
+            c = canvas.Canvas(temp_file.name, pagesize=letter)
+            width, height = letter
+            
+            # Add title
+            c.setFont("Helvetica-Bold", 16)
+            c.drawString(50, height - 50, "CONTRATO DE CONSÓRCIO")
+            
+            # Add content
+            c.setFont("Helvetica", 12)
+            y_position = height - 100
+            
+            lines = content_text.split('\n')
+            for line in lines:
+                if y_position < 50:  # Start new page if needed
+                    c.showPage()
+                    c.setFont("Helvetica", 12)
+                    y_position = height - 50
+                
+                c.drawString(50, y_position, line)
+                y_position -= 20
+            
+            c.save()
+            temp_file.close()
+            
+            return temp_file.name
+            
+        except Exception as e:
+            print(f"Error creating test PDF: {e}")
+            return None
+
+    def test_claude_api_key_configuration(self):
+        """Test Claude API key configuration and client initialization"""
+        try:
+            # Check backend logs for Claude initialization
+            import subprocess
+            log_result = subprocess.run(['tail', '-n', '100', '/var/log/supervisor/backend.out.log'], 
+                                      capture_output=True, text=True, timeout=5)
+            
+            success = False
+            details = ""
+            
+            if log_result.returncode == 0:
+                log_content = log_result.stdout
+                
+                # Look for Claude initialization success message
+                if "✅ Cliente Claude inicializado com sucesso" in log_content:
+                    success = True
+                    details = "Claude client initialized successfully in backend logs"
+                    
+                    # Also check for API key logging
+                    if "🔑 Chave API Claude (primeiros 20 chars): sk-ant-api03-i4vwK5wy" in log_content:
+                        details += " - API key loaded correctly (sk-ant-api03-i4vwK5wy...)"
+                    else:
+                        details += " - API key logging not found"
+                        
+                elif "❌ Erro ao inicializar cliente Claude" in log_content:
+                    success = False
+                    details = "Claude client initialization failed in backend logs"
+                elif "⚠️ Chave API do Claude não encontrada" in log_content:
+                    success = False
+                    details = "Claude API key not found in environment"
+                else:
+                    success = False
+                    details = "No Claude initialization messages found in logs"
+            else:
+                success = False
+                details = "Could not read backend logs"
+            
+            self.log_test("Claude API Key Configuration", success, details)
+            return success
+            
+        except Exception as e:
+            self.log_test("Claude API Key Configuration", False, str(e))
+            return False
+
+    def test_pdf_text_extraction(self):
+        """Test PDF text extraction functionality"""
+        try:
+            # Create a test PDF with known content
+            test_content = """CONTRATO DE CONSÓRCIO TESTE
+            
+Administradora: Consórcio Nacional LTDA
+Valor da Carta de Crédito: R$ 80.000,00
+Prazo do Grupo: 80 meses
+Taxa de Administração: 20% sobre o valor da carta
+Fundo de Reserva: 3% sobre o valor da carta
+
+CLÁUSULAS IMPORTANTES:
+1. O consorciado se compromete ao pagamento mensal das parcelas
+2. A contemplação poderá ocorrer por sorteio ou por lance
+3. Em caso de desistência, haverá devolução conforme regulamento
+4. Taxa de juros de 1,2% ao mês sobre saldo devedor após contemplação
+
+Este contrato é válido para teste de extração de texto."""
+
+            pdf_path = self.create_test_pdf(test_content)
+            
+            if not pdf_path:
+                self.log_test("PDF Text Extraction", False, "Failed to create test PDF")
+                return False
+            
+            try:
+                # Test the endpoint with the PDF file
+                with open(pdf_path, 'rb') as pdf_file:
+                    files = {'pdf_file': ('test_contract.pdf', pdf_file, 'application/pdf')}
+                    
+                    response = requests.post(f"{self.api_url}/analisar-contrato", 
+                                           files=files, 
+                                           timeout=60)
+                
+                success = response.status_code == 200
+                
+                if success:
+                    data = response.json()
+                    
+                    if data.get('success'):
+                        # Check if key information was extracted
+                        text_length = data.get('text_length', 0)
+                        analysis = data.get('analysis', '')
+                        
+                        # Validate extraction
+                        if text_length > 100:  # Should have extracted substantial text
+                            if analysis and len(analysis) > 200:  # Should have meaningful analysis
+                                details = f"PDF processed successfully - Text: {text_length} chars, Analysis: {len(analysis)} chars"
+                            else:
+                                success = False
+                                details = f"Analysis too short: {len(analysis)} chars"
+                        else:
+                            success = False
+                            details = f"Extracted text too short: {text_length} chars"
+                    else:
+                        success = False
+                        details = f"API returned error: {data.get('error', 'Unknown error')}"
+                else:
+                    details = f"HTTP {response.status_code}: {response.text[:200]}"
+                
+            finally:
+                # Clean up test file
+                try:
+                    os.unlink(pdf_path)
+                except:
+                    pass
+            
+            self.log_test("PDF Text Extraction", success, details)
+            return success
+            
+        except Exception as e:
+            self.log_test("PDF Text Extraction", False, str(e))
+            return False
+
+    def test_claude_contract_analysis_endpoint(self):
+        """Test the /api/analisar-contrato endpoint with Claude AI integration"""
+        try:
+            # Create a realistic consortium contract PDF
+            contract_content = """CONTRATO DE PARTICIPAÇÃO EM GRUPO DE CONSÓRCIO
+
+ADMINISTRADORA: Consórcio Nacional de Veículos LTDA
+CNPJ: 12.345.678/0001-90
+
+DADOS DO GRUPO:
+- Número do Grupo: 001/2024
+- Valor da Carta de Crédito: R$ 45.000,00
+- Prazo: 60 meses
+- Número de Participantes: 120
+- Contemplações mensais: 2 (sorteio + lance)
+
+TAXAS E ENCARGOS:
+- Taxa de Administração: 18% sobre o valor da carta
+- Fundo de Reserva: 2,5% sobre o valor da carta  
+- Taxa de Juros: 1,0% ao mês sobre saldo devedor (após contemplação)
+- Seguro Prestamista: R$ 45,00 mensais
+
+CLÁUSULAS PRINCIPAIS:
+
+1. OBJETO DO CONTRATO
+Este contrato tem por objeto a participação em grupo de consórcio para aquisição de veículo automotor.
+
+2. OBRIGAÇÕES DO CONSORCIADO
+- Pagamento pontual das parcelas mensais
+- Manutenção dos dados atualizados
+- Cumprimento das normas do grupo
+
+3. CONTEMPLAÇÃO
+A contemplação ocorrerá mensalmente através de:
+a) Sorteio gratuito entre os participantes ativos
+b) Lance livre em dinheiro (mínimo 10% do valor da carta)
+
+4. DESISTÊNCIA E EXCLUSÃO
+Em caso de desistência, o participante receberá:
+- 80% dos valores pagos se desistir nos primeiros 12 meses
+- 90% dos valores pagos se desistir após 12 meses
+- Devolução em até 60 dias após encerramento do grupo
+
+5. PENALIDADES
+- Multa de 2% sobre parcela em atraso
+- Juros de mora de 1% ao mês
+- Exclusão automática após 3 parcelas em atraso consecutivas
+
+6. DISPOSIÇÕES GERAIS
+Este contrato é regido pela Lei 11.795/2008 e regulamentações do Banco Central.
+
+Local: São Paulo, SP
+Data: 15 de janeiro de 2024
+
+_________________________        _________________________
+Administradora                   Consorciado"""
+
+            pdf_path = self.create_test_pdf(contract_content)
+            
+            if not pdf_path:
+                self.log_test("Claude Contract Analysis", False, "Failed to create test PDF")
+                return False
+            
+            try:
+                print(f"   Testing Claude AI analysis with realistic contract PDF...")
+                
+                # Test the endpoint with the realistic contract PDF
+                with open(pdf_path, 'rb') as pdf_file:
+                    files = {'pdf_file': ('consortium_contract.pdf', pdf_file, 'application/pdf')}
+                    
+                    response = requests.post(f"{self.api_url}/analisar-contrato", 
+                                           files=files, 
+                                           timeout=120)  # Longer timeout for AI processing
+                
+                success = response.status_code == 200
+                issues = []
+                
+                if success:
+                    data = response.json()
+                    
+                    if data.get('success'):
+                        # Validate response structure
+                        required_fields = ['filename', 'file_size', 'text_length', 'analysis', 'model_used', 'timestamp']
+                        missing_fields = [field for field in required_fields if field not in data]
+                        
+                        if missing_fields:
+                            issues.append(f"Missing response fields: {missing_fields}")
+                        
+                        # Validate content
+                        text_length = data.get('text_length', 0)
+                        analysis = data.get('analysis', '')
+                        model_used = data.get('model_used', '')
+                        
+                        if text_length < 500:  # Should extract substantial text from our contract
+                            issues.append(f"Text extraction too short: {text_length} chars")
+                        
+                        if len(analysis) < 500:  # Claude should provide detailed analysis
+                            issues.append(f"Analysis too short: {len(analysis)} chars")
+                        
+                        if 'claude-3-5-sonnet' not in model_used:
+                            issues.append(f"Unexpected model: {model_used}")
+                        
+                        # Check if analysis contains expected sections
+                        expected_sections = ['RESUMO EXECUTIVO', 'ANÁLISE FINANCEIRA', 'PONTOS DE ATENÇÃO', 'RECOMENDAÇÕES']
+                        missing_sections = [section for section in expected_sections if section not in analysis.upper()]
+                        
+                        if missing_sections:
+                            issues.append(f"Missing analysis sections: {missing_sections}")
+                        
+                        # Check if analysis mentions key contract details
+                        key_terms = ['taxa de administração', 'fundo de reserva', 'contemplação', 'consórcio']
+                        missing_terms = [term for term in key_terms if term.lower() not in analysis.lower()]
+                        
+                        if missing_terms:
+                            issues.append(f"Analysis missing key terms: {missing_terms}")
+                        
+                        success = len(issues) == 0
+                        
+                        if success:
+                            details = (f"✅ Claude analysis successful - "
+                                     f"Text: {text_length} chars, "
+                                     f"Analysis: {len(analysis)} chars, "
+                                     f"Model: {model_used}, "
+                                     f"File: {data.get('filename')}")
+                        else:
+                            details = f"❌ Analysis issues: {'; '.join(issues)}"
+                    else:
+                        success = False
+                        error_msg = data.get('error', 'Unknown error')
+                        details = f"❌ API error: {error_msg}"
+                        
+                        # Check for specific authentication errors
+                        if '401' in error_msg or 'authentication' in error_msg.lower():
+                            details += " - AUTHENTICATION ERROR: Check Claude API key"
+                else:
+                    details = f"❌ HTTP {response.status_code}: {response.text[:300]}"
+                    
+                    # Check for specific error patterns
+                    if response.status_code == 401:
+                        details += " - AUTHENTICATION ERROR: Invalid Claude API key"
+                    elif response.status_code == 500:
+                        details += " - SERVER ERROR: Check backend logs for Claude integration issues"
+                
+            finally:
+                # Clean up test file
+                try:
+                    os.unlink(pdf_path)
+                except:
+                    pass
+            
+            self.log_test("Claude Contract Analysis Endpoint", success, details)
+            return success
+            
+        except Exception as e:
+            self.log_test("Claude Contract Analysis Endpoint", False, str(e))
+            return False
+
+    def test_claude_api_authentication(self):
+        """Test Claude API authentication specifically"""
+        try:
+            # Create a minimal PDF for authentication test
+            minimal_content = "Contrato de Consórcio - Teste de Autenticação\nAdministradora: Teste LTDA\nValor: R$ 10.000,00"
+            pdf_path = self.create_test_pdf(minimal_content)
+            
+            if not pdf_path:
+                self.log_test("Claude API Authentication", False, "Failed to create test PDF")
+                return False
+            
+            try:
+                print(f"   Testing Claude API authentication with minimal PDF...")
+                
+                with open(pdf_path, 'rb') as pdf_file:
+                    files = {'pdf_file': ('auth_test.pdf', pdf_file, 'application/pdf')}
+                    
+                    response = requests.post(f"{self.api_url}/analisar-contrato", 
+                                           files=files, 
+                                           timeout=60)
+                
+                success = response.status_code == 200
+                
+                if success:
+                    data = response.json()
+                    
+                    if data.get('success'):
+                        # Authentication successful if we get a valid response
+                        analysis = data.get('analysis', '')
+                        model_used = data.get('model_used', '')
+                        
+                        if analysis and 'claude' in model_used.lower():
+                            details = f"✅ Authentication successful - Model: {model_used}, Response length: {len(analysis)} chars"
+                        else:
+                            success = False
+                            details = f"❌ Invalid response format - Model: {model_used}, Analysis: {len(analysis)} chars"
+                    else:
+                        success = False
+                        error_msg = data.get('error', 'Unknown error')
+                        
+                        if '401' in str(error_msg) or 'authentication' in str(error_msg).lower() or 'unauthorized' in str(error_msg).lower():
+                            details = f"❌ AUTHENTICATION FAILED: {error_msg} - Check Claude API key: sk-ant-api03-i4vwK5wyRx4ub8B7..."
+                        else:
+                            details = f"❌ API error (not auth): {error_msg}"
+                else:
+                    if response.status_code == 401:
+                        details = f"❌ HTTP 401 UNAUTHORIZED - Claude API key invalid: sk-ant-api03-i4vwK5wyRx4ub8B7..."
+                    elif response.status_code == 403:
+                        details = f"❌ HTTP 403 FORBIDDEN - Claude API access denied"
+                    else:
+                        details = f"❌ HTTP {response.status_code}: {response.text[:200]}"
+                
+            finally:
+                # Clean up test file
+                try:
+                    os.unlink(pdf_path)
+                except:
+                    pass
+            
+            self.log_test("Claude API Authentication", success, details)
+            return success
+            
+        except Exception as e:
+            self.log_test("Claude API Authentication", False, str(e))
+            return False
+
+    def test_pdf_file_validation(self):
+        """Test PDF file validation in the contract analysis endpoint"""
+        try:
+            # Test 1: Non-PDF file
+            print(f"   Testing file validation with non-PDF file...")
+            
+            # Create a text file instead of PDF
+            temp_txt = tempfile.NamedTemporaryFile(delete=False, suffix='.txt', mode='w')
+            temp_txt.write("This is not a PDF file")
+            temp_txt.close()
+            
+            try:
+                with open(temp_txt.name, 'rb') as txt_file:
+                    files = {'pdf_file': ('test.txt', txt_file, 'text/plain')}
+                    
+                    response = requests.post(f"{self.api_url}/analisar-contrato", 
+                                           files=files, 
+                                           timeout=30)
+                
+                # Should return 400 for non-PDF file
+                validation_success = response.status_code == 400
+                
+                if validation_success:
+                    details = "✅ Correctly rejected non-PDF file (HTTP 400)"
+                else:
+                    details = f"❌ Should reject non-PDF files, got HTTP {response.status_code}"
+                
+            finally:
+                os.unlink(temp_txt.name)
+            
+            # Test 2: Empty PDF file
+            print(f"   Testing file validation with empty PDF...")
+            
+            empty_pdf = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
+            empty_pdf.write(b'%PDF-1.4\n%%EOF')  # Minimal PDF structure
+            empty_pdf.close()
+            
+            try:
+                with open(empty_pdf.name, 'rb') as pdf_file:
+                    files = {'pdf_file': ('empty.pdf', pdf_file, 'application/pdf')}
+                    
+                    response = requests.post(f"{self.api_url}/analisar-contrato", 
+                                           files=files, 
+                                           timeout=30)
+                
+                # Should return 400 for PDF with insufficient text
+                empty_validation_success = response.status_code == 400
+                
+                if empty_validation_success:
+                    details += " - Correctly rejected empty PDF (HTTP 400)"
+                else:
+                    details += f" - Should reject empty PDF, got HTTP {response.status_code}"
+                    validation_success = False
+                
+            finally:
+                os.unlink(empty_pdf.name)
+            
+            self.log_test("PDF File Validation", validation_success, details)
+            return validation_success
+            
+        except Exception as e:
+            self.log_test("PDF File Validation", False, str(e))
+            return False
+
+    def run_claude_integration_tests(self):
+        """Run all Claude AI integration tests"""
+        print(f"\n🤖 TESTING CLAUDE AI INTEGRATION")
+        print(f"=" * 50)
+        
+        claude_tests = [
+            self.test_claude_api_key_configuration,
+            self.test_claude_api_authentication,
+            self.test_pdf_text_extraction,
+            self.test_pdf_file_validation,
+            self.test_claude_contract_analysis_endpoint
+        ]
+        
+        claude_results = []
+        for test in claude_tests:
+            result = test()
+            claude_results.append(result)
+        
+        claude_passed = sum(claude_results)
+        claude_total = len(claude_results)
+        
+        print(f"\n🤖 CLAUDE AI INTEGRATION RESULTS: {claude_passed}/{claude_total} tests passed")
+        
+        return claude_passed == claude_total
+
     def run_all_tests(self):
         """Run all backend tests"""
         print(f"\n🚀 Starting Consortium API Tests - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
