@@ -1,0 +1,97 @@
+%PDF-1.4
+1 0 obj
+<<
+/Type /Catalog
+/Pages 2 0 R
+>>
+endobj
+
+2 0 obj
+<<
+/Type /Pages
+/Kids [3 0 R]
+/Count 1
+>>
+endobj
+
+3 0 obj
+<<
+/Type /Page
+/Parent 2 0 R
+/MediaBox [0 0 612 792]
+/Contents 4 0 R
+/Resources <<
+/Font <<
+/F1 5 0 R
+>>
+>>
+>>
+endobj
+
+4 0 obj
+<<
+/Length 800
+>>
+stream
+BT
+/F1 12 Tf
+50 750 Td
+(CONTRATO DE CONSÓRCIO - TESTE) Tj
+0 -30 Td
+(CLÁUSULAS SUSPEITAS PARA ANÁLISE) Tj
+0 -50 Td
+(1. TAXA DE ADMINISTRAÇÃO) Tj
+0 -20 Td
+(A taxa de administração será de 25% sobre o valor da carta.) Tj
+0 -30 Td
+(2. RESTITUIÇÃO) Tj
+0 -20 Td
+(A restituição dos valores pagos somente ocorrerá após o) Tj
+0 -15 Td
+(encerramento completo do grupo e última assembleia.) Tj
+0 -30 Td
+(3. MULTA POR DESISTÊNCIA) Tj
+0 -20 Td
+(Em caso de desistência, será aplicada multa de 20% sobre) Tj
+0 -15 Td
+(o valor total do contrato, sem necessidade de comprovação.) Tj
+0 -30 Td
+(4. CRITÉRIOS DE CONTEMPLAÇÃO) Tj
+0 -20 Td
+(A contemplação será baseada em critérios subjetivos da) Tj
+0 -15 Td
+(administradora, conforme análise interna discricionária.) Tj
+0 -30 Td
+(5. RESPONSABILIDADE) Tj
+0 -20 Td
+(A administradora fica isenta de qualquer responsabilidade) Tj
+0 -15 Td
+(por falhas no sistema ou atrasos na contemplação.) Tj
+ET
+endstream
+endobj
+
+5 0 obj
+<<
+/Type /Font
+/Subtype /Type1
+/BaseFont /Helvetica
+>>
+endobj
+
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000274 00000 n 
+0000001126 00000 n 
+trailer
+<<
+/Size 6
+/Root 1 0 R
+>>
+startxref
+1195
+%%EOF
