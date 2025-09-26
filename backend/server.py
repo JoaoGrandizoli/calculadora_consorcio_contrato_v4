@@ -31,6 +31,7 @@ import base64
 import json
 from notion_client import Client
 import anthropic
+import PyPDF2
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
