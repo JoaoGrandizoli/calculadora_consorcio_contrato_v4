@@ -1357,6 +1357,9 @@ logger = logging.getLogger(__name__)
 notion_api_key = os.environ.get("NOTION_API_KEY")
 notion_database_id = os.environ.get("NOTION_DATABASE_ID")
 
+# Configuração do Claude (Anthropic)
+claude_api_key = os.environ.get("CLAUDE_API_KEY")
+
 # Inicializar cliente do Notion
 notion_client = None
 if notion_api_key and notion_database_id:
@@ -1367,6 +1370,17 @@ if notion_api_key and notion_database_id:
         logger.error(f"❌ Erro ao inicializar cliente Notion: {e}")
 else:
     logger.warning("⚠️ Credenciais do Notion não encontradas")
+
+# Inicializar cliente do Claude
+claude_client = None
+if claude_api_key:
+    try:
+        claude_client = anthropic.Anthropic(api_key=claude_api_key)
+        logger.info("✅ Cliente Claude inicializado com sucesso")
+    except Exception as e:
+        logger.error(f"❌ Erro ao inicializar cliente Claude: {e}")
+else:
+    logger.warning("⚠️ Chave API do Claude não encontrada")
 
 # ----------------------------
 # INTEGRAÇÃO COM NOTION
