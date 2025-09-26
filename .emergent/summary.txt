@@ -1,37 +1,43 @@
 <analysis>
-The trajectory outlines the transition of work from an AI engineer to me, focusing on a consórcio simulation application. Initially, the previous engineer enhanced probability calculations, fixed financial bugs, implemented VPL, and refined graph/table displays. A significant part was integrating a lead capture system with a React frontend, MongoDB backend, and an admin panel, with Notion integration as the next pending task.
-
-However, the current trajectory (Chat Message 2 onwards) shows an immediate pivot. The user requested re-implementing Typeform for lead capture. The primary efforts shifted to integrating Typeform, debugging its webhook, ensuring data flow to MongoDB and the admin panel, correcting timezone display, and critically, synchronizing  between frontend and backend to correctly associate user simulations with their leads. This involved multiple iterations of code edits, testing, and troubleshooting database configuration and frontend token handling. The Notion integration remains unaddressed.
+The trajectory details a complex journey of feature development and bug fixing for a consórcio simulation application. Initially, the AI engineer addressed critical  synchronization issues between the React frontend and FastAPI backend, resolving orphaned simulations by ensuring correct token transmission and persistence. This involved multiple iterations of debugging Typeform webhook configurations, frontend state management, and robust lead fetching. Performance bottlenecks, PDF download failures, and admin panel state persistence were also tackled. A significant security vulnerability regarding admin access without authentication was identified and patched. The work then pivoted from Typeform to an internal lead capture form, integrating with MongoDB and Notion, followed by debugging 404 errors for the new lead creation endpoint. Most recently, a new Análise de Contrato tab with Claude AI integration for PDF contract analysis was added, with current efforts focused on fixing a Claude API authentication error and an improper UI rendering bug for the lead capture form.
 </analysis>
 
 <product_requirements>
-The application is a full-stack consórcio simulation tool with a web interface, capable of calculating CET, cash flow, outstanding balance, and generating PDF reports and interactive graphs for contemplation probabilities. It requires a responsive design and initially no database.
+The application provides a full-stack consórcio simulation with web interface for CET, cash flow, outstanding balance, PDF reports, and contemplation probability graphs. It needs a responsive design.
 
-**Subsequent and Current Requirements:**
-*   **Probability & Graphs:** Hazard graphs for with bid () and no bid () scenarios, reducing participants by 2 monthly, with a Y-axis scaled to 100% for all months.
-*   **Financial Tables:** Detailed display for the first 24 months, then annual summaries for  and .
-*   ** Correction:** Initial , annual 5% correction, monthly abatement, reaching zero at term end.
-*   **Lead Capture & Storage:** Gate access to simulator requiring user data (name, email, phone - mandatory; patrimony, income - optional). Store this and simulation inputs in MongoDB.
-*   **Admin Panel:** Visualize captured leads and simulation data.
-*   **Typeform Integration:** Embed a specific Typeform (https://caremfo.typeform.com/to/dN3w60PD) for lead capture. If problematic, use a simple form (already implemented as ).
-*   **Notion Integration:** Connect captured lead data to Notion (pending).
-*   **Admin Panel Enhancements:** Display dates/times in Brasília timezone (UTC-3). Correctly display user names instead of choice options (e.g., Facebook).
-*   **Simulation Association:** Crucially, ensure all user simulations are correctly linked to their respective leads.
+**Key Requirements & Implementations:**
+*   **Simulation & Reporting:** Calculates CET, cash flow, outstanding balance. Generates PDF reports and interactive probability graphs (hazard graphs for with bid and no bid scenarios, scaled Y-axis, reducing participants monthly). Displays financial tables with 24-month detail and annual summaries.
+*   **Saldo Devedor:** Corrected calculation starting with , annual 5% correction, monthly abatement, reaching zero at term end.
+*   **Lead Capture:** Initially via Typeform (ID ) requiring name, email, phone (mandatory), patrimony, income (optional). Stores data and simulation inputs in MongoDB. Later transitioned to an **internal registration form** mimicking Typeform's questions.
+*   **Admin Panel:** Visualizes captured leads and simulation data. Enhanced with Brasília timezone display (UTC-3), correct user name parsing, and password protection ().
+*   **Data Integration:**
+    *   MongoDB: Stores lead and simulation data.  changed to .
+    *   Notion: **New requirement** to integrate captured lead data into a Notion database (ID: ) via API.
+*   **Simulation Association:** Crucially, ensure all user simulations are correctly linked to their respective leads using a unique  (UUID).
+*   **Performance:** Optimized lead capture flow after form submission to reduce delay.
+*   **PDF Download:** Ensured PDF reports are downloadable from the frontend.
+*   **Navigation:** Fixed admin navigation issues where expanding screen redirected to admin.
+*   **Skip Registration:** Added a button to bypass registration for direct simulator access.
+*   **Contract Analysis:** **New requirement** for an Análise de Contrato tab.
+    *   Initially a text area for contract input.
+    *   **Updated:** To accept PDF upload for contract analysis.
+    *   Uses **Claude AI** (Anthropic) for analysis, providing a structured report (Summary, Financial Analysis, Attention Points, Recommendations, Score).
 </product_requirements>
 
 <key_technical_concepts>
--   **FastAPI**: Python backend framework.
--   **React**: Frontend library for UI.
+-   **FastAPI**: Python backend.
+-   **React**: Frontend UI.
+-   **MongoDB & Motor**: Database.
 -   **Pydantic**: Data validation.
--   **MongoDB & Motor**: Database for data storage.
 -   **ReportLab**: PDF generation.
 -   **Chart.js**: Frontend graphing.
--   **Consórcio Financial Logic**: Core business logic.
--   **Probability Hazards**: Contemplation calculation.
--   ****: React component for Typeform.
--   **Webhooks**: Real-time data push from Typeform to backend.
--   ****: UUIDs for user session and lead-simulation association.
--   **Timezone Handling**: Formatting dates/times for display.
+-   ****: Typeform integration.
+-   **Webhooks**: Real-time data push.
+-   ** (UUIDs)**: User session/association.
+-   **Anthropic Claude 3.5 Sonnet**: AI for contract analysis.
+-   **PyPDF2**: PDF text extraction.
+-   **Notion API**: Third-party database integration.
+-   **Timezone Handling**: Date/time display.
 </key_technical_concepts>
 
 <code_architecture>
@@ -40,57 +46,71 @@ The application follows a standard full-stack architecture:
 
 
 -   **/app/backend/server.py**:
-    -   **Importance:** Core backend logic, FastAPI endpoints, financial calculations, probability functions, PDF generation, and data handling.
+    -   **Importance:** Core backend logic, FastAPI endpoints, financial calculations, probability functions, PDF generation, and data handling. Also manages integrations.
     -   **Changes Made:**
-        -   Added  endpoint.
-        -   Modified  to log raw Typeform data, become more flexible in data parsing, then refined to accept specific text fields for name (ignoring choice fields), and later reverted to be less restrictive for debugging missing data.
-        -   Added detailed logging for the  header in the  endpoint to debug  issues.
+        -    endpoint added.
+        -   : Multiple iterations for flexibility in data parsing, later adjusted to cross-reference Typeform  fields with  for robust name/profession extraction.
+        -    endpoint: Added detailed logging for  header, made  extraction robust,  model updated with  field, ensures  is saved.
+        -    changed from  to .
+        -   Notion Integration: Implemented  with methods to create pages, new endpoint  to save leads to MongoDB and Notion.
+        -   Claude AI Integration: Configured Anthropic client, implemented , new endpoint  to receive contract text (initially string, then PDF), sends to Claude for analysis.
+        -   PDF Text Extraction: Added  function using .
+        -   Endpoint Registration: Multiple fixes to ensure endpoints are defined *before*  and  is instantiated correctly.
 -   **/app/backend/requirements.txt**:
     -   **Importance:** Python dependencies.
-    -   **Changes Made:** No new dependencies added in this trajectory,  and  were previously added.
+    -   **Changes Made:** Added , , , , .
 -   **/app/backend/.env**:
     -   **Importance:** Backend environment variables.
-    -   **Changes Made:** Changed  from  to  to ensure consistent database usage.
+    -   **Changes Made:**  changed to . Added , , .
 -   **/app/frontend/src/App.js**:
-    -   **Importance:** Main React component managing UI state, API calls, and rendering.
+    -   **Importance:** Main React component managing UI state, API calls, and rendering logic.
     -   **Changes Made:**
-        -   Modified  to include token expiration (24 hours) and robust local storage cleanup, forcing re-registration when necessary.
-        -   Implemented logic for robust synchronization after Typeform submission, including hiding the Typeform, waiting for webhook processing, fetching the latest lead, saving the correct  to local storage, and then displaying the simulator.
+        -   : Modified for token expiration (24h) and robust local storage cleanup.
+        -   : Implemented robust synchronization and fallback for .
+        -   PDF Download: Implemented robust download () using Blob creation, validation, and fallback to new window.
+        -   Admin State Persistence: Implemented  to persist , updated  and toggle buttons.
+        -   Admin Authentication: Added  state,  function, and login UI for password protection ().
+        -   : Refined logic to depend on URL hash and separated from  persistence.
+        -   Lead Capture Switch: Replaced  (Typeform) with .
+        -   : Added function to search for leads via URL parameters (email, timestamp).
+        -   Pular cadastro button: Added logic to create demo token and bypass registration.
+        -   Tabbed Interface: Integrated new  and  structure for Simulador and Análise de Contrato, managed  state.
+        -   Conditional Rendering: Corrected rendering logic for  to prevent it from appearing below the main app content.
 -   **/app/frontend/src/components/LeadCapture.js**:
-    -   **Importance:** Component responsible for lead capture.
-    -   **Changes Made:** Refactored to embed Typeform using the  library and handle its callback. An initial attempt was made to directly use the webhook's returned token here, which was later shifted to .
--   **/app/frontend/src/components/SimpleForm.js**:
-    -   **Importance:** Alternative, direct lead capture form.
-    -   **Changes Made:** None in this trajectory, it serves as a fallback.
+    -   **Importance:** Component for Typeform lead capture (deprecated in favor of ).
+    -   **Changes Made:** Refactored to embed Typeform using , removed fixed 8-second delay, implemented intelligent polling for lead status.
 -   **/app/frontend/src/components/AdminPanel.js**:
     -   **Importance:** UI for visualizing captured lead and simulation data.
-    -   **Changes Made:** Modified the  function to display dates and times in the Brasília timezone (UTC-3).
--   **/app/frontend/.env**:
-    -   **Importance:** Frontend environment variables.
-    -   **Changes Made:** None explicitly recorded in this trajectory.
+    -   **Changes Made:** Modified  for Brasília timezone. Added Profissão column to leads table.
+-   **/app/frontend/src/components/CadastroForm.js**: (New File)
+    -   **Importance:** New internal lead capture form.
+    -   **Changes Made:** Created to capture Name, Last Name, Email, Phone, Profession, replacing Typeform.
+-   **/app/frontend/src/components/ContractAnalysis.js**: (New File)
+    -   **Importance:** New component for contract analysis.
+    -   **Changes Made:** Created with a text area for contract input, later modified to include PDF upload () with drag-and-drop, displays file info, and presents analysis results.
 -   **/app/frontend/package.json**:
     -   **Importance:** Frontend dependencies.
-    -   **Changes Made:**  was added.
+    -   **Changes Made:**  was added, then effectively removed from usage. No new explicit yarn add v1.22.22
+info Visit https://yarnpkg.com/en/docs/cli/add for documentation about this command. commands were shown for new components, but they use standard React/UI libraries.
+-   **/app/frontend/.env**:
+    -   **Importance:** Frontend environment variables.
+    -   **Changes Made:**  is critical and changes with new forks.  is present but no longer used for primary lead capture.
 </code_architecture>
 
 <pending_tasks>
--   Integrate lead data directly into Notion (initial task from previous agent's summary).
--   Resolve the issue where simulations are not being correctly associated with user leads due to the frontend not sending the correct  in simulation requests.
--   Ensure correct display of user names in the admin panel, avoiding capture of choice fields (e.g., Facebook) as names.
+-   Resolve the Claude API authentication error (401) when analyzing contracts.
+-   Fix the frontend rendering issue where the  component appears below the main application content when it should be conditionally rendered.
+-   Update the Notion API key in the backend's  file to a valid one to ensure successful lead saving to Notion.
 </pending_tasks>
 
 <current_work>
-Immediately before this summary request, the AI engineer was actively debugging a critical issue: user simulations are not being correctly associated with their respective leads. The backend receives simulation data, but the  and  fields are often , indicating a failure in the frontend to transmit the correct .
+Immediately before this summary request, the AI engineer was actively addressing two critical bugs reported by the user:
+1.  **Claude AI Authentication Error (401):** The user reported that the contract analysis feature was failing to read the consortium contract, indicating an issue with the Claude AI integration. The AI investigated the  in , confirmed its presence, and made an adjustment to potentially resolve loading/initialization issues.
+2.  **Incorrect Frontend Rendering:** The user pointed out that the  was appearing incorrectly abaixo da tela principal (below the main screen) even when not intended. The AI diagnosed this as a structural error in the conditional rendering logic within  and was in the process of reorganizing the component hierarchy to ensure the  is only displayed when  and .
 
-Previous attempts to fix this included:
-1.  **Frontend  synchronization:** Trying to synchronize the  generated by the Typeform webhook with the frontend's state, initially by having  handle it, then shifting logic to .
-2.  **Database Name Correction:** A  identified that the backend was incorrectly searching for leads in  instead of , which was corrected in . However, this did not fully resolve the association issue.
-3.  **Robust Frontend Synchronization:** Implemented a robust synchronization mechanism in  to forcefully hide the Typeform, wait for webhook processing, fetch the latest valid lead, and save its  to localStorage before enabling the simulator.
-4.  **Admin Panel Fixes:** Addressed minor issues like displaying dates in Brasília timezone and attempted to fix the  to correctly parse user names.
-
-Despite these efforts, the core problem persists. The current step involves adding detailed logging to the backend's  endpoint to capture the  header and the  being sent (or not sent) by the frontend during a simulation request. The user has just been asked to perform a new simulation so these new logs can be analyzed.
+The last action taken was a code edit to reorganize the frontend rendering structure in  to correctly display the main application content (including the new tabs for Simulator and Contract Analysis) and conditionally render the . The next step is to test these fixes.
 </current_work>
 
 <optional_next_step>
-Analyze the backend logs after a user simulation to identify why the  is not being sent or processed.
+Test the fixes for the Claude API error and the  rendering issue by taking a screenshot of the frontend.
 </optional_next_step>

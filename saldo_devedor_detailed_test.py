@@ -28,7 +28,7 @@ def test_saldo_devedor_detailed():
     print()
     
     try:
-        response = requests.post("https://consim-hub.preview.emergentagent.com/api/simular", 
+        response = requests.post("https://finance-wizard-27.preview.emergentagent.com/api/simular", 
                                json=parametros, 
                                timeout=30)
         
