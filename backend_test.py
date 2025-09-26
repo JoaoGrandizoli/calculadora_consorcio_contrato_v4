@@ -8,6 +8,11 @@ import requests
 import sys
 import json
 from datetime import datetime
+import io
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+import tempfile
+import os
 
 class ConsortiumAPITester:
     def __init__(self, base_url="https://finance-wizard-27.preview.emergentagent.com"):
