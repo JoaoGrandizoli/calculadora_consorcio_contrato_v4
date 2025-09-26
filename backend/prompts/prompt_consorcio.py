@@ -1,6 +1,7 @@
 """
-Prompt especializado para análise de contratos de consórcio
+Prompt especializado e robusto para análise de contratos de consórcio
 Desenvolvido com base em jurisprudência consolidada e legislação vigente
+Versão aprimorada com detecção automatizada e análise mais profunda
 """
 
 prompt_consorcio = """
@@ -411,69 +412,97 @@ Alteração unilateral → "Adequação às necessidades"
 - **Status**: Em análise na Segunda Seção
 - **Impacto**: Possível alteração da Súmula 381
 
-## IMPLEMENTAÇÃO PRÁTICA DO SISTEMA
+## FORMATO DE RESPOSTA OBRIGATÓRIO
 
-### Arquivo de Configuração para Detecção
+### Estrutura de Análise Detalhada
 
-```json
-{
-  "padroes_criticos": {
-    "desistencia": [
-      {"regex": "somente após.*(encerramento|término)", "peso": 25},
-      {"regex": "última assembleia", "peso": 20},
-      {"regex": "prazo.*([6-9]\\d|\\d{3,}).*dias", "peso": 20}
-    ],
-    "taxas": [
-      {"regex": "taxa.*([2-9]\\d|\\d{3,})%", "peso": 30},
-      {"regex": "além.*\\d+%", "peso": 25},
-      {"regex": "poderá ser (alterada|revista)", "peso": 20}
-    ],
-    "penalidades": [
-      {"regex": "(multa|penalidade).*([2-9]\\d|\\d{3,})%", "peso": 30},
-      {"regex": "sem (necessidade|comprovação)", "peso": 25},
-      {"regex": "juros.*([3-9]|\\d{2,})%", "peso": 20}
-    ]
-  },
-  "eufemismos": {
-    "taxa de gestão": "taxa administrativa",
-    "compensação": "multa", 
-    "análise criteriosa": "critério subjetivo",
-    "custos operacionais": "taxa extra"
-  }
-}
-```
-
-### Relatório de Saída Estruturado
+Você deve SEMPRE responder no seguinte formato estruturado para contratos de consórcio:
 
 ```markdown
 ## ANÁLISE DE ABUSIVIDADE - CONTRATO CONSÓRCIO
 
 ### RESUMO EXECUTIVO
-- **Pontuação Total**: 85 pontos
-- **Classificação**: RISCO ALTO  
-- **Cláusulas Problemáticas**: 7 identificadas
-- **Recomendação**: Revisão obrigatória
+- **Pontuação Total**: [X] pontos (0-100)
+- **Classificação de Risco**: [CRÍTICO/ALTO/MÉDIO/BAIXO]
+- **Cláusulas Problemáticas**: [número] identificadas
+- **Recomendação Geral**: [ação necessária]
+- **Administradora**: [nome se identificado]
+- **Tipo de Bem**: [veículo/imóvel/serviços se identificado]
+
+### ANÁLISE FINANCEIRA DETALHADA
+- **Taxa de Administração**: [percentual] - [CONFORME/EXCESSIVA/ABUSIVA]
+- **Fundo de Reserva**: [percentual] - [análise]
+- **Critérios de Contemplação**: [TRANSPARENTES/SUBJETIVOS/ABUSIVOS]
+- **Penalidades**: [análise de multas e juros]
+- **Prazo de Restituição**: [tempo] - [LEGAL/IRREGULAR/ABUSIVO]
 
 ### CLÁUSULAS ABUSIVAS IDENTIFICADAS
 
-#### 1. DESISTÊNCIA (Cláusula 15.3)
-- **Texto**: "A restituição ocorrerá somente após o encerramento do grupo"
-- **Problema**: Prazo indefinido, pode chegar a 33 anos
-- **Base Legal**: Viola CDC Art. 51, IV e Lei 11.795/08 Art. 30
-- **Pontuação**: 25 pontos
-- **Sugestão**: "Restituição em 30 dias após encerramento do plano"
+#### [NÚMERO]. [CATEGORIA] - RISCO [NÍVEL]
+- **Localização**: [número da cláusula se disponível]
+- **Texto Identificado**: "[citação literal]"
+- **Problema Específico**: [explicação técnica detalhada]
+- **Base Legal Violada**: [artigos específicos - CDC, Lei 11.795/08]
+- **Jurisprudência**: [precedentes STJ/tribunais relevantes]
+- **Pontuação**: [X] pontos
+- **Impacto Financeiro**: [consequência prática em R$ ou %]
+- **Sugestão de Correção**: "[redação alternativa específica]"
 
-#### 2. TAXA ADMINISTRATIVA (Cláusula 8.1)  
-- **Texto**: "Taxa de administração de 24% do valor do bem"
-- **Problema**: Percentual acima do razoável (12-15%)
-- **Precedente**: STJ considera até 15% razoável
-- **Pontuação**: 25 pontos
-- **Sugestão**: Reduzir para 12-15% ou justificar
+[Repetir para cada cláusula abusiva encontrada]
 
-### RECOMENDAÇÕES PRIORITÁRIAS
-1. **Imediata**: Alterar prazo de restituição
-2. **Urgente**: Revisar taxa administrativa  
-3. **Importante**: Esclarecer critérios de contemplação
+### PONTOS POSITIVOS DO CONTRATO
+- [Listar aspectos conformes à legislação]
+- [Cláusulas que protegem o consumidor]
+- [Transparência identificada]
+
+### ALERTAS CRÍTICOS
+1. **[CATEGORIA]**: [alerta específico]
+2. **[CATEGORIA]**: [alerta específico]
+3. **[CATEGORIA]**: [alerta específico]
+
+### RECOMENDAÇÕES POR PRIORIDADE
+
+#### AÇÕES IMEDIATAS (Risco Crítico - até 7 dias):
+1. [ação específica com base legal]
+2. [ação específica com base legal]
+
+#### AÇÕES URGENTES (Risco Alto - até 30 dias):
+1. [ação específica]
+2. [ação específica]
+
+#### AÇÕES IMPORTANTES (Risco Médio - até 90 dias):
+1. [ação específica]
+
+### ESTIMATIVA DE IMPACTO FINANCEIRO
+- **Economia Potencial**: R$ [valor] com correções sugeridas
+- **Risco de Perda**: R$ [valor] mantendo cláusulas abusivas
+- **Custo de Oportunidade**: [análise temporal]
+
+### SCORE DETALHADO POR CATEGORIA
+- **Desistência e Restituição**: [X]/30 pontos - [análise]
+- **Taxa de Administração**: [X]/30 pontos - [análise]
+- **Penalidades**: [X]/25 pontos - [análise]
+- **Contemplação**: [X]/10 pontos - [análise]  
+- **Transferência de Riscos**: [X]/5 pontos - [análise]
+- **TOTAL GERAL**: [X]/100 pontos
+
+### COMPARATIVO COM MERCADO
+- **Taxa Administração**: Mercado 12-15% vs Contrato [X]%
+- **Prazo Restituição**: Mercado 30-60 dias vs Contrato [X]
+- **Transparência**: [comparativo qualitativo]
+
+### CONFORMIDADE REGULATÓRIA
+- **Lei 11.795/08**: [CONFORME/IRREGULAR] - [detalhes]
+- **CDC**: [CONFORME/IRREGULAR] - [detalhes]
+- **Resolução BCB 285/2023**: [CONFORME/IRREGULAR] - [detalhes]
+
+### CONCLUSÃO E PARECER FINAL
+[Avaliação geral do contrato, viabilidade, riscos principais e recomendação final sobre assinar ou não o contrato]
+
+### PRÓXIMOS PASSOS SUGERIDOS
+1. [Ação específica]
+2. [Ação específica]
+3. [Orientação para busca de assessoria jurídica se necessário]
 ```
 
 ## CONSIDERAÇÕES TÉCNICAS FINAIS
@@ -494,66 +523,7 @@ Alteração unilateral → "Adequação às necessidades"
 - **Recall**: >85% na detecção de práticas já julgadas pelos tribunais
 - **Falsos positivos**: <5% para não sobrecarregar revisão humana
 
-Este sistema representa uma ferramenta robusta para a detecção preventiva de cláusulas abusivas, fundamentada em extensiva pesquisa jurisprudencial e regulamentária, contribuindo para contratos mais equilibrados e transparentes no mercado brasileiro de consórcios.
-
-## INSTRUÇÕES PARA ANÁLISE
-
-### Formato de Resposta Obrigatório
-
-Você deve SEMPRE responder no seguinte formato estruturado para contratos de consórcio:
-
-```markdown
-## ANÁLISE DE ABUSIVIDADE - CONTRATO CONSÓRCIO
-
-### RESUMO EXECUTIVO
-- **Pontuação Total**: [X] pontos
-- **Classificação de Risco**: [CRÍTICO/ALTO/MÉDIO/BAIXO]
-- **Cláusulas Problemáticas**: [número] identificadas
-- **Recomendação Geral**: [ação necessária]
-
-### ANÁLISE FINANCEIRA
-- **Taxa de Administração**: [percentual encontrado] - [avaliação]
-- **Critérios de Contemplação**: [análise da transparência]
-- **Penalidades**: [multas e juros identificados]
-- **Prazo de Restituição**: [tempo identificado] - [conformidade legal]
-
-### PONTOS DE ATENÇÃO CRÍTICOS
-
-#### 1. [CATEGORIA - ex: DESISTÊNCIA]
-- **Texto Identificado**: "[citação literal]"
-- **Problema**: [explicação técnica]
-- **Base Legal Violada**: [artigos específicos]
-- **Risco**: [CRÍTICO/ALTO/MÉDIO/BAIXO]
-- **Impacto**: [consequência prática]
-- **Sugestão**: [redação alternativa]
-
-[Repetir para cada problema encontrado]
-
-### RECOMENDAÇÕES
-
-#### AÇÕES IMEDIATAS (até 7 dias):
-1. [ação específica]
-2. [ação específica]
-
-#### AÇÕES URGENTES (até 30 dias):
-1. [ação específica]
-2. [ação específica]
-
-#### AÇÕES IMPORTANTES (até 90 dias):
-1. [ação específica]
-
-### SCORE DETALHADO
-- **Desistência e Restituição**: [X]/30 pontos
-- **Taxa de Administração**: [X]/30 pontos  
-- **Penalidades**: [X]/25 pontos
-- **Contemplação**: [X]/15 pontos
-- **TOTAL**: [X]/100 pontos
-
-### CONCLUSÃO
-[Avaliação geral do contrato e grau de conformidade legal]
-```
-
-Use SEMPRE este formato, seja detalhista e cite legislação específica.
+Use SEMPRE este formato detalhado, seja extremamente específico e cite legislação e jurisprudência aplicável a cada ponto identificado.
 """
 
-print("Prompt de consórcio carregado com sucesso!")
+print("Prompt robusto de análise de consórcio carregado com sucesso!")
