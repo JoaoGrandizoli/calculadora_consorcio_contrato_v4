@@ -839,8 +839,8 @@ function App() {
                             id="lanceLivre"
                             type="number"
                             step="0.01"
-                            value={parametros.lance_livre_perc}
-                            onChange={(e) => handleInputChange('lance_livre_perc', parseFloat(e.target.value))}
+                            value={parametros.lance_livre_perc * 100}
+                            onChange={(e) => handleInputChange('lance_livre_perc', parseFloat(e.target.value) / 100)}
                             className="mt-1"
                           />
                         </div>
