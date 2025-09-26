@@ -1114,6 +1114,69 @@ def criar_grafico_probabilidades(num_participantes: int, lance_livre_perc: float
         logger.error(f"Erro ao criar gráfico de probabilidades: {e}")
         return None
 
+def gerar_dados_grafico_probabilidade(prazo_meses: int, lance_livre_perc: float) -> Dict:
+    """Gera dados do gráfico de probabilidade para o frontend."""
+    try:
+        # Usar lógica similar ao PDF - participantes = 2 × prazo
+        num_participantes = prazo_meses * 2
+        N0 = num_participantes
+        
+        meses_total = min(60, int(np.ceil(N0 / 2)))  # Limitar a 60 meses para o gráfico
+        
+        # Listas para dados
+        meses = []
+        hazard_sem = []
+        hazard_com = []
+        
+        # Inicializar
+        n_atual = N0
+        
+        for mes in range(1, meses_total + 1):
+            meses.append(f"Mês {mes}")
+            
+            if n_atual > 0:
+                # Hazard sem lance: 1/(N-1) - só compete no sorteio
+                h_sem = 1.0 / max(1, n_atual - 1)
+                
+                # Hazard com lance: 2/N - compete no sorteio E no lance
+                h_com = min(2.0 / n_atual, 1.0)
+            else:
+                h_sem = 0
+                h_com = 0
+            
+            hazard_sem.append(round(h_sem * 100, 2))  # Em %
+            hazard_com.append(round(h_com * 100, 2))  # Em %
+            
+            # Reduzir participantes (2 por mês)
+            n_atual = max(0, n_atual - 2)
+        
+        # Retornar formato compatível com Chart.js
+        return {
+            "labels": meses,
+            "datasets": [
+                {
+                    "label": "Sem Lance Livre",
+                    "data": hazard_sem,
+                    "borderColor": "rgb(75, 192, 192)",
+                    "backgroundColor": "rgba(75, 192, 192, 0.2)",
+                    "tension": 0.1,
+                    "fill": False
+                },
+                {
+                    "label": "Com Lance Livre",
+                    "data": hazard_com,
+                    "borderColor": "rgb(255, 99, 132)",
+                    "backgroundColor": "rgba(255, 99, 132, 0.2)",
+                    "tension": 0.1,
+                    "fill": False
+                }
+            ]
+        }
+        
+    except Exception as e:
+        logger.error(f"Erro ao gerar dados do gráfico de probabilidade: {e}")
+        return None
+
 def gerar_relatorio_pdf(dados_simulacao: Dict, temp_dir: str) -> str:
     """Gera relatório PDF da simulação de consórcio."""
     try:
