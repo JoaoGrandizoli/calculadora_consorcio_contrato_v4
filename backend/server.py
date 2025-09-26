@@ -1490,26 +1490,53 @@ class ContractAnalysisService:
             return {"success": False, "error": str(e)}
 
 @api_router.post("/analisar-contrato")
-async def analisar_contrato(request: Request):
-    """Endpoint para análise de contratos de consórcio"""
+async def analisar_contrato(pdf_file: UploadFile = File(...)):
+    """Endpoint para análise de contratos de consórcio via upload de PDF"""
     try:
-        body = await request.json()
-        contract_text = body.get("contract_text", "").strip()
+        # Verificar se é um arquivo PDF
+        if not pdf_file.content_type == "application/pdf":
+            raise HTTPException(
+                status_code=400, 
+                detail="Apenas arquivos PDF são aceitos"
+            )
         
-        if not contract_text:
-            raise HTTPException(status_code=400, detail="Texto do contrato é obrigatório")
+        # Verificar tamanho do arquivo (limite: 10MB)
+        if pdf_file.size > 10 * 1024 * 1024:
+            raise HTTPException(
+                status_code=400,
+                detail="Arquivo muito grande (limite: 10MB)"
+            )
+        
+        logger.info(f"📄 Processando PDF: {pdf_file.filename} ({pdf_file.size} bytes)")
+        
+        # Ler conteúdo do arquivo
+        pdf_content = await pdf_file.read()
+        
+        # Extrair texto do PDF
+        contract_text = extract_text_from_pdf(pdf_content)
         
         if len(contract_text) < 100:
-            raise HTTPException(status_code=400, detail="Texto do contrato muito curto (mínimo 100 caracteres)")
+            raise HTTPException(
+                status_code=400, 
+                detail="Texto extraído do PDF muito curto (mínimo 100 caracteres)"
+            )
+        
+        logger.info(f"📝 Texto extraído: {len(contract_text)} caracteres")
         
         # Realizar análise com Claude
         result = await contract_analysis_service.analyze_contract_text(contract_text)
         
         if not result["success"]:
-            raise HTTPException(status_code=500, detail=f"Erro na análise: {result.get('error')}")
+            raise HTTPException(
+                status_code=500, 
+                detail=f"Erro na análise: {result.get('error')}"
+            )
         
         return {
             "success": True,
+            "filename": pdf_file.filename,
+            "file_size": pdf_file.size,
+            "text_length": len(contract_text),
             "analysis": result["analysis"],
             "model_used": result["model_used"],
             "timestamp": result["timestamp"]
@@ -1518,7 +1545,7 @@ async def analisar_contrato(request: Request):
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"❌ Erro no endpoint de análise: {e}")
+        logger.error(f"❌ Erro no endpoint de análise de PDF: {e}")
         raise HTTPException(status_code=500, detail=f"Erro interno: {str(e)}")
 
 # Instanciar serviço de análise
