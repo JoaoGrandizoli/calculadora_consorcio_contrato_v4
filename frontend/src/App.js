@@ -804,8 +804,8 @@ function App() {
                             id="taxaAdmin"
                             type="number"
                             step="0.01"
-                            value={parametros.taxa_admin}
-                            onChange={(e) => handleInputChange('taxa_admin', parseFloat(e.target.value))}
+                            value={parametros.taxa_admin * 100}
+                            onChange={(e) => handleInputChange('taxa_admin', parseFloat(e.target.value) / 100)}
                             className="mt-1"
                           />
                         </div>
