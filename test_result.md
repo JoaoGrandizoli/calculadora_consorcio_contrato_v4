@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: Corrigir problemas críticos na aplicação: 1) Erro de autenticação 401 na integração Claude AI para análise de contratos, 2) Bug de renderização onde CadastroForm aparece incorretamente abaixo do conteúdo principal, 3) Atualizar chaves API para Notion e Claude com credenciais válidas fornecidas pelo usuário.
+user_problem_statement: URGENTE: O simulador de consórcio não está fazendo cálculos! O frontend mostra "N/A" para CET e Valor Total. Preciso que você teste o endpoint /api/simular com dados básicos e verifique se a resposta contém cet_anual e valor_total_pago com valores numéricos (não null).
 
 backend:
   - task: "Atualizar chaves API Claude e Notion no backend/.env"
