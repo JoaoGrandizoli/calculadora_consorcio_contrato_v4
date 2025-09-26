@@ -4718,6 +4718,10 @@ Administradora                   Consorciado"""
         print("\n🎯 Testing CORRECTED HAZARD LOGIC from User's Spreadsheet (HIGH PRIORITY):")
         self.test_corrected_hazard_logic_from_spreadsheet()
         
+        # CLAUDE AI INTEGRATION TESTS (CURRENT FOCUS)
+        print("\n🤖 TESTING CLAUDE AI INTEGRATION (CURRENT FOCUS):")
+        self.run_claude_integration_tests()
+        
         # Summary
         print("\n" + "=" * 70)
         print("📊 TEST SUMMARY")
