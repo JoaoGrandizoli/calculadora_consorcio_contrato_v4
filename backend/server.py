@@ -100,6 +100,8 @@ class DetalhamentoMes(BaseModel):
     fator_correcao: float
     valor_carta_corrigido: float
     parcela_corrigida: float
+    parcela_antes: float  # Valor da parcela antes da contemplação
+    parcela_depois: float  # Valor da parcela após contemplação
     lance_livre: float
     fluxo_liquido: float
     saldo_devedor: float
