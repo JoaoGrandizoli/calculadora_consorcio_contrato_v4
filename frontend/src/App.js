@@ -46,6 +46,9 @@ function App() {
   const [adminAuthenticated, setAdminAuthenticated] = useState(false);
   const [adminPassword, setAdminPassword] = useState('');
   const [adminLoginError, setAdminLoginError] = useState('');
+  
+  // Estado para controlar abas principais
+  const [activeTab, setActiveTab] = useState('simulador');
 
   // 🔧 FIX CRÍTICO: Verificar acesso admin apenas por URL, não por localStorage
   // localStorage serve apenas para persistir APÓS a autenticação
