@@ -1331,6 +1331,185 @@ class ConsortiumAPITester:
         self.log_test("VPL Always Calculated", all_passed, details)
         return all_passed
 
+    def test_critical_simulator_issue(self):
+        """
+        🔥 CRITICAL TEST: Test the exact issue reported by user
+        
+        USER ISSUE: "O simulador de consórcio não está fazendo cálculos! O frontend mostra 'N/A' para CET e Valor Total."
+        
+        Test requirements from user:
+        1. Test direct endpoint /api/simular with basic data
+        2. Verify response contains numeric values (not null) for cet_anual and valor_total_pago
+        3. Check for expected response fields: grafico_probabilidade, grafico_fluxo, grafico_saldo, tabela_dados
+        4. If returning null/N/A, identify where it's failing
+        
+        Exact parameters from user:
+        - valor_carta: 100000
+        - prazo_meses: 120
+        - taxa_admin: 0.21
+        - fundo_reserva: 0.03
+        - mes_contemplacao: 1
+        - lance_livre_perc: 0.10
+        - taxa_reajuste_anual: 0.05
+        """
+        # Exact parameters from user report
+        parametros = {
+            "valor_carta": 100000,
+            "prazo_meses": 120,
+            "taxa_admin": 0.21,
+            "fundo_reserva": 0.03,
+            "mes_contemplacao": 1,
+            "lance_livre_perc": 0.10,
+            "taxa_reajuste_anual": 0.05
+        }
+        
+        print(f"\n🔥 TESTING CRITICAL SIMULATOR ISSUE - User Report: Frontend shows 'N/A' for CET and Valor Total")
+        print(f"   Testing endpoint: /api/simular")
+        print(f"   Parameters: {parametros}")
+        
+        try:
+            # Test the exact endpoint with exact parameters
+            response = requests.post(f"{self.api_url}/simular", 
+                                   json=parametros, 
+                                   timeout=30)
+            
+            success = response.status_code == 200
+            critical_issues = []
+            
+            if success:
+                data = response.json()
+                print(f"   ✅ HTTP 200 OK - Response received")
+                
+                # Check if simulation has error
+                if data.get('erro'):
+                    critical_issues.append(f"SIMULATION ERROR: {data.get('mensagem')}")
+                    success = False
+                else:
+                    print(f"   ✅ No simulation error")
+                    
+                    # 1. CRITICAL: Check cet_anual (user reports N/A)
+                    resultados = data.get('resultados', {})
+                    cet_anual = resultados.get('cet_anual')
+                    
+                    if cet_anual is None:
+                        critical_issues.append("❌ CRITICAL: cet_anual is NULL - this causes frontend N/A")
+                    elif str(cet_anual) in ['nan', 'inf', '-inf']:
+                        critical_issues.append(f"❌ CRITICAL: cet_anual is invalid: {cet_anual}")
+                    else:
+                        print(f"   ✅ cet_anual is valid: {cet_anual} ({cet_anual*100:.2f}% a.a.)")
+                    
+                    # 2. CRITICAL: Check valor_total_pago (user reports N/A)
+                    resumo_financeiro = data.get('resumo_financeiro', {})
+                    valor_total_pago = resumo_financeiro.get('total_parcelas')
+                    
+                    if valor_total_pago is None:
+                        critical_issues.append("❌ CRITICAL: valor_total_pago (total_parcelas) is NULL")
+                    elif str(valor_total_pago) in ['nan', 'inf', '-inf']:
+                        critical_issues.append(f"❌ CRITICAL: valor_total_pago is invalid: {valor_total_pago}")
+                    else:
+                        print(f"   ✅ valor_total_pago is valid: R${valor_total_pago:,.2f}")
+                    
+                    # 3. Check required response fields
+                    required_fields = {
+                        'parametros': data.get('parametros'),
+                        'resultados': data.get('resultados'),
+                        'fluxos': data.get('fluxos'),
+                        'detalhamento': data.get('detalhamento'),
+                        'resumo_financeiro': data.get('resumo_financeiro')
+                    }
+                    
+                    missing_fields = [field for field, value in required_fields.items() if value is None]
+                    if missing_fields:
+                        critical_issues.append(f"❌ Missing response fields: {missing_fields}")
+                    else:
+                        print(f"   ✅ All required response fields present")
+                    
+                    # 4. Check convergence status
+                    convergiu = resultados.get('convergiu', False)
+                    motivo_erro = resultados.get('motivo_erro')
+                    
+                    if not convergiu:
+                        print(f"   ⚠️ CET did not converge: {motivo_erro}")
+                        # Check if VPL is available as alternative
+                        vpl = resultados.get('vpl')
+                        if vpl is None or str(vpl) in ['nan', 'inf', '-inf']:
+                            critical_issues.append("❌ CRITICAL: CET didn't converge AND VPL is invalid")
+                        else:
+                            print(f"   ✅ VPL available as alternative: R${vpl:,.2f}")
+                    else:
+                        print(f"   ✅ CET converged successfully")
+                    
+                    # 5. Check data completeness
+                    fluxos = data.get('fluxos', [])
+                    detalhamento = data.get('detalhamento', [])
+                    
+                    if len(fluxos) != 121:  # 0 + 120 months
+                        critical_issues.append(f"❌ Wrong number of cash flows: {len(fluxos)} (expected 121)")
+                    else:
+                        print(f"   ✅ Cash flows complete: {len(fluxos)} periods")
+                    
+                    if len(detalhamento) != 120:  # 120 months
+                        critical_issues.append(f"❌ Wrong number of detail months: {len(detalhamento)} (expected 120)")
+                    else:
+                        print(f"   ✅ Monthly details complete: {len(detalhamento)} months")
+                    
+                    # 6. Check for calculation errors in logs
+                    print(f"   🔍 Checking for calculation errors...")
+                    try:
+                        import subprocess
+                        log_result = subprocess.run(['tail', '-n', '20', '/var/log/supervisor/backend.err.log'], 
+                                                  capture_output=True, text=True, timeout=5)
+                        
+                        if log_result.returncode == 0:
+                            log_content = log_result.stdout.lower()
+                            error_keywords = ['error', 'exception', 'traceback', 'failed', 'nan', 'infinity']
+                            recent_errors = [line for line in log_content.split('\n') 
+                                           if any(keyword in line for keyword in error_keywords)]
+                            
+                            if recent_errors:
+                                print(f"   ⚠️ Found {len(recent_errors)} potential errors in logs")
+                                for error in recent_errors[-2:]:  # Show last 2
+                                    print(f"      {error}")
+                            else:
+                                print(f"   ✅ No recent errors in backend logs")
+                    except Exception:
+                        print(f"   ⚠️ Could not check backend logs")
+                
+                success = len(critical_issues) == 0
+                
+                if success:
+                    details = (f"✅ SIMULATOR WORKING CORRECTLY: "
+                             f"CET: {cet_anual*100:.2f}% a.a., "
+                             f"Total Pago: R${valor_total_pago:,.2f}, "
+                             f"Convergiu: {convergiu}")
+                else:
+                    details = f"❌ CRITICAL ISSUES FOUND: {'; '.join(critical_issues)}"
+                    
+            else:
+                critical_issues.append(f"HTTP ERROR: {response.status_code}")
+                details = f"❌ HTTP {response.status_code}: {response.text[:300]}"
+                
+            self.log_test("🔥 CRITICAL: Simulator Calculations", success, details)
+            
+            # If failed, provide diagnostic information
+            if not success:
+                print(f"\n🔍 DIAGNOSTIC INFORMATION:")
+                print(f"   - Endpoint: {self.api_url}/simular")
+                print(f"   - Parameters: {json.dumps(parametros, indent=2)}")
+                print(f"   - HTTP Status: {response.status_code if 'response' in locals() else 'No response'}")
+                if 'data' in locals() and data:
+                    print(f"   - Response keys: {list(data.keys())}")
+                    if 'resultados' in data:
+                        print(f"   - Results keys: {list(data['resultados'].keys())}")
+                print(f"   - Critical Issues: {critical_issues}")
+            
+            return success
+            
+        except Exception as e:
+            self.log_test("🔥 CRITICAL: Simulator Calculations", False, f"Exception: {str(e)}")
+            print(f"\n🔍 EXCEPTION DETAILS: {str(e)}")
+            return False
+
     def test_negative_cet_detection(self):
         """
         Test the new functionality for negative CET detection and VPL usage.
