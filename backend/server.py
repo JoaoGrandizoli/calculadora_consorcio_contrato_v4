@@ -1514,6 +1514,9 @@ class NotionLeadService:
             logger.error(f"❌ Erro ao atualizar lead no Notion: {e}")
             return {"success": False, "error": str(e)}
 
+# Instanciar serviço do Notion
+notion_service = NotionLeadService()
+
 # Modelo para criar lead personalizado
 class CriarLeadRequest(BaseModel):
     nome: str = Field(..., min_length=1, max_length=100)
