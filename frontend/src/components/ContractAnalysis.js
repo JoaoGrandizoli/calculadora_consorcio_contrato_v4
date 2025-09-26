@@ -94,17 +94,27 @@ const ContractAnalysis = () => {
     lines.forEach(line => {
       const trimmed = line.trim();
       
-      // Detectar seções pelos números e asteriscos
-      if (trimmed.match(/^\d+\.\s*\*\*.*\*\*/) || trimmed.match(/^\*\*\d+\..*\*\*/)) {
+      // Detectar seções pelos marcadores ### ou ** (novo formato do prompt especializado)
+      if (trimmed.match(/^###\s*(.+)/) || trimmed.match(/^\*\*(.+)\*\*:?\s*$/) || trimmed.match(/^\d+\.\s*\*\*.*\*\*/)) {
         // Salvar seção anterior se existe
         if (currentSection && currentContent.length > 0) {
           sections[currentSection] = currentContent.join('\n').trim();
         }
         
-        // Nova seção
-        currentSection = trimmed.replace(/^\d+\.\s*\*\*/, '').replace(/\*\*/g, '').trim();
+        // Nova seção - extrair o título
+        let sectionTitle = '';
+        if (trimmed.startsWith('###')) {
+          sectionTitle = trimmed.replace(/^###\s*/, '').trim();
+        } else if (trimmed.match(/^\*\*(.+)\*\*:?\s*$/)) {
+          sectionTitle = trimmed.replace(/^\*\*/, '').replace(/\*\*:?\s*$/, '').trim();
+        } else {
+          sectionTitle = trimmed.replace(/^\d+\.\s*\*\*/, '').replace(/\*\*/g, '').trim();
+        }
+        
+        currentSection = sectionTitle;
         currentContent = [];
-      } else if (trimmed && currentSection) {
+      } else if (trimmed && currentSection && !trimmed.startsWith('##') && !trimmed.startsWith('---')) {
+        // Adicionar conteúdo (excluir headers principais e separadores)
         currentContent.push(trimmed);
       }
     });
@@ -114,6 +124,7 @@ const ContractAnalysis = () => {
       sections[currentSection] = currentContent.join('\n').trim();
     }
 
+    console.log('🔍 Seções detectadas:', Object.keys(sections));
     return sections;
   };
 
