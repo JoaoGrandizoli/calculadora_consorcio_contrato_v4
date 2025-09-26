@@ -1066,14 +1066,88 @@ function App() {
                             <CardHeader>
                               <CardTitle className="flex items-center gap-2">
                                 <PieChart className="h-5 w-5" />
-                                Fluxo de Caixa Mensal
+                                Fluxo de Caixa Detalhado
                               </CardTitle>
                             </CardHeader>
                             <CardContent>
-                              {resultados.grafico_fluxo?.labels && (
-                                <div className="h-80">
-                                  <Line data={resultados.grafico_fluxo} options={chartOptions} />
+                              {resultados.detalhamento ? (
+                                <div className="overflow-x-auto">
+                                  <table className="w-full border-collapse border border-gray-300">
+                                    <thead>
+                                      <tr className="bg-gray-50">
+                                        <th className="border border-gray-300 px-4 py-2 text-left">Mês</th>
+                                        <th className="border border-gray-300 px-4 py-2 text-left">Data</th>
+                                        <th className="border border-gray-300 px-4 py-2 text-left">Parcela</th>
+                                        <th className="border border-gray-300 px-4 py-2 text-left">Valor da Carta</th>
+                                        <th className="border border-gray-300 px-4 py-2 text-left">Fluxo Líquido</th>
+                                        <th className="border border-gray-300 px-4 py-2 text-left">Saldo Devedor</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {/* Primeiros 24 meses */}
+                                      {resultados.detalhamento.slice(0, 24).map((item, index) => (
+                                        <tr key={index} className={item.eh_contemplacao ? 'bg-green-50' : ''}>
+                                          <td className="border border-gray-300 px-4 py-2">{item.mes}</td>
+                                          <td className="border border-gray-300 px-4 py-2">{item.data}</td>
+                                          <td className="border border-gray-300 px-4 py-2">
+                                            R$ {item.parcela_corrigida?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                          </td>
+                                          <td className="border border-gray-300 px-4 py-2">
+                                            R$ {item.valor_carta_corrigido?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                          </td>
+                                          <td className={`border border-gray-300 px-4 py-2 ${item.fluxo_liquido > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                            R$ {item.fluxo_liquido?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                          </td>
+                                          <td className="border border-gray-300 px-4 py-2">
+                                            R$ {item.saldo_devedor?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                          </td>
+                                        </tr>
+                                      ))}
+                                      
+                                      {/* Meses anuais (36, 48, 60, etc.) */}
+                                      {resultados.detalhamento.length > 24 && (
+                                        <>
+                                          <tr className="bg-gray-100">
+                                            <td colSpan={6} className="border border-gray-300 px-4 py-2 text-center font-semibold">
+                                              --- Meses Anuais ---
+                                            </td>
+                                          </tr>
+                                          {[36, 48, 60, 72, 84, 96, 108, 120].map((mes) => {
+                                            const item = resultados.detalhamento[mes - 1];
+                                            if (!item) return null;
+                                            return (
+                                              <tr key={mes} className={item.eh_contemplacao ? 'bg-green-50' : ''}>
+                                                <td className="border border-gray-300 px-4 py-2">{item.mes}</td>
+                                                <td className="border border-gray-300 px-4 py-2">{item.data}</td>
+                                                <td className="border border-gray-300 px-4 py-2">
+                                                  R$ {item.parcela_corrigida?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                                </td>
+                                                <td className="border border-gray-300 px-4 py-2">
+                                                  R$ {item.valor_carta_corrigido?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                                </td>
+                                                <td className={`border border-gray-300 px-4 py-2 ${item.fluxo_liquido > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                                  R$ {item.fluxo_liquido?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                                </td>
+                                                <td className="border border-gray-300 px-4 py-2">
+                                                  R$ {item.saldo_devedor?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                                </td>
+                                              </tr>
+                                            );
+                                          })}
+                                        </>
+                                      )}
+                                    </tbody>
+                                  </table>
+                                  
+                                  <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded">
+                                    <p className="text-sm text-blue-800">
+                                      <strong>Legenda:</strong> Linha verde indica o mês de contemplação. 
+                                      Fluxo positivo = recebe dinheiro, Fluxo negativo = paga parcela.
+                                    </p>
+                                  </div>
                                 </div>
+                              ) : (
+                                <p className="text-gray-500">Execute uma simulação para ver o fluxo de caixa detalhado.</p>
                               )}
                             </CardContent>
                           </Card>
