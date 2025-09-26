@@ -334,12 +334,11 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Testar endpoint /api/gerar-relatorio-pdf para problema crítico do botão 'Baixar Relatório'"
-    - "Implementar webhook do Typeform no backend"
-    - "Implementar endpoint /api/save-lead para formulário direto"
-    - "Implementar endpoint /api/check-access/{access_token}"
-    - "Implementar endpoints admin /api/admin/leads e /api/admin/simulations"
-  stuck_tasks: []
+    - "Corrigir bug de renderização do CadastroForm - aparecendo mesmo após acesso concedido"
+    - "Atualizar chaves API Claude e Notion no backend/.env"
+    - "Testar integração Claude AI para análise de contratos"
+  stuck_tasks:
+    - "Corrigir bug de renderização do CadastroForm - aparecendo mesmo após acesso concedido"
   test_all: false
   test_priority: "high_first"
 
