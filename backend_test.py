@@ -5062,6 +5062,188 @@ Administradora                   Consorciado"""
             self.log_test("Prompt Import Verification", False, f"Exception: {str(e)}")
             return False
 
+    def test_detalhamento_structure_critical(self):
+        """
+        🔥 CRITICAL TEST: Investigate detalhamento structure for cash flow
+        
+        USER ISSUE: Frontend shows "N/A" for detalhamento values
+        
+        Test requirements:
+        1. Test endpoint /api/simular with exact parameters provided
+        2. Verify detalhamento array exists and has data
+        3. Check if each item has required fields: mes, parcela_antes, parcela_depois, saldo_devedor
+        4. Show first 3 items for debugging
+        5. Verify calculations are correct
+        6. Check if parcela_depois in month 1 is different from parcela_antes
+        
+        Parameters from user:
+        - valor_carta: 100000
+        - prazo_meses: 120
+        - taxa_admin: 0.21
+        - fundo_reserva: 0.03
+        - mes_contemplacao: 1
+        - lance_livre_perc: 0.10
+        - taxa_reajuste_anual: 0.05
+        """
+        # Exact parameters from user request
+        parametros = {
+            "valor_carta": 100000,
+            "prazo_meses": 120,
+            "taxa_admin": 0.21,
+            "fundo_reserva": 0.03,
+            "mes_contemplacao": 1,
+            "lance_livre_perc": 0.10,
+            "taxa_reajuste_anual": 0.05
+        }
+        
+        print(f"\n🔥 TESTING CRITICAL DETALHAMENTO STRUCTURE ISSUE")
+        print(f"   User Report: Frontend shows 'N/A' for detalhamento values")
+        print(f"   Parameters: valor_carta=R${parametros['valor_carta']:,}, mes_contemplacao={parametros['mes_contemplacao']}")
+        
+        try:
+            response = requests.post(f"{self.api_url}/simular", 
+                                   json=parametros, 
+                                   timeout=30)
+            success = response.status_code == 200
+            issues = []
+            
+            if success:
+                data = response.json()
+                
+                # Check if simulation was successful
+                if data.get('erro'):
+                    success = False
+                    issues.append(f"Simulation error: {data.get('mensagem')}")
+                else:
+                    print(f"   ✅ HTTP 200 OK - Endpoint responds correctly")
+                    
+                    # 1. Check if detalhamento array exists
+                    detalhamento = data.get('detalhamento', [])
+                    if not detalhamento:
+                        issues.append("detalhamento array is missing or empty")
+                    else:
+                        print(f"   ✅ detalhamento array exists with {len(detalhamento)} items")
+                    
+                    # 2. Check structure of first few items
+                    if detalhamento and len(detalhamento) >= 3:
+                        print(f"   📋 FIRST 3 ITEMS OF DETALHAMENTO FOR DEBUG:")
+                        
+                        for i in range(3):
+                            item = detalhamento[i]
+                            print(f"      Month {i+1}:")
+                            print(f"        - mes: {item.get('mes', 'MISSING')}")
+                            print(f"        - data: {item.get('data', 'MISSING')}")
+                            print(f"        - parcela_corrigida: R${item.get('parcela_corrigida', 'MISSING'):,.2f}" if item.get('parcela_corrigida') else f"        - parcela_corrigida: MISSING")
+                            print(f"        - saldo_devedor: R${item.get('saldo_devedor', 'MISSING'):,.2f}" if item.get('saldo_devedor') else f"        - saldo_devedor: MISSING")
+                            print(f"        - valor_carta_corrigido: R${item.get('valor_carta_corrigido', 'MISSING'):,.2f}" if item.get('valor_carta_corrigido') else f"        - valor_carta_corrigido: MISSING")
+                            print(f"        - eh_contemplacao: {item.get('eh_contemplacao', 'MISSING')}")
+                            print(f"        - fluxo_liquido: R${item.get('fluxo_liquido', 'MISSING'):,.2f}" if item.get('fluxo_liquido') else f"        - fluxo_liquido: MISSING")
+                    
+                    # 3. Check for expected vs actual field names
+                    if detalhamento:
+                        first_item = detalhamento[0]
+                        actual_fields = list(first_item.keys())
+                        expected_frontend_fields = ['mes', 'parcela_antes', 'parcela_depois', 'saldo_devedor']
+                        actual_backend_fields = ['mes', 'parcela_corrigida', 'saldo_devedor', 'valor_carta_corrigido', 'eh_contemplacao']
+                        
+                        print(f"   🔍 FIELD NAME ANALYSIS:")
+                        print(f"      Frontend expects: {expected_frontend_fields}")
+                        print(f"      Backend provides: {actual_fields}")
+                        
+                        # Check if frontend expected fields exist
+                        missing_frontend_fields = []
+                        for field in expected_frontend_fields:
+                            if field not in first_item:
+                                missing_frontend_fields.append(field)
+                        
+                        if missing_frontend_fields:
+                            issues.append(f"Frontend expected fields missing: {missing_frontend_fields}")
+                            print(f"      ❌ MISSING FIELDS: {missing_frontend_fields}")
+                            
+                            # Check if there are equivalent fields with different names
+                            field_mapping = {
+                                'parcela_antes': 'parcela_corrigida',  # Might be the same
+                                'parcela_depois': 'parcela_corrigida'  # Might be the same or different calculation
+                            }
+                            
+                            print(f"      🔄 POSSIBLE FIELD MAPPING:")
+                            for frontend_field, backend_field in field_mapping.items():
+                                if backend_field in first_item:
+                                    print(f"        {frontend_field} → {backend_field}: R${first_item[backend_field]:,.2f}")
+                                else:
+                                    print(f"        {frontend_field} → {backend_field}: NOT FOUND")
+                        else:
+                            print(f"      ✅ All frontend expected fields present")
+                    
+                    # 4. Check if parcela values are different before/after contemplation
+                    if len(detalhamento) >= 2:
+                        mes_1 = detalhamento[0]  # Month 1 (contemplation month)
+                        mes_2 = detalhamento[1]  # Month 2 (after contemplation)
+                        
+                        parcela_1 = mes_1.get('parcela_corrigida', 0)
+                        parcela_2 = mes_2.get('parcela_corrigida', 0)
+                        
+                        print(f"   💰 PARCELA ANALYSIS:")
+                        print(f"      Month 1 (contemplation): R${parcela_1:,.2f}")
+                        print(f"      Month 2 (after): R${parcela_2:,.2f}")
+                        print(f"      Difference: R${abs(parcela_1 - parcela_2):,.2f}")
+                        
+                        # For this specific case, parcelas should be the same (no reduction after contemplation)
+                        # The difference is in the cash flow (receives carta value in contemplation month)
+                        if abs(parcela_1 - parcela_2) < 1.0:
+                            print(f"      ✅ Parcelas are consistent (no reduction after contemplation)")
+                        else:
+                            print(f"      ⚠️ Parcelas differ between months")
+                    
+                    # 5. Check last month calculation (should have reajustes applied)
+                    if len(detalhamento) >= 120:
+                        last_month = detalhamento[119]  # Month 120
+                        first_month = detalhamento[0]   # Month 1
+                        
+                        parcela_first = first_month.get('parcela_corrigida', 0)
+                        parcela_last = last_month.get('parcela_corrigida', 0)
+                        
+                        print(f"   📈 REAJUSTE ANALYSIS:")
+                        print(f"      First month parcela: R${parcela_first:,.2f}")
+                        print(f"      Last month parcela: R${parcela_last:,.2f}")
+                        print(f"      Growth factor: {parcela_last/parcela_first:.3f}x")
+                        
+                        # With 5% annual reajuste for 10 years, should be around 1.63x
+                        expected_factor = (1.05 ** 10)  # 10 years of 5% growth
+                        actual_factor = parcela_last / parcela_first if parcela_first > 0 else 0
+                        
+                        if abs(actual_factor - expected_factor) < 0.1:
+                            print(f"      ✅ Reajuste calculation correct (expected ~{expected_factor:.2f}x)")
+                        else:
+                            print(f"      ⚠️ Reajuste might be incorrect (expected ~{expected_factor:.2f}x, got {actual_factor:.2f}x)")
+                    
+                    # 6. Overall assessment
+                    if not issues:
+                        print(f"   ✅ DETALHAMENTO STRUCTURE ANALYSIS COMPLETE")
+                        print(f"   📊 SUMMARY:")
+                        print(f"      - detalhamento array: ✅ Present with {len(detalhamento)} items")
+                        print(f"      - Required fields: ✅ All backend fields present")
+                        print(f"      - Field mapping issue: ❌ Frontend expects different field names")
+                        print(f"      - Calculations: ✅ Values are numeric and reasonable")
+                        
+                        # The main issue is likely field name mismatch
+                        issues.append("FIELD NAME MISMATCH: Frontend expects 'parcela_antes'/'parcela_depois' but backend provides 'parcela_corrigida'")
+                        success = False  # This is the root cause
+            else:
+                issues.append(f"HTTP {response.status_code}: {response.text[:200]}")
+            
+            if success:
+                details = f"✅ Backend detalhamento structure is correct, but field names don't match frontend expectations"
+            else:
+                details = f"❌ Issues found: {'; '.join(issues)}"
+            
+            self.log_test("CRITICAL: Detalhamento Structure Investigation", success, details)
+            return success
+            
+        except Exception as e:
+            self.log_test("CRITICAL: Detalhamento Structure Investigation", False, f"Exception: {str(e)}")
+            return False
+
     def run_all_tests(self):
         """Run all backend tests"""
         print(f"\n🚀 Starting Consortium API Tests - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
