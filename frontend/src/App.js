@@ -828,13 +828,6 @@ function App() {
               <ContractAnalysis />
             </TabsContent>
           </Tabs>
-            
-            {/* Aba de Análise de Contrato */}
-            <TabsContent value="analise-contrato" className="mt-6">
-              <ContractAnalysis />
-            </TabsContent>
-
-          </Tabs>
         </div>
       </div>
 
