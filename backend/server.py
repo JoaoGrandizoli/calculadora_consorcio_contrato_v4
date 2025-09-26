@@ -1337,9 +1337,6 @@ async def gerar_relatorio_pdf_endpoint(parametros: ParametrosConsorcio):
         logger.error(f"Erro no endpoint de PDF: {e}")
         raise HTTPException(status_code=500, detail=f"Erro interno: {str(e)}")
 
-# Include the router in the main app
-app.include_router(api_router)
-
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
