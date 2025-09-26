@@ -920,6 +920,11 @@ function App() {
             <AdminPanel />
           </div>
         )
+      ) : (
+        /* Conteúdo principal - Simulador quando tem acesso mas não está no admin */
+        <div className="container mx-auto px-4 md:px-6 py-8">
+          {/* O conteúdo do simulador já está renderizado no header acima */}
+        </div>
       )}
     </div>
   );
