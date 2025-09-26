@@ -652,6 +652,14 @@ function App() {
                   </div>
                 </div>
               </div>
+              
+              {/* Conteúdo do simulador será movido aqui */}
+            </TabsContent>
+
+            <TabsContent value="analise-contrato" className="mt-6">
+              <ContractAnalysis />
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
 
