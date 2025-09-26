@@ -4727,6 +4727,341 @@ Administradora                   Consorciado"""
         
         return claude_passed == claude_total
 
+    def create_test_consortium_pdf(self, filename="test_consortium_contract.pdf"):
+        """Create a test PDF with consortium contract content for testing"""
+        try:
+            # Create a temporary PDF with consortium contract content
+            pdf_path = os.path.join(tempfile.gettempdir(), filename)
+            
+            # Create PDF with consortium contract text
+            c = canvas.Canvas(pdf_path, pagesize=letter)
+            width, height = letter
+            
+            # Title
+            c.setFont("Helvetica-Bold", 16)
+            c.drawString(50, height - 50, "CONTRATO DE PARTICIPAÇÃO EM GRUPO DE CONSÓRCIO")
+            
+            # Contract content with specific consortium terms for testing
+            contract_text = [
+                "",
+                "CONTRATO DE PARTICIPAÇÃO EM GRUPO DE CONSÓRCIO",
+                "",
+                "Administradora: Teste Consórcios Ltda",
+                "CNPJ: 12.345.678/0001-90",
+                "",
+                "CLÁUSULA 1 - DO OBJETO",
+                "O presente contrato tem por objeto a participação do consorciado",
+                "em grupo de consórcio para aquisição de bem imóvel.",
+                "",
+                "CLÁUSULA 8 - TAXA DE ADMINISTRAÇÃO", 
+                "A taxa de administração será de 25% (vinte e cinco por cento)",
+                "sobre o valor do bem, cobrada mensalmente junto com as parcelas.",
+                "",
+                "CLÁUSULA 12 - CONTEMPLAÇÃO",
+                "A contemplação ocorrerá por sorteio ou lance livre, conforme",
+                "critérios subjetivos da administradora e análise interna.",
+                "Garantimos alta probabilidade de contemplação nos primeiros 6 meses.",
+                "",
+                "CLÁUSULA 15 - DESISTÊNCIA E RESTITUIÇÃO",
+                "Em caso de desistência, a restituição dos valores pagos",
+                "ocorrerá somente após o encerramento do grupo, sem correção",
+                "monetária, em até 90 dias após a última assembleia.",
+                "",
+                "CLÁUSULA 18 - PENALIDADES",
+                "Multa por desistência: 30% (trinta por cento) do valor total pago,",
+                "além de juros remuneratórios de 3% ao mês e compensação por",
+                "prejuízos no valor de 15% do crédito contemplado.",
+                "",
+                "CLÁUSULA 22 - RESPONSABILIDADES",
+                "A administradora fica isenta de qualquer responsabilidade por",
+                "falhas no sistema, atrasos na contemplação ou problemas na",
+                "documentação, sendo todos os riscos assumidos pelo consorciado.",
+                "",
+                "DADOS DO CONSÓRCIO:",
+                "- Prazo: 120 meses",
+                "- Valor do bem: R$ 300.000,00",
+                "- Taxa de administração: 25%",
+                "- Fundo de reserva: 3%",
+                "- Restituição: somente após encerramento do grupo",
+                "- Multa por desistência: 30% do valor pago",
+                "",
+                "Este contrato contém várias cláusulas potencialmente abusivas",
+                "para testar o sistema de detecção especializado em consórcios."
+            ]
+            
+            # Add text to PDF
+            y_position = height - 80
+            c.setFont("Helvetica", 10)
+            
+            for line in contract_text:
+                if y_position < 50:  # New page if needed
+                    c.showPage()
+                    y_position = height - 50
+                    c.setFont("Helvetica", 10)
+                
+                c.drawString(50, y_position, line)
+                y_position -= 15
+            
+            c.save()
+            return pdf_path
+            
+        except Exception as e:
+            print(f"Error creating test PDF: {e}")
+            return None
+
+    def test_consortium_prompt_integration(self):
+        """
+        🔥 CRITICAL TEST: Test new specialized consortium contract analysis prompt integration
+        
+        REVIEW REQUEST: Test if the new specialized consortium prompt was integrated correctly:
+        1. Verify prompt import: from prompts.prompt_consorcio import prompt_consorcio
+        2. Test endpoint /api/analisar-contrato with consortium PDF
+        3. Validate new structured analysis format (RESUMO EXECUTIVO, ANÁLISE FINANCEIRA, etc.)
+        4. Compare with previous analysis to confirm more detailed and specific for consortiums
+        5. Test with PDF containing consortium-specific abusive clauses
+        """
+        print(f"\n🔥 TESTING CONSORTIUM PROMPT INTEGRATION")
+        print(f"   Testing specialized consortium contract analysis with new prompt")
+        
+        try:
+            # Step 1: Create test PDF with consortium contract content
+            print(f"   Step 1: Creating test consortium contract PDF...")
+            pdf_path = self.create_test_consortium_pdf()
+            
+            if not pdf_path or not os.path.exists(pdf_path):
+                self.log_test("Consortium Prompt Integration", False, "Failed to create test PDF")
+                return False
+            
+            print(f"   ✅ Test PDF created: {os.path.basename(pdf_path)} ({os.path.getsize(pdf_path)} bytes)")
+            
+            # Step 2: Test the /api/analisar-contrato endpoint
+            print(f"   Step 2: Testing /api/analisar-contrato endpoint...")
+            
+            with open(pdf_path, 'rb') as pdf_file:
+                files = {'pdf_file': ('test_consortium_contract.pdf', pdf_file, 'application/pdf')}
+                response = requests.post(f"{self.api_url}/analisar-contrato", 
+                                       files=files, 
+                                       timeout=60)  # Claude API might take longer
+            
+            success = response.status_code == 200
+            issues = []
+            
+            if success:
+                data = response.json()
+                
+                # Check if analysis was successful
+                if not data.get('success'):
+                    issues.append(f"Analysis failed: {data.get('error', 'Unknown error')}")
+                    success = False
+                else:
+                    analysis_text = data.get('analysis', '')
+                    
+                    # Step 3: Validate new structured format
+                    print(f"   Step 3: Validating structured analysis format...")
+                    
+                    # Check for required sections from the specialized prompt
+                    required_sections = [
+                        "RESUMO EXECUTIVO",
+                        "ANÁLISE FINANCEIRA", 
+                        "PONTOS DE ATENÇÃO CRÍTICOS",
+                        "RECOMENDAÇÕES",
+                        "SCORE DETALHADO"
+                    ]
+                    
+                    missing_sections = []
+                    for section in required_sections:
+                        if section not in analysis_text:
+                            missing_sections.append(section)
+                    
+                    if missing_sections:
+                        issues.append(f"Missing required sections: {missing_sections}")
+                    else:
+                        print(f"   ✅ All required sections present: {', '.join(required_sections)}")
+                    
+                    # Step 4: Check for consortium-specific analysis
+                    print(f"   Step 4: Validating consortium-specific content...")
+                    
+                    consortium_indicators = [
+                        "taxa de administração",
+                        "contemplação", 
+                        "restituição",
+                        "desistência",
+                        "Lei 11.795",  # Lei dos Consórcios
+                        "CDC",  # Código de Defesa do Consumidor
+                        "pontos",  # Scoring system
+                        "CRÍTICO|ALTO|MÉDIO|BAIXO"  # Risk classification
+                    ]
+                    
+                    found_indicators = []
+                    for indicator in consortium_indicators:
+                        if indicator.lower() in analysis_text.lower():
+                            found_indicators.append(indicator)
+                    
+                    if len(found_indicators) < 5:  # Should find most indicators
+                        issues.append(f"Analysis lacks consortium-specific content. Found: {found_indicators}")
+                    else:
+                        print(f"   ✅ Consortium-specific analysis detected: {len(found_indicators)}/{len(consortium_indicators)} indicators")
+                    
+                    # Step 5: Check for detection of specific abusive clauses
+                    print(f"   Step 5: Checking detection of abusive clauses...")
+                    
+                    # Our test PDF contains these abusive clauses:
+                    expected_detections = [
+                        "25%",  # Excessive admin fee
+                        "30%",  # Excessive penalty
+                        "somente após encerramento",  # Abusive restitution
+                        "critérios subjetivos",  # Subjective contemplation
+                        "isenta.*responsabilidade"  # Risk transfer
+                    ]
+                    
+                    detected_clauses = []
+                    for clause in expected_detections:
+                        if clause.lower() in analysis_text.lower():
+                            detected_clauses.append(clause)
+                    
+                    if len(detected_clauses) < 3:  # Should detect most abusive clauses
+                        issues.append(f"Failed to detect abusive clauses. Found: {detected_clauses}")
+                    else:
+                        print(f"   ✅ Abusive clauses detected: {len(detected_clauses)}/{len(expected_detections)}")
+                    
+                    # Step 6: Check for scoring system
+                    print(f"   Step 6: Validating scoring system...")
+                    
+                    scoring_indicators = ["pontos", "pontuação", "score", "risco"]
+                    scoring_found = any(indicator in analysis_text.lower() for indicator in scoring_indicators)
+                    
+                    if not scoring_found:
+                        issues.append("Scoring system not detected in analysis")
+                    else:
+                        print(f"   ✅ Scoring system detected")
+                    
+                    # Step 7: Check response metadata
+                    print(f"   Step 7: Validating response metadata...")
+                    
+                    expected_fields = ['success', 'filename', 'file_size', 'text_length', 'analysis', 'model_used', 'timestamp']
+                    missing_fields = [field for field in expected_fields if field not in data]
+                    
+                    if missing_fields:
+                        issues.append(f"Missing response fields: {missing_fields}")
+                    
+                    # Check model used
+                    model_used = data.get('model_used', '')
+                    if 'claude-3-5-sonnet' not in model_used:
+                        issues.append(f"Unexpected model used: {model_used}")
+                    else:
+                        print(f"   ✅ Correct Claude model used: {model_used}")
+                    
+                    # Check text extraction
+                    text_length = data.get('text_length', 0)
+                    if text_length < 100:
+                        issues.append(f"Text extraction too short: {text_length} chars")
+                    else:
+                        print(f"   ✅ Text extracted successfully: {text_length} characters")
+                    
+                    # Final validation
+                    if len(issues) == 0:
+                        print(f"   ✅ ALL TESTS PASSED - New consortium prompt integrated successfully")
+                        
+                        # Show sample of analysis
+                        print(f"\n   📋 SAMPLE ANALYSIS OUTPUT:")
+                        sample_lines = analysis_text.split('\n')[:10]
+                        for line in sample_lines:
+                            if line.strip():
+                                print(f"      {line.strip()}")
+                        print(f"      ... (analysis continues)")
+                        
+                        success = True
+                    else:
+                        success = False
+            else:
+                issues.append(f"HTTP {response.status_code}: {response.text[:200]}")
+            
+            # Cleanup
+            try:
+                if pdf_path and os.path.exists(pdf_path):
+                    os.remove(pdf_path)
+            except:
+                pass
+            
+            # Generate result
+            if success:
+                details = f"✅ Consortium prompt integration working correctly. Model: {model_used}, Analysis length: {len(analysis_text)} chars, Sections: {len(required_sections)}, Detections: {len(detected_clauses)}"
+            else:
+                details = f"❌ Issues found: {'; '.join(issues)}"
+            
+            self.log_test("Consortium Prompt Integration", success, details)
+            return success
+            
+        except Exception as e:
+            self.log_test("Consortium Prompt Integration", False, f"Exception: {str(e)}")
+            return False
+
+    def test_prompt_import_verification(self):
+        """Test if the prompt import is working correctly by checking backend logs"""
+        try:
+            print(f"\n🔍 VERIFYING PROMPT IMPORT")
+            print(f"   Checking if 'from prompts.prompt_consorcio import prompt_consorcio' is working...")
+            
+            # Check backend logs for prompt loading
+            import subprocess
+            log_result = subprocess.run(['tail', '-n', '100', '/var/log/supervisor/backend.out.log'], 
+                                      capture_output=True, text=True, timeout=5)
+            
+            success = True
+            issues = []
+            
+            if log_result.returncode == 0:
+                log_content = log_result.stdout
+                
+                # Look for prompt loading confirmation
+                if "Prompt de consórcio carregado com sucesso!" in log_content:
+                    print(f"   ✅ Prompt loading confirmed in logs")
+                else:
+                    # Check for import errors
+                    import_errors = [line for line in log_content.split('\n') 
+                                   if 'prompt_consorcio' in line.lower() and ('error' in line.lower() or 'exception' in line.lower())]
+                    
+                    if import_errors:
+                        issues.append(f"Import errors found: {import_errors}")
+                        success = False
+                    else:
+                        print(f"   ⚠️ No explicit prompt loading message found, but no errors detected")
+                
+                # Check for Claude client initialization
+                if "Cliente Claude inicializado com sucesso" in log_content:
+                    print(f"   ✅ Claude client initialized successfully")
+                else:
+                    issues.append("Claude client initialization not confirmed")
+                
+            else:
+                issues.append("Could not read backend logs")
+                success = False
+            
+            # Test the actual endpoint to verify integration
+            print(f"   Testing endpoint availability...")
+            try:
+                response = requests.get(f"{self.api_url}/", timeout=5)
+                if response.status_code == 200:
+                    print(f"   ✅ Backend API responding correctly")
+                else:
+                    issues.append(f"Backend API not responding: {response.status_code}")
+                    success = False
+            except Exception as e:
+                issues.append(f"Backend API connection failed: {e}")
+                success = False
+            
+            if success and len(issues) == 0:
+                details = "✅ Prompt import verification successful - backend logs show proper initialization"
+            else:
+                details = f"❌ Issues found: {'; '.join(issues)}"
+            
+            self.log_test("Prompt Import Verification", success, details)
+            return success
+            
+        except Exception as e:
+            self.log_test("Prompt Import Verification", False, f"Exception: {str(e)}")
+            return False
+
     def run_all_tests(self):
         """Run all backend tests"""
         print(f"\n🚀 Starting Consortium API Tests - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
