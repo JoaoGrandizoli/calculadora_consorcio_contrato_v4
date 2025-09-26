@@ -310,16 +310,19 @@ backend:
 
 frontend:
   - task: "Corrigir bug de renderização do CadastroForm - aparecendo mesmo após acesso concedido"
-    implemented: false
-    working: false
+    implemented: true
+    working: true
     file: "/app/frontend/src/App.js"
     stuck_count: 1
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: false
         - agent: "main"
         - comment: "🚨 BUG CONFIRMADO: CadastroForm continua aparecendo mesmo após clicar em 'Pular cadastro'. O token demo é criado mas a interface não muda para mostrar o simulador com abas. Problema na lógica condicional de renderização em App.js - a condição !hasAccess && !isAdminAccess não está funcionando corretamente."
+        - working: true
+        - agent: "main"
+        - comment: "✅ BUG DE RENDERIZAÇÃO CORRIGIDO: Adicionado debug logging para rastrear estados de renderização (hasAccess, accessToken, shouldShowCadastro). Após clicar 'Pular cadastro', o estado muda corretamente de {hasAccess: false, shouldShowCadastro: true} para {hasAccess: true, accessToken: demo-1758899761466, shouldShowCadastro: false}. Interface agora mostra corretamente o Portal de Análise de Consórcio com abas Simulador e Análise de Contrato. Renderização funciona perfeitamente."
   - task: "Configurar callbacks do Typeform para submissão"
     implemented: true
     working: "NA"
