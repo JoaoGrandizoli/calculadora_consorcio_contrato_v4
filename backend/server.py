@@ -1514,6 +1514,83 @@ class NotionLeadService:
             logger.error(f"❌ Erro ao atualizar lead no Notion: {e}")
             return {"success": False, "error": str(e)}
 
+# Modelo para criar lead personalizado
+class CriarLeadRequest(BaseModel):
+    nome: str = Field(..., min_length=1, max_length=100)
+    sobrenome: str = Field(..., min_length=1, max_length=100)
+    email: EmailStr
+    telefone: str = Field(..., min_length=10, max_length=20)
+    profissao: str = Field(..., min_length=1, max_length=200)
+    
+    @validator('nome', 'sobrenome', 'profissao')
+    def validate_text_fields(cls, v):
+        if not v.strip():
+            raise ValueError('Campo não pode estar vazio')
+        return v.strip()
+    
+    @validator('telefone')
+    def validate_phone(cls, v):
+        cleaned = ''.join(filter(str.isdigit, v))
+        if len(cleaned) < 10:
+            raise ValueError('Telefone deve ter pelo menos 10 dígitos')
+        return v
+
+@api_router.post("/criar-lead")
+async def criar_lead(dados: CriarLeadRequest):
+    """Criar lead através do formulário personalizado"""
+    try:
+        # Gerar token de acesso
+        access_token = str(uuid.uuid4())
+        
+        # Criar lead no MongoDB
+        lead_data = LeadData(
+            name=f"{dados.nome} {dados.sobrenome}",
+            email=dados.email,
+            phone=dados.telefone,
+            profissao=dados.profissao,
+            access_token=access_token,
+            patrimonio=None,
+            renda=None
+        )
+        
+        # Salvar no MongoDB
+        await db.leads.insert_one(lead_data.dict())
+        logger.info(f"✅ Lead salvo no MongoDB: {lead_data.id}")
+        
+        # Salvar no Notion
+        notion_data = {
+            "nome": dados.nome,
+            "sobrenome": dados.sobrenome,
+            "email": dados.email,
+            "telefone": dados.telefone,
+            "profissao": dados.profissao
+        }
+        
+        notion_result = await notion_service.create_lead_in_notion(notion_data)
+        if notion_result["success"]:
+            logger.info(f"✅ Lead salvo no Notion: {notion_result.get('notion_id')}")
+            
+            # Atualizar MongoDB com ID do Notion
+            await db.leads.update_one(
+                {"id": lead_data.id},
+                {"$set": {"notion_id": notion_result.get("notion_id")}}
+            )
+        else:
+            logger.warning(f"⚠️ Falha ao salvar no Notion: {notion_result.get('error')}")
+        
+        return {
+            "status": "success",
+            "message": "Lead criado com sucesso",
+            "access_token": access_token,
+            "lead_id": lead_data.id,
+            "notion_saved": notion_result["success"],
+            "notion_id": notion_result.get("notion_id") if notion_result["success"] else None
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ Erro ao criar lead: {e}")
+        raise HTTPException(status_code=400, detail=f"Erro ao criar lead: {str(e)}")
+
 # Instanciar serviço do Notion
 notion_service = NotionLeadService()
 
