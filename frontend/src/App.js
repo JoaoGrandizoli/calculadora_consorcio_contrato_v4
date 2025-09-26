@@ -426,20 +426,61 @@ function App() {
         setResultados(response.data);
         console.log('✅ Simulação realizada com sucesso');
         
-        // Buscar dados do gráfico de probabilidade após simulação bem-sucedida
+        // Buscar dados dos gráficos após simulação bem-sucedida
         try {
+          // 1. Gráfico de Probabilidade
           const graficoProbResponse = await axios.get(`${API}/grafico-probabilidades/${parametros.prazo_meses}?lance_livre_perc=${parametros.lance_livre_perc}`);
           
-          // Adicionar dados do gráfico aos resultados
+          // 2. Gráfico de Fluxo de Caixa (usar detalhamento da simulação)
+          const graficoFluxoData = response.data.detalhamento ? {
+            labels: response.data.detalhamento.slice(0, 24).map((item, index) => `Mês ${index + 1}`),
+            datasets: [
+              {
+                label: "Parcela Antes da Contemplação",
+                data: response.data.detalhamento.slice(0, 24).map(item => item.parcela_antes || 0),
+                borderColor: "rgb(255, 99, 132)",
+                backgroundColor: "rgba(255, 99, 132, 0.2)",
+                tension: 0.1,
+                fill: false
+              },
+              {
+                label: "Parcela Depois da Contemplação", 
+                data: response.data.detalhamento.slice(0, 24).map(item => item.parcela_depois || 0),
+                borderColor: "rgb(54, 162, 235)",
+                backgroundColor: "rgba(54, 162, 235, 0.2)",
+                tension: 0.1,
+                fill: false
+              }
+            ]
+          } : null;
+          
+          // 3. Gráfico de Saldo Devedor (usar detalhamento da simulação)
+          const graficoSaldoData = response.data.detalhamento ? {
+            labels: response.data.detalhamento.slice(0, 60).map((item, index) => `Mês ${index + 1}`),
+            datasets: [
+              {
+                label: "Saldo Devedor",
+                data: response.data.detalhamento.slice(0, 60).map(item => item.saldo_devedor || 0),
+                borderColor: "rgb(75, 192, 192)",
+                backgroundColor: "rgba(75, 192, 192, 0.2)",
+                tension: 0.1,
+                fill: true
+              }
+            ]
+          } : null;
+          
+          // Adicionar todos os dados dos gráficos aos resultados
           setResultados(prevResultados => ({
             ...prevResultados,
-            grafico_probabilidade: graficoProbResponse.data
+            grafico_probabilidade: graficoProbResponse.data,
+            grafico_fluxo: graficoFluxoData,
+            grafico_saldo: graficoSaldoData
           }));
           
-          console.log('✅ Dados do gráfico de probabilidade carregados');
+          console.log('✅ Dados dos gráficos carregados');
         } catch (graficoError) {
-          console.error('⚠️ Erro ao carregar gráfico de probabilidade:', graficoError);
-          // Não falhar a simulação se o gráfico não carregar
+          console.error('⚠️ Erro ao carregar gráficos:', graficoError);
+          // Não falhar a simulação se os gráficos não carregarem
         }
       }
     } catch (error) {
