@@ -29,6 +29,7 @@ import hmac
 import hashlib
 import base64
 import json
+from notion_client import Client
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
