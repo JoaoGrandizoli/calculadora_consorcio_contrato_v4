@@ -1004,6 +1004,26 @@ async def get_parametros_padrao():
     """Retorna os parâmetros padrão para simulação."""
     return ParametrosConsorcio()
 
+@api_router.get("/grafico-probabilidades/{prazo_meses}")
+async def get_grafico_probabilidades(prazo_meses: int, lance_livre_perc: float = 0.10):
+    """Endpoint para obter dados do gráfico de probabilidades."""
+    try:
+        if prazo_meses <= 0:
+            raise HTTPException(status_code=400, detail="Prazo deve ser positivo")
+        
+        dados_grafico = gerar_dados_grafico_probabilidade(prazo_meses, lance_livre_perc)
+        
+        if dados_grafico is None:
+            raise HTTPException(status_code=500, detail="Erro ao gerar dados do gráfico")
+        
+        return dados_grafico
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Erro no endpoint de gráfico de probabilidades: {e}")
+        raise HTTPException(status_code=500, detail=f"Erro interno: {str(e)}")
+
 @api_router.post("/calcular-probabilidades", response_model=RespostaProbabilidades)
 async def calcular_probabilidades(parametros: ParametrosProbabilidade):
     """Calcula probabilidades de contemplação para o consórcio."""
