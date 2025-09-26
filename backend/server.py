@@ -1134,6 +1134,82 @@ def criar_grafico_probabilidades(num_participantes: int, lance_livre_perc: float
         logger.error(f"Erro ao criar gráfico de probabilidades: {e}")
         return None
 
+def gerar_dados_grafico_fluxo_caixa(detalhamento: List[Dict]) -> Dict:
+    """Gera dados do gráfico de fluxo de caixa para o frontend."""
+    try:
+        # Usar os primeiros 24 meses para o gráfico
+        meses_grafico = min(24, len(detalhamento))
+        
+        labels = []
+        parcelas_antes = []
+        parcelas_depois = []
+        saldo_devedor = []
+        
+        for i in range(meses_grafico):
+            mes_data = detalhamento[i]
+            labels.append(f"Mês {mes_data['mes']}")
+            parcelas_antes.append(round(mes_data['parcela_antes'], 2))
+            parcelas_depois.append(round(mes_data['parcela_depois'], 2))
+            saldo_devedor.append(round(mes_data['saldo_devedor'], 2))
+        
+        return {
+            "labels": labels,
+            "datasets": [
+                {
+                    "label": "Parcela Antes da Contemplação",
+                    "data": parcelas_antes,
+                    "borderColor": "rgb(255, 99, 132)",
+                    "backgroundColor": "rgba(255, 99, 132, 0.2)",
+                    "tension": 0.1,
+                    "fill": False
+                },
+                {
+                    "label": "Parcela Depois da Contemplação",
+                    "data": parcelas_depois,
+                    "borderColor": "rgb(54, 162, 235)",
+                    "backgroundColor": "rgba(54, 162, 235, 0.2)",
+                    "tension": 0.1,
+                    "fill": False
+                }
+            ]
+        }
+        
+    except Exception as e:
+        logger.error(f"Erro ao gerar dados do gráfico de fluxo de caixa: {e}")
+        return None
+
+def gerar_dados_grafico_saldo_devedor(detalhamento: List[Dict]) -> Dict:
+    """Gera dados do gráfico de saldo devedor para o frontend."""
+    try:
+        # Usar todos os meses mas limitar visual a 60 para performance
+        meses_grafico = min(60, len(detalhamento))
+        
+        labels = []
+        saldo_valores = []
+        
+        for i in range(meses_grafico):
+            mes_data = detalhamento[i]
+            labels.append(f"Mês {mes_data['mes']}")
+            saldo_valores.append(round(mes_data['saldo_devedor'], 2))
+        
+        return {
+            "labels": labels,
+            "datasets": [
+                {
+                    "label": "Saldo Devedor",
+                    "data": saldo_valores,
+                    "borderColor": "rgb(75, 192, 192)",
+                    "backgroundColor": "rgba(75, 192, 192, 0.2)",
+                    "tension": 0.1,
+                    "fill": True
+                }
+            ]
+        }
+        
+    except Exception as e:
+        logger.error(f"Erro ao gerar dados do gráfico de saldo devedor: {e}")
+        return None
+
 def gerar_dados_grafico_probabilidade(prazo_meses: int, lance_livre_perc: float) -> Dict:
     """Gera dados do gráfico de probabilidade para o frontend."""
     try:
