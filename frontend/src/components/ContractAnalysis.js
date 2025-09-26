@@ -325,9 +325,9 @@ const ContractAnalysis = () => {
           )}
           
           {renderSection(
-            'PONTOS DE ATENÇÃO', 
-            sections['PONTOS DE ATENÇÃO'], 
-            <AlertCircle className="h-5 w-5 text-yellow-600" />
+            'PONTOS DE ATENÇÃO CRÍTICOS', 
+            sections['PONTOS DE ATENÇÃO CRÍTICOS'] || sections['PONTOS DE ATENÇÃO'], 
+            <AlertCircle className="h-5 w-5 text-red-600" />
           )}
           
           {renderSection(
@@ -337,9 +337,32 @@ const ContractAnalysis = () => {
           )}
           
           {renderSection(
-            'SCORE DE RECOMENDAÇÃO', 
-            sections['SCORE DE RECOMENDAÇÃO'], 
+            'SCORE DETALHADO', 
+            sections['SCORE DETALHADO'] || sections['SCORE DE RECOMENDAÇÃO'], 
             <Star className="h-5 w-5 text-yellow-500" />
+          )}
+          
+          {renderSection(
+            'CONCLUSÃO', 
+            sections['CONCLUSÃO'], 
+            <CheckCircle className="h-5 w-5 text-blue-600" />
+          )}
+
+          {/* Exibir análise completa como fallback se parsing falhar */}
+          {Object.keys(sections).length === 0 && (
+            <Card className="mb-4">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <FileText className="h-5 w-5 text-blue-600" />
+                  Análise Completa
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="whitespace-pre-wrap text-sm leading-relaxed">
+                  {analysis.analysis}
+                </div>
+              </CardContent>
+            </Card>
           )}
 
           {/* Info sobre o modelo */}
