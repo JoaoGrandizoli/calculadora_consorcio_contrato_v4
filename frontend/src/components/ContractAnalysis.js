@@ -312,58 +312,67 @@ const ContractAnalysis = () => {
             </CardContent>
           </Card>
 
-          {renderSection(
-            'RESUMO EXECUTIVO', 
-            sections['RESUMO EXECUTIVO'], 
-            <FileText className="h-5 w-5 text-blue-600" />
-          )}
-          
-          {renderSection(
-            'ANÁLISE FINANCEIRA', 
-            sections['ANÁLISE FINANCEIRA'], 
-            <span className="text-green-600">💰</span>
-          )}
-          
-          {renderSection(
-            'PONTOS DE ATENÇÃO CRÍTICOS', 
-            sections['PONTOS DE ATENÇÃO CRÍTICOS'] || sections['PONTOS DE ATENÇÃO'], 
-            <AlertCircle className="h-5 w-5 text-red-600" />
-          )}
-          
-          {renderSection(
-            'RECOMENDAÇÕES', 
-            sections['RECOMENDAÇÕES'], 
-            <CheckCircle className="h-5 w-5 text-green-600" />
-          )}
-          
-          {renderSection(
-            'SCORE DETALHADO', 
-            sections['SCORE DETALHADO'] || sections['SCORE DE RECOMENDAÇÃO'], 
-            <Star className="h-5 w-5 text-yellow-500" />
-          )}
-          
-          {renderSection(
-            'CONCLUSÃO', 
-            sections['CONCLUSÃO'], 
-            <CheckCircle className="h-5 w-5 text-blue-600" />
+          {/* Análise bruta como fallback - SEMPRE mostra a análise */}
+          <Card className="mb-4">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <FileText className="h-5 w-5 text-blue-600" />
+                Análise Completa do Contrato
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="whitespace-pre-wrap text-sm leading-relaxed bg-gray-50 p-4 rounded border">
+                {analysis.analysis}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Seções parseadas (se disponíveis) */}
+          {Object.keys(sections).length > 0 && (
+            <>
+              {renderSection(
+                'RESUMO EXECUTIVO', 
+                sections['RESUMO EXECUTIVO'], 
+                <FileText className="h-5 w-5 text-blue-600" />
+              )}
+              
+              {renderSection(
+                'ANÁLISE FINANCEIRA', 
+                sections['ANÁLISE FINANCEIRA'], 
+                <span className="text-green-600">💰</span>
+              )}
+              
+              {renderSection(
+                'PONTOS DE ATENÇÃO CRÍTICOS', 
+                sections['PONTOS DE ATENÇÃO CRÍTICOS'] || sections['PONTOS DE ATENÇÃO'], 
+                <AlertCircle className="h-5 w-5 text-red-600" />
+              )}
+              
+              {renderSection(
+                'RECOMENDAÇÕES', 
+                sections['RECOMENDAÇÕES'], 
+                <CheckCircle className="h-5 w-5 text-green-600" />
+              )}
+              
+              {renderSection(
+                'SCORE DETALHADO', 
+                sections['SCORE DETALHADO'] || sections['SCORE DE RECOMENDAÇÃO'], 
+                <Star className="h-5 w-5 text-yellow-500" />
+              )}
+              
+              {renderSection(
+                'CONCLUSÃO', 
+                sections['CONCLUSÃO'], 
+                <CheckCircle className="h-5 w-5 text-blue-600" />
+              )}
+            </>
           )}
 
-          {/* Exibir análise completa como fallback se parsing falhar */}
-          {Object.keys(sections).length === 0 && (
-            <Card className="mb-4">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <FileText className="h-5 w-5 text-blue-600" />
-                  Análise Completa
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="whitespace-pre-wrap text-sm leading-relaxed">
-                  {analysis.analysis}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          {/* Debug info */}
+          <div className="mt-4 p-2 bg-gray-100 text-xs text-gray-600 rounded">
+            <p><strong>Análise realizada por Claude AI</strong> • claude-3-5-sonnet-20241022</p>
+            <p><strong>Data:</strong> {new Date().toLocaleString('pt-BR')}</p>
+          </div>
 
           {/* Info sobre o modelo */}
           <Card className="bg-gray-50">
