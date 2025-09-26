@@ -105,6 +105,20 @@
 user_problem_statement: Corrigir problemas críticos na aplicação: 1) Erro de autenticação 401 na integração Claude AI para análise de contratos, 2) Bug de renderização onde CadastroForm aparece incorretamente abaixo do conteúdo principal, 3) Atualizar chaves API para Notion e Claude com credenciais válidas fornecidas pelo usuário.
 
 backend:
+  - task: "Atualizar chaves API Claude e Notion no backend/.env"
+    implemented: true
+    working: true
+    file: "/app/backend/.env"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+        - agent: "main"
+        - comment: "Atualizadas as chaves API do Claude (sk-ant-api03-i4vwK5wyRx4ub8B7...) e Notion (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) fornecidas pelo usuário no arquivo backend/.env"
+        - working: true
+        - agent: "main"
+        - comment: "✅ CHAVES API ATUALIZADAS: Backend reiniciado automaticamente após update das environment variables. Claude e Notion APIs agora configuradas com novas credenciais válidas."
   - task: "Implementar embed do Typeform no frontend"
     implemented: true
     working: true
