@@ -273,6 +273,8 @@ class SimuladorConsorcio:
                     'fator_correcao': fator_correcao,
                     'valor_carta_corrigido': valor_carta_corrigido,
                     'parcela_corrigida': parcela_corrigida,
+                    'parcela_antes': parcela_corrigida,  # Igual à parcela corrigida
+                    'parcela_depois': parcela_corrigida,  # Igual à parcela corrigida (consórcio não muda após contemplação)
                     'lance_livre': lance_mes,
                     'fluxo_liquido': fluxo,
                     'saldo_devedor': max(0, saldo_devedor_atual),
