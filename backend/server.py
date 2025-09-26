@@ -1459,6 +1459,38 @@ class ContractAnalysisService:
             logger.error(f"❌ Erro na análise do contrato: {e}")
             return {"success": False, "error": str(e)}
 
+@api_router.post("/analisar-contrato")
+async def analisar_contrato(request: Request):
+    """Endpoint para análise de contratos de consórcio"""
+    try:
+        body = await request.json()
+        contract_text = body.get("contract_text", "").strip()
+        
+        if not contract_text:
+            raise HTTPException(status_code=400, detail="Texto do contrato é obrigatório")
+        
+        if len(contract_text) < 100:
+            raise HTTPException(status_code=400, detail="Texto do contrato muito curto (mínimo 100 caracteres)")
+        
+        # Realizar análise com Claude
+        result = await contract_analysis_service.analyze_contract_text(contract_text)
+        
+        if not result["success"]:
+            raise HTTPException(status_code=500, detail=f"Erro na análise: {result.get('error')}")
+        
+        return {
+            "success": True,
+            "analysis": result["analysis"],
+            "model_used": result["model_used"],
+            "timestamp": result["timestamp"]
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Erro no endpoint de análise: {e}")
+        raise HTTPException(status_code=500, detail=f"Erro interno: {str(e)}")
+
 # Instanciar serviço de análise
 contract_analysis_service = ContractAnalysisService()
 
