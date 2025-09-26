@@ -1594,9 +1594,6 @@ async def criar_lead(dados: CriarLeadRequest):
         logger.error(f"❌ Erro ao criar lead: {e}")
         raise HTTPException(status_code=400, detail=f"Erro ao criar lead: {str(e)}")
 
-# Instanciar serviço do Notion
-notion_service = NotionLeadService()
-
 def _as_float_array(x):
     """Converte para array numpy float."""
     a = np.asarray(list(x), dtype=float)
