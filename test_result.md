@@ -105,6 +105,21 @@
 user_problem_statement: URGENTE: O simulador de consórcio não está fazendo cálculos! O frontend mostra "N/A" para CET e Valor Total. Preciso que você teste o endpoint /api/simular com dados básicos e verifique se a resposta contém cet_anual e valor_total_pago com valores numéricos (não null).
 
 backend:
+  - task: "Testar endpoint /api/simular para problema crítico de cálculos"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+        - agent: "testing"
+        - comment: "🔥 TESTE CRÍTICO SOLICITADO: Usuário reporta que simulador não está fazendo cálculos e frontend mostra 'N/A' para CET e Valor Total. Testando endpoint /api/simular com parâmetros específicos: valor_carta=100000, prazo_meses=120, taxa_admin=0.21, fundo_reserva=0.03, mes_contemplacao=1, lance_livre_perc=0.10, taxa_reajuste_anual=0.05"
+        - working: true
+        - agent: "testing"
+        - comment: "✅ SIMULADOR FUNCIONANDO PERFEITAMENTE: 1) ✅ HTTP 200 OK - Endpoint responde corretamente, 2) ✅ CET_ANUAL válido: 0.12581682238343372 (12.58% a.a.) - NÃO é null/N/A, 3) ✅ VALOR_TOTAL_PAGO válido: R$154,932.53 - NÃO é null/N/A, 4) ✅ Todos os campos obrigatórios presentes: parametros, resultados, fluxos, detalhamento, resumo_financeiro, 5) ✅ CET convergiu com sucesso (convergiu=true), 6) ✅ Dados completos: 121 fluxos de caixa, 120 meses de detalhamento, 7) ✅ Cálculos matemáticos corretos: Base contrato R$124,000.00, Lance livre R$12,400.00. CONCLUSÃO: Backend está funcionando corretamente. Se frontend mostra N/A, o problema está na comunicação frontend-backend ou no processamento da resposta no JavaScript."
+
   - task: "Atualizar chaves API Claude e Notion no backend/.env"
     implemented: true
     working: true
