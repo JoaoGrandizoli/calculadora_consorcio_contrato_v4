@@ -942,10 +942,10 @@ function App() {
                   {resultados && (
                     <>
                       {/* Métricas Principais */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                         <Card>
-                          <CardHeader className="pb-3">
-                            <CardTitle className="text-lg">CET</CardTitle>
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-medium text-muted-foreground">CET Anual</CardTitle>
                           </CardHeader>
                           <CardContent>
                             <div className="text-2xl font-bold text-accent-warm">
@@ -954,10 +954,10 @@ function App() {
                             <p className="text-sm text-muted-foreground">Custo Efetivo Total</p>
                           </CardContent>
                         </Card>
-
+                        
                         <Card>
-                          <CardHeader className="pb-3">
-                            <CardTitle className="text-lg">Valor Total</CardTitle>
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-medium text-muted-foreground">Valor Total</CardTitle>
                           </CardHeader>
                           <CardContent>
                             <div className="text-2xl font-bold text-accent-warm">
@@ -966,7 +966,74 @@ function App() {
                             <p className="text-sm text-muted-foreground">Total a ser pago</p>
                           </CardContent>
                         </Card>
+
+                        <Card>
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-medium text-muted-foreground">Parcela Após Contemplação</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="text-2xl font-bold text-green-600">
+                              R$ {resultados.detalhamento && resultados.detalhamento[parametros.mes_contemplacao - 1] 
+                                ? resultados.detalhamento[parametros.mes_contemplacao - 1].parcela_depois?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) 
+                                : 'N/A'}
+                            </div>
+                            <p className="text-sm text-muted-foreground">Mês {parametros.mes_contemplacao}</p>
+                          </CardContent>
+                        </Card>
+
+                        <Card>
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-medium text-muted-foreground">Última Parcela</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="text-2xl font-bold text-blue-600">
+                              R$ {resultados.detalhamento && resultados.detalhamento.length > 0 
+                                ? resultados.detalhamento[resultados.detalhamento.length - 1].parcela_depois?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) 
+                                : 'N/A'}
+                            </div>
+                            <p className="text-sm text-muted-foreground">Com reajustes (Mês {parametros.prazo_meses})</p>
+                          </CardContent>
+                        </Card>
                       </div>
+
+                      {/* Cards de Probabilidades */}
+                      {resultados.resumo_financeiro && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                          <Card>
+                            <CardHeader className="pb-2">
+                              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                                <TrendingUp className="h-4 w-4" />
+                                Probabilidade no Mês {parametros.mes_contemplacao}
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="text-2xl font-bold text-purple-600">
+                                {resultados.resumo_financeiro.prob_contemplacao_no_mes !== undefined 
+                                  ? `${(resultados.resumo_financeiro.prob_contemplacao_no_mes * 100).toFixed(2)}%` 
+                                  : 'N/A'}
+                              </div>
+                              <p className="text-sm text-muted-foreground">Chance de ser contemplado neste mês específico</p>
+                            </CardContent>
+                          </Card>
+
+                          <Card>
+                            <CardHeader className="pb-2">
+                              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                                <Target className="h-4 w-4" />
+                                Probabilidade até o Mês {parametros.mes_contemplacao}
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="text-2xl font-bold text-orange-600">
+                                {resultados.resumo_financeiro.prob_contemplacao_ate_mes !== undefined 
+                                  ? `${(resultados.resumo_financeiro.prob_contemplacao_ate_mes * 100).toFixed(2)}%` 
+                                  : 'N/A'}
+                              </div>
+                              <p className="text-sm text-muted-foreground">Chance acumulada de ser contemplado até este mês</p>
+                            </CardContent>
+                          </Card>
+                        </div>
+                      )}
 
                       {/* Gráficos */}
                       <Tabs defaultValue="probabilidade" className="w-full">
