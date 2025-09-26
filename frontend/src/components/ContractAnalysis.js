@@ -287,6 +287,20 @@ const ContractAnalysis = () => {
             <span className="text-lg font-semibold">Análise Concluída</span>
           </div>
 
+          {/* Info do arquivo processado */}
+          <Card className="bg-blue-50 border-blue-200">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3 text-blue-800">
+                <File className="h-5 w-5" />
+                <div className="text-sm">
+                  <p><strong>Arquivo:</strong> {analysis.filename}</p>
+                  <p><strong>Tamanho:</strong> {(analysis.file_size / 1024 / 1024).toFixed(2)} MB</p>
+                  <p><strong>Texto extraído:</strong> {analysis.text_length.toLocaleString()} caracteres</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {renderSection(
             'RESUMO EXECUTIVO', 
             sections['RESUMO EXECUTIVO'], 
