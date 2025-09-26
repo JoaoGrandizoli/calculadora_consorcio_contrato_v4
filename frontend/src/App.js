@@ -554,9 +554,98 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-light">
-      {/* Header */}
-      <div className="bg-primary-accent text-light border-b border-moonstone">
+    <div className="min-h-screen bg-gradient-to-br from-primary-dark via-primary to-secondary">
+      {!hasAccess && !isAdminAccess ? (
+        /* Mostrar tela de Lead Capture */
+        <div className="container mx-auto px-4 md:px-6 py-8">
+          <CadastroForm onAccessGranted={handleAccessGranted} />
+        </div>
+      ) : showAdmin || isAdminAccess ? (
+        /* 🔐 PROTEÇÃO ADMIN: Mostrar login ou painel conforme autenticação */
+        !adminAuthenticated ? (
+          /* Tela de Login Admin */
+          <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8">
+              <div className="text-center mb-8">
+                <div className="mx-auto h-12 w-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                  <Settings className="h-6 w-6 text-red-600" />
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900">Acesso Administrativo</h2>
+                <p className="text-gray-600 mt-2">Digite a senha para acessar o painel admin</p>
+              </div>
+              
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                console.log('🔐 Tentativa de login com senha:', adminPassword);
+                const success = handleAdminLogin(adminPassword);
+                if (success) {
+                  console.log('🔐 Login bem-sucedido, atualizando estado...');
+                  // Forçar atualização do estado
+                  setTimeout(() => {
+                    setShowAdmin(true);
+                    localStorage.setItem('admin_mode', 'true');
+                  }, 100);
+                }
+              }}>
+                <div className="mb-4">
+                  <Label htmlFor="adminPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                    Senha de Administrador
+                  </Label>
+                  <Input
+                    id="adminPassword"
+                    type="password"
+                    value={adminPassword}
+                    onChange={(e) => setAdminPassword(e.target.value)}
+                    className="w-full"
+                    placeholder="Digite a senha..."
+                    required
+                  />
+                  {adminLoginError && (
+                    <p className="mt-2 text-sm text-red-600">{adminLoginError}</p>
+                  )}
+                </div>
+                
+                <Button 
+                  type="submit"
+                  className="w-full bg-red-600 hover:bg-red-700 text-white"
+                >
+                  Entrar no Admin
+                </Button>
+              </form>
+              
+              <div className="mt-6 text-center">
+                <button 
+                  onClick={() => {
+                    setShowAdmin(false);
+                    localStorage.removeItem('admin_mode');
+                    window.location.hash = '';
+                  }}
+                  className="text-sm text-gray-500 hover:text-gray-700"
+                >
+                  Voltar ao simulador
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : (
+          /* Painel Admin Autenticado */
+          <div>
+            <div className="bg-white border-b border-gray-200 px-6 py-4">
+              <div className="flex items-center justify-between">
+                <h1 className="text-xl font-semibold text-gray-900">Painel Administrativo</h1>
+                <button
+                  onClick={handleAdminLogout}
+                  className="flex items-center gap-2 px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
+                >
+                  Sair do Admin
+                </button>
+              </div>
+            </div>
+            <AdminPanel />
+          </div>
+        )
+      ) : (
+        /* 🎯 CONTEÚDO PRINCIPAL - Simulador com abas quando tem acesso */
         <div className="container mx-auto px-6 py-6">
           {/* Header Principal */}
           <div className="flex items-center gap-3 justify-between mb-6">
@@ -652,278 +741,290 @@ function App() {
                   </div>
                 </div>
               </div>
-              
-              {/* Conteúdo do simulador */}
+
               <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 md:gap-8">
                 {/* Painel de Parâmetros */}
                 <div className="lg:col-span-2">
-                  <Card className="border-moonstone shadow-sm">
-                    <CardHeader className="bg-neutral-light border-b border-moonstone">
-                      <CardTitle className="text-primary-accent flex items-center gap-2 text-lg md:text-xl">
-                        <TrendingUp className="h-5 w-5" />
+                  <Card>
+                    <CardHeader className="pb-4">
+                      <CardTitle className="flex items-center gap-2">
+                        <Calculator className="h-5 w-5" />
                         Parâmetros da Simulação
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="p-4 md:p-6 space-y-4 md:space-y-6">
-                      {/* Valor da Carta */}
-                      <div className="space-y-2">
-                        <Label htmlFor="valor_carta" className="text-primary-accent font-medium text-sm md:text-base">
-                          Valor da Carta (R$)
-                        </Label>
-                        <Input
-                          id="valor_carta"
-                          type="number"
-                          value={parametros.valor_carta}
-                          onChange={(e) => handleInputChange('valor_carta', parseFloat(e.target.value))}
-                          className="border-moonstone focus:border-accent-warm text-base"
-                        />
+                    <CardContent className="space-y-6">
+                      {/* Todos os campos de input do simulador */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="valorCarta" className="text-sm font-medium">Valor da Carta</Label>
+                          <Input
+                            id="valorCarta"
+                            type="number"
+                            step="1000"
+                            value={parametros.valor_carta}
+                            onChange={(e) => handleInputChange('valor_carta', parseFloat(e.target.value))}
+                            className="mt-1"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="prazoMeses" className="text-sm font-medium">Prazo (meses)</Label>
+                          <Input
+                            id="prazoMeses"
+                            type="number"
+                            value={parametros.prazo_meses}
+                            onChange={(e) => handleInputChange('prazo_meses', parseInt(e.target.value))}
+                            className="mt-1"
+                          />
+                        </div>
                       </div>
-
-                      {/* Prazo */}
-                      <div className="space-y-2">
-                        <Label htmlFor="prazo_meses" className="text-primary-accent font-medium text-sm md:text-base">
-                          Prazo (meses)
-                        </Label>
-                        <Input
-                          id="prazo_meses"
-                          type="number"
-                          value={parametros.prazo_meses}
-                          onChange={(e) => handleInputChange('prazo_meses', parseInt(e.target.value))}
-                          className="border-moonstone focus:border-accent-warm text-base"
-                        />
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="taxaAdmin" className="text-sm font-medium">Taxa Administração (%)</Label>
+                          <Input
+                            id="taxaAdmin"
+                            type="number"
+                            step="0.01"
+                            value={parametros.taxa_admin}
+                            onChange={(e) => handleInputChange('taxa_admin', parseFloat(e.target.value))}
+                            className="mt-1"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="fundoReserva" className="text-sm font-medium">Fundo Reserva (%)</Label>
+                          <Input
+                            id="fundoReserva"
+                            type="number"
+                            step="0.01"
+                            value={parametros.fundo_reserva}
+                            onChange={(e) => handleInputChange('fundo_reserva', parseFloat(e.target.value))}
+                            className="mt-1"
+                          />
+                        </div>
                       </div>
-
-                      {/* Taxa Admin */}
-                      <div className="space-y-2">
-                        <Label htmlFor="taxa_admin" className="text-primary-accent font-medium text-sm md:text-base">
-                          Taxa de Administração (%)
-                        </Label>
-                        <Input
-                          id="taxa_admin"
-                          type="number"
-                          step="0.01"
-                          value={parametros.taxa_admin * 100}
-                          onChange={(e) => handleInputChange('taxa_admin', parseFloat(e.target.value) / 100)}
-                          className="border-moonstone focus:border-accent-warm text-base"
-                        />
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="mesContemplacao" className="text-sm font-medium">Mês Contemplação</Label>
+                          <Input
+                            id="mesContemplacao"
+                            type="number"
+                            value={parametros.mes_contemplacao}
+                            onChange={(e) => handleInputChange('mes_contemplacao', parseInt(e.target.value))}
+                            className="mt-1"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="lanceLivre" className="text-sm font-medium">Lance Livre (%)</Label>
+                          <Input
+                            id="lanceLivre"
+                            type="number"
+                            step="0.01"
+                            value={parametros.lance_livre_perc}
+                            onChange={(e) => handleInputChange('lance_livre_perc', parseFloat(e.target.value))}
+                            className="mt-1"
+                          />
+                        </div>
                       </div>
-
-                      {/* Fundo de Reserva */}
-                      <div className="space-y-2">
-                        <Label htmlFor="fundo_reserva" className="text-primary-accent font-medium text-sm md:text-base">
-                          Fundo de Reserva (%)
-                        </Label>
+                      
+                      <div>
+                        <Label htmlFor="taxaReajuste" className="text-sm font-medium">Taxa Reajuste Anual (%)</Label>
                         <Input
-                          id="fundo_reserva"
-                          type="number"
-                          step="0.01"
-                          value={parametros.fundo_reserva * 100}
-                          onChange={(e) => handleInputChange('fundo_reserva', parseFloat(e.target.value) / 100)}
-                          className="border-moonstone focus:border-accent-warm text-base"
-                        />
-                      </div>
-
-                      {/* Mês de Contemplação */}
-                      <div className="space-y-2">
-                        <Label htmlFor="mes_contemplacao" className="text-primary-accent font-medium text-sm md:text-base">
-                          Mês de Contemplação
-                        </Label>
-                        <Input
-                          id="mes_contemplacao"
-                          type="number"
-                          value={parametros.mes_contemplacao}
-                          onChange={(e) => handleInputChange('mes_contemplacao', parseInt(e.target.value))}
-                          className="border-moonstone focus:border-accent-warm text-base"
-                        />
-                      </div>
-
-                      {/* Lance Livre */}
-                      <div className="space-y-2">
-                        <Label htmlFor="lance_livre_perc" className="text-primary-accent font-medium text-sm md:text-base">
-                          Lance Livre (%)
-                        </Label>
-                        <Input
-                          id="lance_livre_perc"
-                          type="number"
-                          step="0.01"
-                          value={parametros.lance_livre_perc * 100}
-                          onChange={(e) => handleInputChange('lance_livre_perc', parseFloat(e.target.value) / 100)}
-                          className="border-moonstone focus:border-accent-warm text-base"
-                        />
-                      </div>
-
-                      {/* Taxa de Reajuste */}
-                      <div className="space-y-2">
-                        <Label htmlFor="taxa_reajuste_anual" className="text-primary-accent font-medium text-sm md:text-base">
-                          Taxa de Reajuste Anual (%)
-                        </Label>
-                        <Input
-                          id="taxa_reajuste_anual"
+                          id="taxaReajuste"
                           type="number"
                           step="0.01"
-                          value={parametros.taxa_reajuste_anual * 100}
-                          onChange={(e) => handleInputChange('taxa_reajuste_anual', parseFloat(e.target.value) / 100)}
-                          className="border-moonstone focus:border-accent-warm text-base"
+                          value={parametros.taxa_reajuste_anual}
+                          onChange={(e) => handleInputChange('taxa_reajuste_anual', parseFloat(e.target.value))}
+                          className="mt-1"
                         />
                       </div>
 
-                      <Separator className="bg-moonstone" />
-
-                      <div className="space-y-3">
-                        <Button 
-                          onClick={simularConsorcio}
-                          disabled={loading}
-                          className="w-full bg-accent-warm hover:bg-accent-dark text-light font-medium py-3 text-base"
-                        >
-                          {loading ? 'Simulando...' : 'Simular Consórcio'}
-                        </Button>
-                        
-                        {resultados && !resultados.erro && (
-                          <Button 
-                            onClick={downloadRelatorioPdf}
-                            disabled={loadingPdf}
-                            variant="outline"
-                            className="w-full border-accent-warm text-accent-dark hover:bg-accent-warm hover:text-light font-medium py-3 text-base"
-                          >
-                            <Download className="h-4 w-4 mr-2" />
-                            {loadingPdf ? 'Gerando PDF...' : 'Baixar Relatório PDF'}
-                          </Button>
-                        )}
-                      </div>
+                      <Button 
+                        onClick={simularConsorcio}
+                        disabled={loading}
+                        className="w-full bg-accent-warm text-primary-accent hover:bg-accent-warm/90"
+                      >
+                        {loading ? 'Simulando...' : 'Simular Consórcio'}
+                      </Button>
                     </CardContent>
                   </Card>
                 </div>
 
-                {/* Painel de Resultados */}
-                <div className="lg:col-span-3">
+                {/* Resultados */}
+                <div className="lg:col-span-3 space-y-6">
                   {erro && (
-                    <Card className="border-red-200 bg-red-50 mb-4 md:mb-6">
-                      <CardContent className="p-4">
-                        <div className="flex items-center gap-2 text-red-700">
+                    <Card className="border-destructive">
+                      <CardContent className="pt-6">
+                        <div className="flex items-center gap-2 text-destructive">
                           <AlertCircle className="h-5 w-5" />
-                          <span className="font-medium text-sm md:text-base">Erro: {erro}</span>
+                          <span>{erro}</span>
                         </div>
                       </CardContent>
                     </Card>
                   )}
 
-                  {!resultados && !erro && (
-                    <Card className="border-moonstone">
-                      <CardContent className="p-8 text-center">
-                        <Calculator className="h-12 w-12 text-neutral-mid mx-auto mb-4" />
-                        <h3 className="text-lg font-semibold text-primary-accent mb-2">
-                          Pronto para simular!
-                        </h3>
-                        <p className="text-neutral-mid text-sm md:text-base">
-                          Configure os parâmetros à esquerda e clique em "Simular Consórcio" para ver os resultados.
-                        </p>
-                      </CardContent>
-                    </Card>
+                  {resultados && (
+                    <>
+                      {/* Métricas Principais */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <Card>
+                          <CardHeader className="pb-3">
+                            <CardTitle className="text-lg">CET</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="text-2xl font-bold text-accent-warm">
+                              {resultados.cet_anual ? `${(resultados.cet_anual * 100).toFixed(2)}%` : 'N/A'}
+                            </div>
+                            <p className="text-sm text-muted-foreground">Custo Efetivo Total</p>
+                          </CardContent>
+                        </Card>
+
+                        <Card>
+                          <CardHeader className="pb-3">
+                            <CardTitle className="text-lg">Valor Total</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="text-2xl font-bold text-accent-warm">
+                              R$ {resultados.valor_total_pago?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || 'N/A'}
+                            </div>
+                            <p className="text-sm text-muted-foreground">Total a ser pago</p>
+                          </CardContent>
+                        </Card>
+                      </div>
+
+                      {/* Gráficos */}
+                      <Tabs defaultValue="probabilidade" className="w-full">
+                        <TabsList className="grid w-full grid-cols-3">
+                          <TabsTrigger value="probabilidade">Probabilidade</TabsTrigger>
+                          <TabsTrigger value="fluxo">Fluxo de Caixa</TabsTrigger>
+                          <TabsTrigger value="saldo">Saldo Devedor</TabsTrigger>
+                        </TabsList>
+
+                        <TabsContent value="probabilidade" className="space-y-4">
+                          <Card>
+                            <CardHeader>
+                              <CardTitle className="flex items-center gap-2">
+                                <TrendingUp className="h-5 w-5" />
+                                Probabilidade de Contemplação
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              {resultados.grafico_probabilidade?.labels && (
+                                <div className="h-80">
+                                  <Line data={resultados.grafico_probabilidade} options={chartOptions} />
+                                </div>
+                              )}
+                            </CardContent>
+                          </Card>
+                        </TabsContent>
+
+                        <TabsContent value="fluxo" className="space-y-4">
+                          <Card>
+                            <CardHeader>
+                              <CardTitle className="flex items-center gap-2">
+                                <PieChart className="h-5 w-5" />
+                                Fluxo de Caixa Mensal
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              {resultados.grafico_fluxo?.labels && (
+                                <div className="h-80">
+                                  <Line data={resultados.grafico_fluxo} options={chartOptions} />
+                                </div>
+                              )}
+                            </CardContent>
+                          </Card>
+                        </TabsContent>
+
+                        <TabsContent value="saldo" className="space-y-4">
+                          <Card>
+                            <CardHeader>
+                              <CardTitle className="flex items-center gap-2">
+                                <TrendingUp className="h-5 w-5" />
+                                Saldo Devedor
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              {resultados.grafico_saldo?.labels && (
+                                <div className="h-80">
+                                  <Line data={resultados.grafico_saldo} options={chartOptions} />
+                                </div>
+                              )}
+                            </CardContent>
+                          </Card>
+                        </TabsContent>
+                      </Tabs>
+
+                      {/* Tabela de dados */}
+                      {resultados.tabela_dados && (
+                        <Card>
+                          <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                              <FileText className="h-5 w-5" />
+                              Dados Detalhados
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="overflow-x-auto">
+                              <table className="w-full border-collapse border border-gray-300">
+                                <thead>
+                                  <tr className="bg-gray-50">
+                                    {resultados.tabela_dados[0]?.map((header, index) => (
+                                      <th key={index} className="border border-gray-300 px-4 py-2 text-left">
+                                        {header}
+                                      </th>
+                                    ))}
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {resultados.tabela_dados.slice(1).map((row, rowIndex) => (
+                                    <tr key={rowIndex}>
+                                      {row.map((cell, cellIndex) => (
+                                        <td key={cellIndex} className="border border-gray-300 px-4 py-2">
+                                          {cell}
+                                        </td>
+                                      ))}
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
+
+                      {/* Botão de download PDF */}
+                      <div className="flex justify-center">
+                        <Button 
+                          onClick={downloadRelatorioPdf}
+                          disabled={loadingPdf}
+                          className="bg-primary text-primary-foreground hover:bg-primary/90"
+                        >
+                          {loadingPdf ? (
+                            <>
+                              <Loader className="mr-2 h-4 w-4 animate-spin" />
+                              Gerando PDF...
+                            </>
+                          ) : (
+                            <>
+                              <Download className="mr-2 h-4 w-4" />
+                              Baixar Relatório PDF
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </>
                   )}
                 </div>
               </div>
             </TabsContent>
-
+            
+            {/* Aba de Análise de Contrato */}
             <TabsContent value="analise-contrato" className="mt-6">
               <ContractAnalysis />
             </TabsContent>
-          </Tabs>
-        </div>
-      </div>
 
-      {!hasAccess && !isAdminAccess ? (
-        /* Mostrar tela de Lead Capture */
-        <div className="container mx-auto px-4 md:px-6 py-8">
-          <CadastroForm onAccessGranted={handleAccessGranted} />
-        </div>
-      ) : showAdmin || isAdminAccess ? (
-        /* 🔐 PROTEÇÃO ADMIN: Mostrar login ou painel conforme autenticação */
-        !adminAuthenticated ? (
-          /* Tela de Login Admin */
-          <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-            <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8">
-              <div className="text-center mb-8">
-                <div className="mx-auto h-12 w-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
-                  <Settings className="h-6 w-6 text-red-600" />
-                </div>
-                <h2 className="text-2xl font-bold text-gray-900">Acesso Administrativo</h2>
-                <p className="text-gray-600 mt-2">Digite a senha para acessar o painel admin</p>
-              </div>
-              
-              <form onSubmit={(e) => {
-                e.preventDefault();
-                console.log('🔐 Tentativa de login com senha:', adminPassword);
-                const success = handleAdminLogin(adminPassword);
-                if (success) {
-                  console.log('🔐 Login bem-sucedido, atualizando estado...');
-                  // Forçar atualização do estado
-                  setTimeout(() => {
-                    setShowAdmin(true);
-                    localStorage.setItem('admin_mode', 'true');
-                  }, 100);
-                }
-              }}>
-                <div className="mb-4">
-                  <Label htmlFor="adminPassword" className="block text-sm font-medium text-gray-700 mb-2">
-                    Senha de Administrador
-                  </Label>
-                  <Input
-                    id="adminPassword"
-                    type="password"
-                    value={adminPassword}
-                    onChange={(e) => setAdminPassword(e.target.value)}
-                    className="w-full"
-                    placeholder="Digite a senha..."
-                    required
-                  />
-                  {adminLoginError && (
-                    <p className="mt-2 text-sm text-red-600">{adminLoginError}</p>
-                  )}
-                </div>
-                
-                <Button 
-                  type="submit"
-                  className="w-full bg-red-600 hover:bg-red-700 text-white"
-                >
-                  Entrar no Admin
-                </Button>
-              </form>
-              
-              <div className="mt-6 text-center">
-                <button 
-                  onClick={() => {
-                    setShowAdmin(false);
-                    localStorage.removeItem('admin_mode');
-                    window.location.hash = '';
-                  }}
-                  className="text-sm text-gray-500 hover:text-gray-700"
-                >
-                  Voltar ao simulador
-                </button>
-              </div>
-            </div>
-          </div>
-        ) : (
-          /* Painel Admin Autenticado */
-          <div>
-            <div className="bg-white border-b border-gray-200 px-6 py-4">
-              <div className="flex items-center justify-between">
-                <h1 className="text-xl font-semibold text-gray-900">Painel Administrativo</h1>
-                <button
-                  onClick={handleAdminLogout}
-                  className="flex items-center gap-2 px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
-                >
-                  Sair do Admin
-                </button>
-              </div>
-            </div>
-            <AdminPanel />
-          </div>
-        )
-      ) : (
-        /* Conteúdo principal - Simulador quando tem acesso mas não está no admin */
-        <div className="container mx-auto px-4 md:px-6 py-8">
-          {/* O conteúdo do simulador já está renderizado no header acima */}
+          </Tabs>
         </div>
       )}
     </div>
