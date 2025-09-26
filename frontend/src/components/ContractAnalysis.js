@@ -1,22 +1,58 @@
 import React, { useState } from 'react';
 import { Button } from './ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
-import { FileText, Upload, AlertCircle, CheckCircle, Star, Loader } from 'lucide-react';
+import { FileText, Upload, AlertCircle, CheckCircle, Star, Loader, File } from 'lucide-react';
 
 const ContractAnalysis = () => {
-  const [contractText, setContractText] = useState('');
+  const [selectedFile, setSelectedFile] = useState(null);
   const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [dragActive, setDragActive] = useState(false);
 
-  const handleAnalyze = async () => {
-    if (!contractText.trim()) {
-      setError('Por favor, cole o texto do contrato');
+  const handleFileSelect = (file) => {
+    if (!file) return;
+    
+    // Verificar se é PDF
+    if (file.type !== 'application/pdf') {
+      setError('Por favor, selecione apenas arquivos PDF');
       return;
     }
+    
+    // Verificar tamanho (10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      setError('Arquivo muito grande (limite: 10MB)');
+      return;
+    }
+    
+    setSelectedFile(file);
+    setError('');
+    console.log('📄 Arquivo selecionado:', file.name, `(${(file.size / 1024 / 1024).toFixed(2)} MB)`);
+  };
 
-    if (contractText.length < 100) {
-      setError('Texto do contrato muito curto (mínimo 100 caracteres)');
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setDragActive(false);
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      handleFileSelect(files[0]);
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setDragActive(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setDragActive(false);
+  };
+
+  const handleAnalyze = async () => {
+    if (!selectedFile) {
+      setError('Por favor, selecione um arquivo PDF');
       return;
     }
 
@@ -25,14 +61,12 @@ const ContractAnalysis = () => {
     setAnalysis(null);
 
     try {
+      const formData = new FormData();
+      formData.append('pdf_file', selectedFile);
+
       const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/analisar-contrato`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contract_text: contractText
-        })
+        body: formData
       });
 
       if (!response.ok) {
