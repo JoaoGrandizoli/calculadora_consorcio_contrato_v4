@@ -34,6 +34,9 @@ import anthropic
 import PyPDF2
 from io import BytesIO
 
+# Import do prompt especializado
+from prompts.prompt_consorcio import prompt_consorcio
+
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
