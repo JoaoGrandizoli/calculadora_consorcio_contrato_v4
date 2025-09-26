@@ -653,7 +653,18 @@ function App() {
                 </div>
               </div>
               
-              {/* Conteúdo do simulador será movido aqui */}
+              {/* Conteúdo do simulador */}
+              <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 md:gap-8">
+            {/* Painel de Parâmetros */}
+            <div className="lg:col-span-2">
+              <Card className="border-moonstone shadow-sm">
+              <CardHeader className="bg-neutral-light border-b border-moonstone">
+                <CardTitle className="text-primary-accent flex items-center gap-2 text-lg md:text-xl">
+                  <TrendingUp className="h-5 w-5" />
+                  Parâmetros da Simulação
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 md:p-6 space-y-4 md:space-y-6">
             </TabsContent>
 
             <TabsContent value="analise-contrato" className="mt-6">
