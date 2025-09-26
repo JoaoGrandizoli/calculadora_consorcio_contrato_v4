@@ -150,8 +150,8 @@ const ContractAnalysis = () => {
           Análise Inteligente de Contratos
         </h2>
         <p className="text-gray-600 max-w-2xl mx-auto">
-          Cole o texto do seu contrato de consórcio e nossa IA irá analisar todos os detalhes, 
-          identificar pontos importantes e dar recomendações personalizadas.
+          Faça upload do seu contrato de consórcio em PDF e nossa IA irá extrair automaticamente 
+          o texto, analisar todos os detalhes e dar recomendações personalizadas.
         </p>
       </div>
 
