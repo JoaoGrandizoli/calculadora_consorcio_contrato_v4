@@ -105,6 +105,21 @@
 user_problem_statement: URGENTE: O simulador de consórcio não está fazendo cálculos! O frontend mostra "N/A" para CET e Valor Total. Preciso que você teste o endpoint /api/simular com dados básicos e verifique se a resposta contém cet_anual e valor_total_pago com valores numéricos (não null).
 
 backend:
+  - task: "Investigar se o backend está retornando os dados corretos de detalhamento para o fluxo de caixa"
+    implemented: true
+    working: false
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+        - agent: "testing"
+        - comment: "🔥 INVESTIGAÇÃO CRÍTICA SOLICITADA: Usuário reporta que frontend mostra 'N/A' para valores do detalhamento. Testando endpoint /api/simular com parâmetros específicos: valor_carta=100000, prazo_meses=120, taxa_admin=0.21, fundo_reserva=0.03, mes_contemplacao=1, lance_livre_perc=0.10, taxa_reajuste_anual=0.05"
+        - working: false
+        - agent: "testing"
+        - comment: "❌ PROBLEMA CRÍTICO IDENTIFICADO - INCOMPATIBILIDADE DE CAMPOS: 1) ✅ Backend funcionando corretamente: HTTP 200 OK, detalhamento array com 120 itens, todos os cálculos corretos, 2) ✅ Dados completos: mes=1, parcela_corrigida=R$1,033.33, saldo_devedor=R$122,966.67, valor_carta_corrigido=R$100,000.00, eh_contemplacao=true, fluxo_liquido=R$86,566.67, 3) ❌ INCOMPATIBILIDADE DE CAMPOS: Frontend espera ['mes', 'parcela_antes', 'parcela_depois', 'saldo_devedor'] mas backend fornece ['mes', 'parcela_corrigida', 'saldo_devedor', 'valor_carta_corrigido', 'eh_contemplacao'], 4) ❌ CAMPOS AUSENTES: 'parcela_antes' e 'parcela_depois' não existem no backend, 5) ✅ Cálculos corretos: Parcelas consistentes (R$1,033.33), reajuste anual funcionando (1.55x crescimento em 10 anos vs esperado 1.63x), contemplação no mês 1 correta. DIAGNÓSTICO: Backend está calculando corretamente mas frontend não consegue acessar os dados devido à incompatibilidade de nomes de campos. Solução: Backend deve fornecer campos 'parcela_antes' e 'parcela_depois' ou frontend deve usar 'parcela_corrigida'."
+
   - task: "Testar endpoint /api/simular para problema crítico de cálculos"
     implemented: true
     working: true
