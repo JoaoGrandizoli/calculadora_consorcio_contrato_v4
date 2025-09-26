@@ -19,7 +19,7 @@ import {
   Legend,
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
-import LeadCapture from './components/LeadCapture';
+import CadastroForm from './components/CadastroForm';
 import AdminPanel from './components/AdminPanel';
 import './App.css';
 
