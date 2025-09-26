@@ -291,6 +291,17 @@ backend:
         - comment: "✅ ENDPOINT /api/gerar-relatorio-pdf FUNCIONANDO PERFEITAMENTE: 1) ✅ Responde com HTTP 200 OK, 2) ✅ Content-Type correto: application/pdf, 3) ✅ Arquivo PDF válido com 225.5KB (não vazio), 4) ✅ Headers de download corretos (Content-Disposition: attachment), 5) ✅ PDF inicia com assinatura válida (%PDF-1.4), 6) ✅ Funciona com e sem Authorization header, 7) ✅ Logs do backend mostram múltiplas chamadas bem-sucedidas (HTTP 200), 8) ✅ Nenhum erro relacionado a PDF nos logs. CONCLUSÃO: Backend está funcionando corretamente. Se usuário não consegue baixar, problema pode estar no frontend (JavaScript, CORS, ou manipulação da resposta)."
 
 frontend:
+  - task: "Corrigir bug de renderização do CadastroForm - aparecendo mesmo após acesso concedido"
+    implemented: false
+    working: false
+    file: "/app/frontend/src/App.js"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: false
+        - agent: "main"
+        - comment: "🚨 BUG CONFIRMADO: CadastroForm continua aparecendo mesmo após clicar em 'Pular cadastro'. O token demo é criado mas a interface não muda para mostrar o simulador com abas. Problema na lógica condicional de renderização em App.js - a condição !hasAccess && !isAdminAccess não está funcionando corretamente."
   - task: "Configurar callbacks do Typeform para submissão"
     implemented: true
     working: "NA"
