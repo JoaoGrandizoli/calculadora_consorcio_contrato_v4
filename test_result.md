@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: Implementar integração do Typeform para captura de leads. O usuário criou um formulário no Typeform (https://caremfo.typeform.com/to/dN3w60PD) e quer substituir o formulário simples atual pelo embed do Typeform. O fluxo deve ser: usuário preenche Typeform → acesso liberado ao simulador → dados salvos no MongoDB.
+user_problem_statement: Corrigir problemas críticos na aplicação: 1) Erro de autenticação 401 na integração Claude AI para análise de contratos, 2) Bug de renderização onde CadastroForm aparece incorretamente abaixo do conteúdo principal, 3) Atualizar chaves API para Notion e Claude com credenciais válidas fornecidas pelo usuário.
 
 backend:
   - task: "Implementar embed do Typeform no frontend"
