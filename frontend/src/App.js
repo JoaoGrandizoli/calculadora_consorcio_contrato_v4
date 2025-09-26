@@ -815,8 +815,8 @@ function App() {
                             id="fundoReserva"
                             type="number"
                             step="0.01"
-                            value={parametros.fundo_reserva}
-                            onChange={(e) => handleInputChange('fundo_reserva', parseFloat(e.target.value))}
+                            value={parametros.fundo_reserva * 100}
+                            onChange={(e) => handleInputChange('fundo_reserva', parseFloat(e.target.value) / 100)}
                             className="mt-1"
                           />
                         </div>
