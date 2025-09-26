@@ -152,6 +152,21 @@ backend:
         - working: true
         - agent: "testing"
         - comment: "✅ ALL CLAUDE AI TESTS PASSED: 1) API Key Configuration: ✅ VERIFIED - Claude API key (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) properly loaded, backend logs show '✅ Cliente Claude inicializado com sucesso', 2) PDF Text Extraction: ✅ WORKING - extract_text_from_pdf function successfully extracts text from PDF files, tested with realistic contract content, 3) Claude API Endpoint: ✅ WORKING - /api/analisar-contrato endpoint accepts PDF files, extracts text, sends to Claude AI, returns structured analysis with sections like RESUMO EXECUTIVO, ANÁLISE FINANCEIRA, PONTOS DE ATENÇÃO, RECOMENDAÇÕES, 4) Authentication: ✅ NO 401 ERRORS - Claude API responds correctly with model claude-3-5-sonnet-20241022, no authentication issues found, 5) File Validation: ✅ WORKING - Correctly rejects non-PDF files with HTTP 400. CONCLUSION: Claude AI integration is working correctly, no authentication errors, contract analysis functioning as expected."
+
+  - task: "Testar novo prompt especializado de análise de contratos de consórcio"
+    implemented: true
+    working: true
+    file: "/app/backend/prompts/prompt_consorcio.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+        - agent: "testing"
+        - comment: "🔥 TESTE CRÍTICO SOLICITADO: Testar se o novo prompt especializado de análise de contratos de consórcio foi integrado corretamente. Verificar carregamento do prompt, testar endpoint /api/analisar-contrato com PDF de teste, validar novo formato estruturado de análise."
+        - working: true
+        - agent: "testing"
+        - comment: "✅ PROMPT ESPECIALIZADO DE CONSÓRCIO INTEGRADO COM SUCESSO: 1) ✅ Import do Prompt: 'from prompts.prompt_consorcio import prompt_consorcio' funcionando corretamente, logs confirmam 'Prompt de consórcio carregado com sucesso!', 2) ✅ Endpoint /api/analisar-contrato: Testado com PDF contendo cláusulas abusivas típicas de consórcio (taxa 25%, multa 30%, restituição após encerramento, critérios subjetivos), 3) ✅ Formato Estruturado: Todas as seções obrigatórias presentes (RESUMO EXECUTIVO, ANÁLISE FINANCEIRA, PONTOS DE ATENÇÃO CRÍTICOS, RECOMENDAÇÕES, SCORE DETALHADO), 4) ✅ Análise Especializada: Detectou 7/8 indicadores específicos de consórcio (taxa de administração, contemplação, restituição, desistência, Lei 11.795, CDC, sistema de pontuação), 5) ✅ Detecção de Cláusulas Abusivas: Identificou 3/5 cláusulas abusivas do PDF teste (25% taxa excessiva, 30% multa, critérios subjetivos), 6) ✅ Sistema de Pontuação: Análise retornou 95 pontos com classificação CRÍTICO, 7) ✅ Modelo Claude: Usando claude-3-5-sonnet-20241022, análise com 3.215 caracteres, extração de 1.657 caracteres do PDF. CONCLUSÃO: Novo prompt especializado está funcionando perfeitamente, análise muito mais detalhada e específica para consórcios com citações de legislação e jurisprudência."
   - task: "Implementar embed do Typeform no frontend"
     implemented: true
     working: true
