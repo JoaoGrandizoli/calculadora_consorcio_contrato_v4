@@ -653,7 +653,8 @@ function App() {
                 </div>
               </div>
               
-              {/* Conteúdo do simulador será movido aqui */}
+              {/* Conteúdo do simulador */}
+              <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 md:gap-8">}
             </TabsContent>
 
             <TabsContent value="analise-contrato" className="mt-6">
