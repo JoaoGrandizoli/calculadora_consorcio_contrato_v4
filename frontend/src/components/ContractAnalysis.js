@@ -155,38 +155,93 @@ const ContractAnalysis = () => {
         </p>
       </div>
 
-      {/* Input do contrato */}
+      {/* Upload do PDF */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Upload className="h-5 w-5" />
-            Texto do Contrato
+            Upload do Contrato PDF
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <textarea
-              value={contractText}
-              onChange={(e) => setContractText(e.target.value)}
-              placeholder="Cole aqui o texto completo do seu contrato de consórcio..."
-              className="w-full h-64 p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-              disabled={loading}
-            />
+            {/* Área de drop */}
+            <div
+              className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                dragActive 
+                  ? 'border-blue-400 bg-blue-50' 
+                  : selectedFile 
+                    ? 'border-green-400 bg-green-50' 
+                    : 'border-gray-300 hover:border-gray-400'
+              }`}
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+            >
+              {selectedFile ? (
+                <div className="space-y-2">
+                  <File className="mx-auto h-12 w-12 text-green-600" />
+                  <div>
+                    <p className="font-medium text-green-800">{selectedFile.name}</p>
+                    <p className="text-sm text-green-600">
+                      {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setSelectedFile(null)}
+                    className="text-sm text-gray-500 hover:text-gray-700 underline"
+                  >
+                    Remover arquivo
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Upload className="mx-auto h-12 w-12 text-gray-400" />
+                  <div>
+                    <p className="text-lg font-medium text-gray-900">
+                      Arraste seu PDF aqui ou clique para selecionar
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      Apenas arquivos PDF até 10MB são aceitos
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            {/* Botão de seleção de arquivo */}
+            <div className="flex items-center justify-center">
+              <input
+                type="file"
+                id="pdf-upload"
+                accept=".pdf,application/pdf"
+                onChange={(e) => handleFileSelect(e.target.files[0])}
+                className="hidden"
+                disabled={loading}
+              />
+              <label
+                htmlFor="pdf-upload"
+                className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                Selecionar PDF
+              </label>
+            </div>
             
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-500">
-                {contractText.length} caracteres (mínimo 100)
+                {selectedFile ? `Arquivo: ${selectedFile.name}` : 'Nenhum arquivo selecionado'}
               </span>
               
               <Button 
                 onClick={handleAnalyze}
-                disabled={loading || contractText.length < 100}
+                disabled={loading || !selectedFile}
                 className="bg-blue-600 hover:bg-blue-700"
               >
                 {loading ? (
                   <>
                     <Loader className="mr-2 h-4 w-4 animate-spin" />
-                    Analisando...
+                    Analisando PDF...
                   </>
                 ) : (
                   <>
