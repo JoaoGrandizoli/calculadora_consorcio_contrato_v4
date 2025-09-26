@@ -627,7 +627,7 @@ function App() {
       {!hasAccess && !isAdminAccess ? (
         /* Mostrar tela de Lead Capture */
         <div className="container mx-auto px-4 md:px-6 py-8">
-          <LeadCapture onAccessGranted={handleAccessGranted} />
+          <CadastroForm onAccessGranted={handleAccessGranted} />
         </div>
       ) : showAdmin || isAdminAccess ? (
         /* 🔐 PROTEÇÃO ADMIN: Mostrar login ou painel conforme autenticação */
