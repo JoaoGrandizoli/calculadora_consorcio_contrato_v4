@@ -5,7 +5,8 @@ from starlette.middleware.cors import CORSMiddleware
 import os
 import logging
 from pathlib import Path
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, validator
+from pydantic_settings import BaseSettings
 from typing import List, Dict, Optional
 import numpy as np
 from scipy.optimize import fsolve
