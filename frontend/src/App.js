@@ -904,7 +904,7 @@ function App() {
                           </CardHeader>
                           <CardContent>
                             <div className="text-2xl font-bold text-accent-warm">
-                              R$ {resultados.valor_total_pago?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || 'N/A'}
+                              R$ {resultados.resumo_financeiro?.total_parcelas?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || 'N/A'}
                             </div>
                             <p className="text-sm text-muted-foreground">Total a ser pago</p>
                           </CardContent>
