@@ -1371,8 +1371,151 @@ else:
     logger.warning("⚠️ Credenciais do Notion não encontradas")
 
 # ----------------------------
-# CÁLCULOS DE PROBABILIDADE DE CONTEMPLAÇÃO
+# INTEGRAÇÃO COM NOTION
 # ----------------------------
+
+class NotionLeadService:
+    """Serviço para gerenciar leads no Notion"""
+    
+    def __init__(self):
+        self.client = notion_client
+        self.database_id = notion_database_id
+    
+    async def create_lead_in_notion(self, lead_data: dict) -> dict:
+        """Criar lead no Notion database"""
+        if not self.client or not self.database_id:
+            logger.warning("❌ Cliente Notion não configurado")
+            return {"success": False, "error": "Notion não configurado"}
+        
+        try:
+            # Formattar dados para o Notion
+            properties = {
+                "Nome Completo": {
+                    "title": [
+                        {
+                            "text": {
+                                "content": f"{lead_data.get('nome', '')} {lead_data.get('sobrenome', '')}"
+                            }
+                        }
+                    ]
+                },
+                "Nome": {
+                    "rich_text": [
+                        {
+                            "text": {
+                                "content": lead_data.get("nome", "")
+                            }
+                        }
+                    ]
+                },
+                "Sobrenome": {
+                    "rich_text": [
+                        {
+                            "text": {
+                                "content": lead_data.get("sobrenome", "")
+                            }
+                        }
+                    ]
+                },
+                "Email": {
+                    "email": lead_data.get("email", "")
+                },
+                "Telefone": {
+                    "phone_number": lead_data.get("telefone", "")
+                },
+                "Profissão": {
+                    "rich_text": [
+                        {
+                            "text": {
+                                "content": lead_data.get("profissao", "")
+                            }
+                        }
+                    ]
+                }
+            }
+            
+            # Criar página no Notion
+            response = self.client.pages.create(
+                parent={"database_id": self.database_id},
+                properties=properties
+            )
+            
+            logger.info(f"✅ Lead criado no Notion: {response.get('id')}")
+            return {
+                "success": True, 
+                "notion_id": response.get("id"),
+                "created_time": response.get("created_time")
+            }
+            
+        except Exception as e:
+            logger.error(f"❌ Erro ao criar lead no Notion: {e}")
+            return {"success": False, "error": str(e)}
+    
+    async def update_lead_in_notion(self, notion_id: str, lead_data: dict) -> dict:
+        """Atualizar lead no Notion"""
+        if not self.client:
+            return {"success": False, "error": "Notion não configurado"}
+        
+        try:
+            properties = {
+                "Nome Completo": {
+                    "title": [
+                        {
+                            "text": {
+                                "content": f"{lead_data.get('nome', '')} {lead_data.get('sobrenome', '')}"
+                            }
+                        }
+                    ]
+                },
+                "Nome": {
+                    "rich_text": [
+                        {
+                            "text": {
+                                "content": lead_data.get("nome", "")
+                            }
+                        }
+                    ]
+                },
+                "Sobrenome": {
+                    "rich_text": [
+                        {
+                            "text": {
+                                "content": lead_data.get("sobrenome", "")
+                            }
+                        }
+                    ]
+                },
+                "Email": {
+                    "email": lead_data.get("email", "")
+                },
+                "Telefone": {
+                    "phone_number": lead_data.get("telefone", "")
+                },
+                "Profissão": {
+                    "rich_text": [
+                        {
+                            "text": {
+                                "content": lead_data.get("profissao", "")
+                            }
+                        }
+                    ]
+                }
+            }
+            
+            response = self.client.pages.update(
+                page_id=notion_id,
+                properties=properties
+            )
+            
+            logger.info(f"✅ Lead atualizado no Notion: {notion_id}")
+            return {"success": True, "updated_time": response.get("last_edited_time")}
+            
+        except Exception as e:
+            logger.error(f"❌ Erro ao atualizar lead no Notion: {e}")
+            return {"success": False, "error": str(e)}
+
+# Instanciar serviço do Notion
+notion_service = NotionLeadService()
 
 def _as_float_array(x):
     """Converte para array numpy float."""
