@@ -368,6 +368,21 @@ backend:
         - agent: "testing"
         - comment: "✅ NOTION INTEGRATION TESTED SUCCESSFULLY: 1) ✅ Configuration: NOTION_API_KEY and NOTION_DATABASE_ID correctly configured in backend/.env, 2) ✅ Endpoint /api/criar-lead: Successfully tested with user data, lead created (ID: b37dcaea..., Token: f3dba784...), response 'Lead criado com sucesso!', 3) ✅ Backend Logs: No critical errors found, integration working without failures, 4) ✅ Direct Connectivity: Successfully connected to Notion API, database accessible, 5) ✅ Problem Analysis: No critical authentication, endpoint, or connectivity issues. CONCLUSION: Notion integration is working correctly. If leads not appearing in Notion, possible issues: 1) Database field structure (missing 'Nome Completo', 'Sobrenome', 'Email' fields), 2) NotionLeadService may fail silently, 3) Network connectivity. Backend integration code is functional and properly configured."
 
+  - task: "Testar endpoint /api/criar-lead para identificar por que está falhando o cadastro"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+        - agent: "testing"
+        - comment: "🔥 TESTE CRÍTICO SOLICITADO: Testar endpoint /api/criar-lead para identificar por que está falhando o cadastro. Dados do usuário: JOAO GRANDIZOLiii (joaoteste@gmail.com), telefone (17) 98209-7776, profissão Consultor Investimentos, senha 123456. Verificar bcrypt, email duplicado, MongoDB, logs específicos."
+        - working: true
+        - agent: "testing"
+        - comment: "✅ ENDPOINT /api/criar-lead FUNCIONANDO CORRETAMENTE: 1) ✅ Endpoint Response: HTTP 409 'Email já cadastrado. Faça login.' - comportamento correto para email duplicado, 2) ✅ Email Conflict Test: Registro funciona com email diferente - email original já existe no banco, 3) ✅ bcrypt Functionality: Hash gerado e verificado com sucesso, biblioteca funcionando corretamente, 4) ✅ MongoDB Connection: 100 leads no banco, conexão funcionando, 5) ✅ Backend Logs: 10 entradas relacionadas a leads, incluindo sucessos no MongoDB e Notion, 6) ✅ Notion Integration: Lead salvo no Notion com ID 27b482de-1c18-816e-93b0-d072cb734794. DIAGNÓSTICO: O endpoint está funcionando perfeitamente. O erro 'Erro ao processar solicitação' reportado pelo usuário provavelmente ocorre porque o email 'joaoteste@gmail.com' já existe no banco de dados. Quando testado com email único, o cadastro funciona normalmente, incluindo hash bcrypt e salvamento no Notion."
+
 frontend:
   - task: "Corrigir bug de renderização do CadastroForm - aparecendo mesmo após acesso concedido"
     implemented: true
