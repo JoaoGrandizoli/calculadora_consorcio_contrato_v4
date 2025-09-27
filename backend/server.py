@@ -1852,9 +1852,10 @@ async def criar_lead(lead_data: dict):
         lead_id = str(uuid.uuid4())
         access_token = str(uuid.uuid4())
         
-        # Hash da senha (simples para MVP)
-        import hashlib
-        senha_hash = hashlib.sha256(lead_data.get("senha", "").encode()).hexdigest()
+        # Hash seguro da senha com bcrypt (inclui salt automático)
+        import bcrypt
+        senha = lead_data.get("senha", "").encode('utf-8')
+        senha_hash = bcrypt.hashpw(senha, bcrypt.gensalt()).decode('utf-8')
         
         # Preparar dados do lead
         lead_completo = {
@@ -1865,7 +1866,7 @@ async def criar_lead(lead_data: dict):
             "email": lead_data.get("email", ""),
             "telefone": lead_data.get("telefone", ""),
             "profissao": lead_data.get("profissao", ""),
-            "senha_hash": senha_hash,
+            "senha_hash": senha_hash,  # Hash bcrypt seguro
             "created_at": datetime.now(timezone.utc).isoformat(),
             "source": "cadastro_interno",
             "has_access": True
@@ -1914,10 +1915,31 @@ async def login(credentials: dict):
         if not lead:
             raise HTTPException(status_code=401, detail="Email ou senha incorretos")
         
-        # Verificar senha
-        import hashlib
-        senha_hash = hashlib.sha256(senha.encode()).hexdigest()
-        if lead.get("senha_hash") != senha_hash:
+        # Verificar senha com bcrypt (seguro contra timing attacks)
+        import bcrypt
+        senha_bytes = senha.encode('utf-8')
+        senha_hash_stored = lead.get("senha_hash", "")
+        
+        # Compatibilidade: verificar se é hash antigo (SHA256) ou novo (bcrypt)
+        if senha_hash_stored.startswith("$2b$"):
+            # Hash bcrypt novo - verificação segura
+            senha_valida = bcrypt.checkpw(senha_bytes, senha_hash_stored.encode('utf-8'))
+        else:
+            # Hash SHA256 antigo - compatibilidade temporária
+            import hashlib
+            senha_hash_sha256 = hashlib.sha256(senha_bytes).hexdigest()
+            senha_valida = (senha_hash_stored == senha_hash_sha256)
+            
+            # Migrar para bcrypt na próxima oportunidade
+            if senha_valida:
+                novo_hash_bcrypt = bcrypt.hashpw(senha_bytes, bcrypt.gensalt()).decode('utf-8')
+                await db.leads.update_one(
+                    {"_id": lead["_id"]},
+                    {"$set": {"senha_hash": novo_hash_bcrypt}}
+                )
+                logger.info(f"✅ Senha migrada para bcrypt: {email}")
+        
+        if not senha_valida:
             raise HTTPException(status_code=401, detail="Email ou senha incorretos")
         
         # Gerar novo token de acesso para esta sessão
