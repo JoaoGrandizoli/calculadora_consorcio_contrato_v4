@@ -49,7 +49,7 @@ async def analisar_mongodb():
                     print(f"📧 Email: {lead.get('email', 'N/A')}")
                     print(f"📱 Telefone: {lead.get('telefone', 'N/A')}")
                     print(f"💼 Profissão: {lead.get('profissao', 'N/A')}")
-                    print(f"🔑 Token: {lead.get('access_token', 'N/A')[:20]}...")
+                    print(f"🔑 Token: {lead.get('access_token', 'N/A')[:20] if lead.get('access_token') else 'N/A'}...")
                     print(f"🔐 Tem senha: {'Sim' if lead.get('senha_hash') else 'Não'}")
                     print(f"📅 Criado em: {lead.get('created_at', 'N/A')}")
                     print(f"🔗 Fonte: {lead.get('source', 'N/A')}")
