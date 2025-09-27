@@ -5472,6 +5472,225 @@ Administradora                   Consorciado"""
             self.log_test("CRITICAL: Notion Integration Test", False, f"Exception: {str(e)}")
             return False
 
+    def test_criar_lead_critical_issue(self):
+        """
+        🔥 CRITICAL TEST: Test /api/criar-lead endpoint for registration failure
+        
+        USER ISSUE: "Erro ao processar solicitação" - generic error during lead registration
+        
+        Test requirements:
+        1. Test endpoint directly with user-provided data
+        2. Check if bcrypt is working properly
+        3. Verify if email already exists in database
+        4. Check MongoDB connection
+        5. Test password hashing functionality
+        6. Capture detailed error logs and status codes
+        7. Test compatibility with bcrypt library
+        
+        User data from report:
+        - nome: "JOAO"
+        - sobrenome: "GRANDIZOLiii"
+        - email: "joaoteste@gmail.com"
+        - telefone: "(17) 98209-7776"
+        - profissao: "Consultor Investimentos"
+        - senha: "123456"
+        """
+        # Exact data from user report
+        lead_data = {
+            "nome": "JOAO",
+            "sobrenome": "GRANDIZOLiii",
+            "email": "joaoteste@gmail.com",
+            "telefone": "(17) 98209-7776",
+            "profissao": "Consultor Investimentos",
+            "senha": "123456"
+        }
+        
+        print(f"\n🔥 TESTING CRITICAL LEAD REGISTRATION ISSUE")
+        print(f"   User Report: 'Erro ao processar solicitação' during registration")
+        print(f"   Testing with: {lead_data['nome']} {lead_data['sobrenome']} ({lead_data['email']})")
+        
+        try:
+            # Test 1: Direct endpoint test
+            print(f"   Test 1: Direct POST to /api/criar-lead...")
+            response = requests.post(f"{self.api_url}/criar-lead", 
+                                   json=lead_data, 
+                                   timeout=30)
+            
+            success = response.status_code in [200, 201]
+            issues = []
+            
+            print(f"      HTTP Status: {response.status_code}")
+            print(f"      Response Headers: {dict(response.headers)}")
+            
+            if success:
+                try:
+                    response_data = response.json()
+                    print(f"      Response Data: {response_data}")
+                    
+                    # Check response structure
+                    expected_fields = ['success', 'lead_id', 'access_token', 'message']
+                    missing_fields = [field for field in expected_fields if field not in response_data]
+                    
+                    if missing_fields:
+                        issues.append(f"Missing response fields: {missing_fields}")
+                    
+                    # Check if success is True
+                    if not response_data.get('success'):
+                        issues.append(f"Success field is False: {response_data}")
+                    
+                    # Check if lead_id and access_token are UUIDs
+                    lead_id = response_data.get('lead_id')
+                    access_token = response_data.get('access_token')
+                    
+                    if not lead_id or len(lead_id) != 36:
+                        issues.append(f"Invalid lead_id format: {lead_id}")
+                    
+                    if not access_token or len(access_token) != 36:
+                        issues.append(f"Invalid access_token format: {access_token}")
+                    
+                    success = len(issues) == 0
+                    
+                    if success:
+                        details = f"✅ Lead created successfully - ID: {lead_id[:8]}..., Token: {access_token[:8]}..., Message: {response_data.get('message')}"
+                    else:
+                        details = f"❌ Response issues: {'; '.join(issues)}"
+                        
+                except json.JSONDecodeError as e:
+                    success = False
+                    details = f"❌ Invalid JSON response: {e}, Raw response: {response.text[:200]}"
+                    
+            else:
+                # Analyze error response
+                try:
+                    error_data = response.json()
+                    error_detail = error_data.get('detail', 'Unknown error')
+                    print(f"      Error Detail: {error_detail}")
+                    
+                    # Check for specific error types
+                    if response.status_code == 409:
+                        details = f"❌ Email already exists: {error_detail}"
+                    elif response.status_code == 500:
+                        details = f"❌ Server error: {error_detail}"
+                    elif response.status_code == 422:
+                        details = f"❌ Validation error: {error_detail}"
+                    else:
+                        details = f"❌ HTTP {response.status_code}: {error_detail}"
+                        
+                except json.JSONDecodeError:
+                    details = f"❌ HTTP {response.status_code}: {response.text[:200]}"
+            
+            self.log_test("CRITICAL: Lead Registration (Direct Test)", success, details)
+            
+            # Test 2: Check if email already exists (if first test failed with 409)
+            if response.status_code == 409:
+                print(f"   Test 2: Checking if email already exists in database...")
+                try:
+                    # Try with a different email
+                    test_lead_data = lead_data.copy()
+                    test_lead_data['email'] = f"test_{datetime.now().strftime('%Y%m%d_%H%M%S')}@teste.com"
+                    
+                    response2 = requests.post(f"{self.api_url}/criar-lead", 
+                                            json=test_lead_data, 
+                                            timeout=30)
+                    
+                    success2 = response2.status_code in [200, 201]
+                    if success2:
+                        response_data2 = response2.json()
+                        details2 = f"✅ Registration works with different email - Original email already exists"
+                    else:
+                        details2 = f"❌ Still failing with different email: HTTP {response2.status_code}"
+                    
+                    self.log_test("CRITICAL: Email Conflict Test", success2, details2)
+                    
+                except Exception as e:
+                    self.log_test("CRITICAL: Email Conflict Test", False, f"Exception: {e}")
+            
+            # Test 3: Test bcrypt functionality directly
+            print(f"   Test 3: Testing bcrypt functionality...")
+            try:
+                import bcrypt
+                
+                # Test bcrypt hashing
+                test_password = "123456"
+                test_password_bytes = test_password.encode('utf-8')
+                
+                # Generate salt and hash
+                salt = bcrypt.gensalt()
+                password_hash = bcrypt.hashpw(test_password_bytes, salt)
+                
+                # Verify hash
+                verification = bcrypt.checkpw(test_password_bytes, password_hash)
+                
+                if verification:
+                    details3 = f"✅ bcrypt working correctly - Hash generated and verified successfully"
+                    bcrypt_success = True
+                else:
+                    details3 = f"❌ bcrypt verification failed"
+                    bcrypt_success = False
+                    
+                self.log_test("CRITICAL: bcrypt Functionality", bcrypt_success, details3)
+                
+            except ImportError as e:
+                self.log_test("CRITICAL: bcrypt Functionality", False, f"bcrypt import failed: {e}")
+            except Exception as e:
+                self.log_test("CRITICAL: bcrypt Functionality", False, f"bcrypt test failed: {e}")
+            
+            # Test 4: Check backend logs for specific errors
+            print(f"   Test 4: Checking backend logs for lead creation errors...")
+            try:
+                import subprocess
+                log_result = subprocess.run(['tail', '-n', '100', '/var/log/supervisor/backend.err.log'], 
+                                          capture_output=True, text=True, timeout=5)
+                
+                if log_result.returncode == 0:
+                    log_content = log_result.stdout
+                    
+                    # Look for lead-related errors
+                    lead_errors = [line for line in log_content.split('\n') 
+                                 if any(keyword in line.lower() for keyword in 
+                                       ['criar-lead', 'bcrypt', 'lead', 'senha', 'hash', 'mongodb', 'notion'])]
+                    
+                    if lead_errors:
+                        details4 = f"⚠️ Found {len(lead_errors)} lead-related log entries"
+                        print(f"      Recent lead-related logs:")
+                        for error in lead_errors[-5:]:  # Show last 5 entries
+                            print(f"        {error}")
+                    else:
+                        details4 = "✅ No lead-related errors in recent logs"
+                else:
+                    details4 = "⚠️ Could not read backend logs"
+                
+                self.log_test("CRITICAL: Backend Logs Check", True, details4)
+                
+            except Exception as log_error:
+                self.log_test("CRITICAL: Backend Logs Check", False, f"Log check failed: {log_error}")
+            
+            # Test 5: Test MongoDB connection
+            print(f"   Test 5: Testing MongoDB connection via admin endpoint...")
+            try:
+                response5 = requests.get(f"{self.api_url}/admin/leads", timeout=10)
+                mongo_success = response5.status_code == 200
+                
+                if mongo_success:
+                    leads_data = response5.json()
+                    total_leads = leads_data.get('total', 0)
+                    details5 = f"✅ MongoDB connection working - {total_leads} leads in database"
+                else:
+                    details5 = f"❌ MongoDB connection issue: HTTP {response5.status_code}"
+                
+                self.log_test("CRITICAL: MongoDB Connection", mongo_success, details5)
+                
+            except Exception as e:
+                self.log_test("CRITICAL: MongoDB Connection", False, f"MongoDB test failed: {e}")
+            
+            # Overall result
+            overall_success = success
+            return overall_success
+            
+        except Exception as e:
+            self.log_test("CRITICAL: Lead Registration Test", False, f"Exception: {str(e)}")
+            return False
+
     def run_all_tests(self):
         """Run all backend tests"""
         print(f"\n🚀 Starting Consortium API Tests - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
