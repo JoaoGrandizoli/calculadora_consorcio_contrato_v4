@@ -5244,6 +5244,234 @@ Administradora                   Consorciado"""
             self.log_test("CRITICAL: Detalhamento Structure Investigation", False, f"Exception: {str(e)}")
             return False
 
+    def test_notion_integration_critical(self):
+        """
+        🔥 CRITICAL TEST: Test Notion integration for lead saving
+        
+        USER ISSUE: "Testar a integração Notion para verificar se os leads estão sendo salvos corretamente"
+        
+        Test requirements from user:
+        1. Verify Notion configuration (API key and database ID)
+        2. Test endpoint /api/criar-lead with test data
+        3. Check specific logs for success/failure
+        4. Test Notion connectivity
+        5. Analyze possible problems (authentication, database ID, field structure, network)
+        
+        Test data from user:
+        {
+          "nome": "João",
+          "sobrenome": "Silva", 
+          "email": "joao.teste@email.com",
+          "telefone": "(11) 99999-9999",
+          "profissao": "Engenheiro"
+        }
+        """
+        print(f"\n🔥 TESTING CRITICAL NOTION INTEGRATION - User Report: 'Leads não estão chegando no Notion'")
+        
+        # Test data from user request
+        test_lead_data = {
+            "nome": "João",
+            "sobrenome": "Silva", 
+            "email": "joao.teste@email.com",
+            "telefone": "(11) 99999-9999",
+            "profissao": "Engenheiro"
+        }
+        
+        print(f"   Test Data: {test_lead_data['nome']} {test_lead_data['sobrenome']} - {test_lead_data['email']}")
+        
+        try:
+            # Test 1: Verify Notion configuration
+            print(f"   Test 1: Verifying Notion configuration...")
+            
+            # Check environment variables from backend/.env
+            import os
+            from dotenv import load_dotenv
+            load_dotenv('/app/backend/.env')
+            
+            notion_api_key = os.getenv('NOTION_API_KEY')
+            notion_database_id = os.getenv('NOTION_DATABASE_ID')
+            
+            config_issues = []
+            if not notion_api_key:
+                config_issues.append("NOTION_API_KEY not found in environment")
+            elif notion_api_key != "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":
+                config_issues.append(f"NOTION_API_KEY mismatch: expected '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', got '{notion_api_key}'")
+            
+            if not notion_database_id:
+                config_issues.append("NOTION_DATABASE_ID not found in environment")
+            elif notion_database_id != "279482de1c1880ed8822c87a95395806":
+                config_issues.append(f"NOTION_DATABASE_ID mismatch: expected '279482de1c1880ed8822c87a95395806', got '{notion_database_id}'")
+            
+            config_success = len(config_issues) == 0
+            if config_success:
+                config_details = f"✅ Notion config OK - API Key: {notion_api_key[:20]}..., DB ID: {notion_database_id}"
+            else:
+                config_details = f"❌ Config issues: {'; '.join(config_issues)}"
+            
+            self.log_test("CRITICAL: Notion Configuration", config_success, config_details)
+            
+            # Test 2: Test /api/criar-lead endpoint
+            print(f"   Test 2: Testing /api/criar-lead endpoint...")
+            
+            response = requests.post(f"{self.api_url}/criar-lead", 
+                                   json=test_lead_data, 
+                                   timeout=30)
+            
+            endpoint_success = response.status_code == 200
+            endpoint_issues = []
+            
+            if endpoint_success:
+                data = response.json()
+                
+                # Check response structure
+                required_fields = ['success', 'lead_id', 'access_token', 'message']
+                missing_fields = [field for field in required_fields if field not in data]
+                
+                if missing_fields:
+                    endpoint_issues.append(f"Missing response fields: {missing_fields}")
+                
+                if not data.get('success'):
+                    endpoint_issues.append(f"API returned success=false: {data.get('message')}")
+                
+                # Validate generated IDs
+                lead_id = data.get('lead_id')
+                access_token = data.get('access_token')
+                
+                if not lead_id or len(lead_id) < 30:
+                    endpoint_issues.append(f"Invalid lead_id: {lead_id}")
+                
+                if not access_token or len(access_token) < 30:
+                    endpoint_issues.append(f"Invalid access_token: {access_token}")
+                
+                endpoint_success = len(endpoint_issues) == 0
+                
+                if endpoint_success:
+                    endpoint_details = f"✅ Lead created - ID: {lead_id[:8]}..., Token: {access_token[:8]}..., Message: {data.get('message')}"
+                else:
+                    endpoint_details = f"❌ Endpoint issues: {'; '.join(endpoint_issues)}"
+            else:
+                endpoint_details = f"❌ HTTP {response.status_code}: {response.text[:200]}"
+            
+            self.log_test("CRITICAL: /api/criar-lead Endpoint", endpoint_success, endpoint_details)
+            
+            # Test 3: Check backend logs for Notion-specific messages
+            print(f"   Test 3: Checking backend logs for Notion integration...")
+            
+            try:
+                import subprocess
+                log_result = subprocess.run(['tail', '-n', '100', '/var/log/supervisor/backend.out.log'], 
+                                          capture_output=True, text=True, timeout=10)
+                
+                if log_result.returncode == 0:
+                    log_content = log_result.stdout
+                    
+                    # Look for specific log messages from the review request
+                    success_logs = [line for line in log_content.split('\n') 
+                                  if '✅ Lead salvo no MongoDB' in line or '✅ Lead salvo no Notion' in line]
+                    
+                    failure_logs = [line for line in log_content.split('\n') 
+                                  if '⚠️ Falha ao salvar no Notion' in line or '❌ Erro ao criar lead no Notion' in line]
+                    
+                    notion_logs = [line for line in log_content.split('\n') 
+                                 if 'notion' in line.lower() or 'Notion' in line]
+                    
+                    log_details = f"✅ Found {len(success_logs)} success logs, {len(failure_logs)} failure logs, {len(notion_logs)} total Notion logs"
+                    
+                    if success_logs:
+                        print(f"      Recent success logs:")
+                        for log in success_logs[-3:]:  # Show last 3
+                            print(f"        {log}")
+                    
+                    if failure_logs:
+                        print(f"      Recent failure logs:")
+                        for log in failure_logs[-3:]:  # Show last 3
+                            print(f"        {log}")
+                    
+                    logs_success = True
+                else:
+                    log_details = "⚠️ Could not read backend logs"
+                    logs_success = False
+                
+                self.log_test("CRITICAL: Backend Logs Analysis", logs_success, log_details)
+                
+            except Exception as log_error:
+                self.log_test("CRITICAL: Backend Logs Analysis", False, f"Log check failed: {log_error}")
+            
+            # Test 4: Test Notion connectivity directly
+            print(f"   Test 4: Testing direct Notion API connectivity...")
+            
+            try:
+                from notion_client import Client
+                
+                if notion_api_key and notion_database_id:
+                    # Test Notion client initialization
+                    test_client = Client(auth=notion_api_key)
+                    
+                    # Test database access
+                    database_response = test_client.databases.retrieve(database_id=notion_database_id)
+                    
+                    connectivity_success = True
+                    connectivity_details = f"✅ Notion API accessible - Database: {database_response.get('title', [{}])[0].get('plain_text', 'Unknown')}"
+                    
+                    # Check database properties
+                    properties = database_response.get('properties', {})
+                    expected_fields = ['Nome Completo', 'Nome', 'Sobrenome', 'Email', 'Telefone', 'Profissão']
+                    missing_fields = [field for field in expected_fields if field not in properties]
+                    
+                    if missing_fields:
+                        connectivity_details += f" - Missing fields: {missing_fields}"
+                    else:
+                        connectivity_details += f" - All required fields present"
+                    
+                else:
+                    connectivity_success = False
+                    connectivity_details = "❌ Missing Notion credentials for direct test"
+                
+            except Exception as notion_error:
+                connectivity_success = False
+                connectivity_details = f"❌ Notion connectivity failed: {str(notion_error)}"
+            
+            self.log_test("CRITICAL: Notion API Connectivity", connectivity_success, connectivity_details)
+            
+            # Test 5: Analyze possible problems
+            print(f"   Test 5: Analyzing possible integration problems...")
+            
+            problems_found = []
+            
+            # Authentication issues
+            if not config_success:
+                problems_found.append("AUTHENTICATION: Invalid API key or database ID")
+            
+            # Endpoint issues
+            if not endpoint_success:
+                problems_found.append("ENDPOINT: /api/criar-lead not working properly")
+            
+            # Connectivity issues
+            if not connectivity_success:
+                problems_found.append("CONNECTIVITY: Cannot reach Notion API or database")
+            
+            # Field structure issues
+            if connectivity_success and 'missing_fields' in connectivity_details.lower():
+                problems_found.append("FIELD_STRUCTURE: Database missing required fields")
+            
+            analysis_success = len(problems_found) == 0
+            
+            if analysis_success:
+                analysis_details = "✅ No critical problems found - Notion integration should be working"
+            else:
+                analysis_details = f"❌ Problems identified: {'; '.join(problems_found)}"
+            
+            self.log_test("CRITICAL: Problem Analysis", analysis_success, analysis_details)
+            
+            # Overall result
+            overall_success = config_success and endpoint_success and connectivity_success
+            
+            return overall_success
+            
+        except Exception as e:
+            self.log_test("CRITICAL: Notion Integration Test", False, f"Exception: {str(e)}")
+            return False
+
     def run_all_tests(self):
         """Run all backend tests"""
         print(f"\n🚀 Starting Consortium API Tests - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
