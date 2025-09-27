@@ -5746,6 +5746,10 @@ Administradora                   Consorciado"""
         print("\n🔥 CRITICAL NOTION INTEGRATION TEST")
         self.test_notion_integration_critical()
         
+        # 🔥 CRITICAL: LEAD REGISTRATION TEST (USER REQUEST)
+        print("\n🔥 CRITICAL LEAD REGISTRATION TEST")
+        self.test_criar_lead_critical_issue()
+        
         # Lance livre functionality tests
         print("\n🎯 LANCE LIVRE FUNCTIONALITY TESTS")
         self.test_lance_livre_zero()
