@@ -1843,9 +1843,18 @@ notion_service = NotionLeadService()
 async def criar_lead(lead_data: dict):
     """Criar lead com dados do formulário interno"""
     try:
+        # Verificar se email já existe
+        existing_lead = await db.leads.find_one({"email": lead_data.get("email")})
+        if existing_lead:
+            raise HTTPException(status_code=409, detail="Email já cadastrado. Faça login.")
+        
         # Gerar ID e token únicos
         lead_id = str(uuid.uuid4())
         access_token = str(uuid.uuid4())
+        
+        # Hash da senha (simples para MVP)
+        import hashlib
+        senha_hash = hashlib.sha256(lead_data.get("senha", "").encode()).hexdigest()
         
         # Preparar dados do lead
         lead_completo = {
@@ -1856,6 +1865,7 @@ async def criar_lead(lead_data: dict):
             "email": lead_data.get("email", ""),
             "telefone": lead_data.get("telefone", ""),
             "profissao": lead_data.get("profissao", ""),
+            "senha_hash": senha_hash,
             "created_at": datetime.now(timezone.utc).isoformat(),
             "source": "cadastro_interno",
             "has_access": True
@@ -1879,12 +1889,66 @@ async def criar_lead(lead_data: dict):
             "success": True,
             "lead_id": lead_id,
             "access_token": access_token,
-            "message": "Lead criado com sucesso!"
+            "message": "Conta criada com sucesso!"
         }
         
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"❌ Erro ao criar lead: {e}")
         raise HTTPException(status_code=500, detail=f"Erro ao criar lead: {str(e)}")
+
+# Endpoint para login
+@api_router.post("/login")
+async def login(credentials: dict):
+    """Login com email e senha"""
+    try:
+        email = credentials.get("email", "").strip().lower()
+        senha = credentials.get("senha", "")
+        
+        if not email or not senha:
+            raise HTTPException(status_code=400, detail="Email e senha são obrigatórios")
+        
+        # Buscar lead no MongoDB
+        lead = await db.leads.find_one({"email": email})
+        if not lead:
+            raise HTTPException(status_code=401, detail="Email ou senha incorretos")
+        
+        # Verificar senha
+        import hashlib
+        senha_hash = hashlib.sha256(senha.encode()).hexdigest()
+        if lead.get("senha_hash") != senha_hash:
+            raise HTTPException(status_code=401, detail="Email ou senha incorretos")
+        
+        # Gerar novo token de acesso para esta sessão
+        new_access_token = str(uuid.uuid4())
+        
+        # Atualizar token no MongoDB
+        await db.leads.update_one(
+            {"_id": lead["_id"]},
+            {
+                "$set": {
+                    "access_token": new_access_token,
+                    "last_login": datetime.now(timezone.utc).isoformat()
+                }
+            }
+        )
+        
+        logger.info(f"✅ Login realizado: {email}")
+        
+        return {
+            "success": True,
+            "access_token": new_access_token,
+            "nome": lead.get("nome", ""),
+            "email": lead.get("email", ""),
+            "message": "Login realizado com sucesso!"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Erro no login: {e}")
+        raise HTTPException(status_code=500, detail=f"Erro interno no login: {str(e)}")
 
 def _as_float_array(x):
     """Converte para array numpy float."""
