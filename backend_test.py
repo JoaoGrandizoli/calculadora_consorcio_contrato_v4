@@ -5523,6 +5523,10 @@ Administradora                   Consorciado"""
         self.test_admin_leads_endpoint()
         self.test_admin_simulations_endpoint()
         
+        # 🔥 CRITICAL: NOTION INTEGRATION TEST (USER REQUEST)
+        print("\n🔥 CRITICAL NOTION INTEGRATION TEST")
+        self.test_notion_integration_critical()
+        
         # Lance livre functionality tests
         print("\n🎯 LANCE LIVRE FUNCTIONALITY TESTS")
         self.test_lance_livre_zero()
