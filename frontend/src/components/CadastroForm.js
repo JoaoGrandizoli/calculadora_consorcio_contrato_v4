@@ -329,5 +329,3 @@ const CadastroForm = ({ onAccessGranted }) => {
 };
 
 export default CadastroForm;
-
-export default CadastroForm;
