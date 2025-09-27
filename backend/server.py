@@ -1835,6 +1835,57 @@ class NotionLeadService:
             logger.error(f"❌ Erro ao atualizar lead no Notion: {e}")
             return {"success": False, "error": str(e)}
 
+# Instanciar serviço Notion
+notion_service = NotionLeadService()
+
+# Endpoint para criar lead (usado pelo frontend CadastroForm)
+@api_router.post("/criar-lead")
+async def criar_lead(lead_data: dict):
+    """Criar lead com dados do formulário interno"""
+    try:
+        # Gerar ID e token únicos
+        lead_id = str(uuid.uuid4())
+        access_token = str(uuid.uuid4())
+        
+        # Preparar dados do lead
+        lead_completo = {
+            "id": lead_id,
+            "access_token": access_token,
+            "nome": lead_data.get("nome", ""),
+            "sobrenome": lead_data.get("sobrenome", ""),
+            "email": lead_data.get("email", ""),
+            "telefone": lead_data.get("telefone", ""),
+            "profissao": lead_data.get("profissao", ""),
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "source": "cadastro_interno",
+            "has_access": True
+        }
+        
+        # Salvar no MongoDB
+        await db.leads.insert_one(lead_completo)
+        logger.info(f"✅ Lead salvo no MongoDB: {lead_id}")
+        
+        # Tentar salvar no Notion (não falha se der erro)
+        try:
+            notion_result = await notion_service.create_lead_in_notion(lead_completo)
+            if notion_result.get("success"):
+                logger.info(f"✅ Lead salvo no Notion: {notion_result.get('notion_id')}")
+            else:
+                logger.warning(f"⚠️  Falha ao salvar no Notion: {notion_result.get('error')}")
+        except Exception as e:
+            logger.warning(f"⚠️  Erro ao salvar no Notion (não crítico): {e}")
+        
+        return {
+            "success": True,
+            "lead_id": lead_id,
+            "access_token": access_token,
+            "message": "Lead criado com sucesso!"
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ Erro ao criar lead: {e}")
+        raise HTTPException(status_code=500, detail=f"Erro ao criar lead: {str(e)}")
+
 def _as_float_array(x):
     """Converte para array numpy float."""
     a = np.asarray(list(x), dtype=float)
