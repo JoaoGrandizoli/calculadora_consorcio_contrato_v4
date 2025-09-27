@@ -109,7 +109,7 @@ const CadastroForm = ({ onAccessGranted }) => {
       if (error.response?.status === 401) {
         setError('Email ou senha incorretos');
       } else if (error.response?.status === 409) {
-        setError('Este email já está cadastrado. Faça login ou use outro email.');
+        setError('Este email já está cadastrado. Clique em "Login" acima ou use outro email.');
       } else {
         setError(error.response?.data?.detail || 'Erro ao processar solicitação');
       }
