@@ -1711,34 +1711,16 @@ class NotionLeadService:
         try:
             # Formattar dados para o Notion
             properties = {
-                "Nome Completo": {
+                "Nome": {
                     "title": [
                         {
                             "text": {
-                                "content": f"{lead_data.get('nome', '')} {lead_data.get('sobrenome', '')}"
+                                "content": f"{lead_data.get('nome', '')} {lead_data.get('sobrenome', '')}".strip()
                             }
                         }
                     ]
                 },
-                "Nome": {
-                    "rich_text": [
-                        {
-                            "text": {
-                                "content": lead_data.get("nome", "")
-                            }
-                        }
-                    ]
-                },
-                "Sobrenome": {
-                    "rich_text": [
-                        {
-                            "text": {
-                                "content": lead_data.get("sobrenome", "")
-                            }
-                        }
-                    ]
-                },
-                "Email": {
+                "email": {
                     "email": lead_data.get("email", "")
                 },
                 "Telefone": {
@@ -1749,6 +1731,24 @@ class NotionLeadService:
                         {
                             "text": {
                                 "content": lead_data.get("profissao", "")
+                            }
+                        }
+                    ]
+                },
+                "Como nos conheceu": {
+                    "rich_text": [
+                        {
+                            "text": {
+                                "content": "Cadastro Interno"
+                            }
+                        }
+                    ]
+                },
+                "Simulações": {
+                    "rich_text": [
+                        {
+                            "text": {
+                                "content": "Nenhuma simulação ainda"
                             }
                         }
                     ]
