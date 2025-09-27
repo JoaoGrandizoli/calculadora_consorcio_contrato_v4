@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
+import axios from 'axios';
 
 const CadastroForm = ({ onAccessGranted }) => {
   const [formData, setFormData] = useState({
@@ -9,266 +7,322 @@ const CadastroForm = ({ onAccessGranted }) => {
     sobrenome: '',
     email: '',
     telefone: '',
-    profissao: ''
+    profissao: '',
+    senha: ''
   });
-
+  
+  const [isLogin, setIsLogin] = useState(false); // Alternar entre cadastro e login
   const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState({});
+  const [error, setError] = useState('');
+
+  const API = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001/api';
+
+  const formatTelefone = (value) => {
+    const numbers = value.replace(/\D/g, '');
+    if (numbers.length <= 10) {
+      return numbers.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
+    }
+    return numbers.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
     
-    // Limpar erro do campo quando usuário começar a digitar
-    if (errors[name]) {
-      setErrors(prev => ({
+    if (name === 'telefone') {
+      setFormData(prev => ({
         ...prev,
-        [name]: ''
+        [name]: formatTelefone(value)
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
       }));
     }
   };
 
   const validateForm = () => {
-    const newErrors = {};
-
-    if (!formData.nome.trim()) {
-      newErrors.nome = 'Nome é obrigatório';
+    const requiredFields = isLogin 
+      ? ['email', 'senha']
+      : ['nome', 'sobrenome', 'email', 'telefone', 'profissao', 'senha'];
+      
+    for (const field of requiredFields) {
+      if (!formData[field]?.trim()) {
+        setError(`Por favor, preencha o campo ${field}`);
+        return false;
+      }
     }
 
-    if (!formData.sobrenome.trim()) {
-      newErrors.sobrenome = 'Sobrenome é obrigatório';
+    // Validar email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setError('Por favor, insira um email válido');
+      return false;
     }
 
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email é obrigatório';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Email inválido';
+    // Validar telefone (apenas no cadastro)
+    if (!isLogin) {
+      const numbers = formData.telefone.replace(/\D/g, '');
+      if (numbers.length < 10 || numbers.length > 11) {
+        setError('Por favor, insira um telefone válido');
+        return false;
+      }
     }
 
-    if (!formData.telefone.trim()) {
-      newErrors.telefone = 'Telefone é obrigatório';
-    } else if (formData.telefone.replace(/\D/g, '').length < 10) {
-      newErrors.telefone = 'Telefone deve ter pelo menos 10 dígitos';
+    // Validar senha
+    if (formData.senha.length < 6) {
+      setError('A senha deve ter pelo menos 6 caracteres');
+      return false;
     }
 
-    if (!formData.profissao.trim()) {
-      newErrors.profissao = 'Profissão é obrigatória';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return true;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!validateForm()) {
-      return;
-    }
-
+    if (!validateForm()) return;
+    
     setLoading(true);
+    setError('');
 
     try {
-      // Fazer chamada para criar lead
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/criar-lead`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData)
-      });
-
-      if (!response.ok) {
-        throw new Error('Erro ao criar cadastro');
-      }
-
-      const result = await response.json();
+      const endpoint = isLogin ? '/login' : '/criar-lead';
+      const response = await axios.post(`${API}${endpoint}`, formData);
       
-      console.log('✅ Cadastro criado com sucesso:', result);
-      
-      // Salvar dados do lead
-      if (result.access_token) {
-        localStorage.setItem('access_token', result.access_token);
+      if (response.data.success) {
+        const token = response.data.access_token;
+        
+        // Armazenar dados localmente
+        localStorage.setItem('access_token', token);
         localStorage.setItem('lead_data', JSON.stringify({
-          leadId: result.lead_id,
-          name: `${formData.nome} ${formData.sobrenome}`,
           email: formData.email,
-          token: result.access_token,
-          timestamp: new Date().toISOString(),
-          source: 'custom_form'
+          nome: formData.nome || response.data.nome,
+          login_time: new Date().toISOString()
         }));
-
-        // Conceder acesso ao simulador
-        onAccessGranted(result.access_token);
-      } else {
-        throw new Error('Token de acesso não recebido');
+        
+        // Conceder acesso
+        onAccessGranted(token);
       }
-
     } catch (error) {
-      console.error('❌ Erro ao criar cadastro:', error);
-      setErrors({
-        submit: 'Erro ao criar cadastro. Tente novamente.'
-      });
+      console.error('Erro:', error);
+      if (error.response?.status === 401) {
+        setError('Email ou senha incorretos');
+      } else if (error.response?.status === 409) {
+        setError('Este email já está cadastrado. Faça login ou use outro email.');
+      } else {
+        setError(error.response?.data?.detail || 'Erro ao processar solicitação');
+      }
     } finally {
       setLoading(false);
     }
   };
 
+  const toggleMode = () => {
+    setIsLogin(!isLogin);
+    setError('');
+    setFormData({
+      nome: '',
+      sobrenome: '',
+      email: formData.email, // Manter email preenchido
+      telefone: '',
+      profissao: '',
+      senha: ''
+    });
+  };
+
   return (
-    <div className="max-w-md mx-auto bg-white p-8 rounded-lg shadow-lg">
-      <div className="text-center mb-8">
-        <div className="mx-auto h-12 w-12 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-          <svg className="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-          </svg>
-        </div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
-          Cadastro para Acessar o Simulador
-        </h2>
-        <p className="text-gray-600">
-          Preencha seus dados para começar a simular seu consórcio
-        </p>
-      </div>
-
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="nome" className="block text-sm font-medium text-gray-700 mb-2">
-              Nome *
-            </Label>
-            <Input
-              id="nome"
-              name="nome"
-              type="text"
-              value={formData.nome}
-              onChange={handleInputChange}
-              className={`w-full ${errors.nome ? 'border-red-500' : ''}`}
-              placeholder="Seu nome"
-              disabled={loading}
-            />
-            {errors.nome && <p className="mt-1 text-sm text-red-600">{errors.nome}</p>}
-          </div>
-
-          <div>
-            <Label htmlFor="sobrenome" className="block text-sm font-medium text-gray-700 mb-2">
-              Sobrenome *
-            </Label>
-            <Input
-              id="sobrenome"
-              name="sobrenome"
-              type="text"
-              value={formData.sobrenome}
-              onChange={handleInputChange}
-              className={`w-full ${errors.sobrenome ? 'border-red-500' : ''}`}
-              placeholder="Seu sobrenome"
-              disabled={loading}
-            />
-            {errors.sobrenome && <p className="mt-1 text-sm text-red-600">{errors.sobrenome}</p>}
-          </div>
+    <div className="min-h-screen bg-gradient-to-br from-primary-dark via-primary to-secondary flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-primary-dark mb-2">
+            {isLogin ? 'Faça seu Login' : 'Cadastre-se'}
+          </h1>
+          <p className="text-gray-600">
+            {isLogin 
+              ? 'Acesse sua conta para usar o simulador' 
+              : 'Crie sua conta para acessar o simulador de consórcio'
+            }
+          </p>
         </div>
 
-        <div>
-          <Label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-            Email *
-          </Label>
-          <Input
-            id="email"
-            name="email"
-            type="email"
-            value={formData.email}
-            onChange={handleInputChange}
-            className={`w-full ${errors.email ? 'border-red-500' : ''}`}
-            placeholder="seu@email.com"
-            disabled={loading}
-          />
-          {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
+        {/* Toggle buttons */}
+        <div className="flex bg-gray-100 rounded-lg p-1 mb-6">
+          <button
+            type="button"
+            onClick={() => !isLogin && toggleMode()}
+            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${
+              !isLogin
+                ? 'bg-white text-primary-dark shadow-sm'
+                : 'text-gray-600 hover:text-gray-800'
+            }`}
+          >
+            Cadastro
+          </button>
+          <button
+            type="button"
+            onClick={() => isLogin && toggleMode()}
+            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${
+              isLogin
+                ? 'bg-white text-primary-dark shadow-sm'
+                : 'text-gray-600 hover:text-gray-800'
+            }`}
+          >
+            Login
+          </button>
         </div>
 
-        <div>
-          <Label htmlFor="telefone" className="block text-sm font-medium text-gray-700 mb-2">
-            Telefone *
-          </Label>
-          <Input
-            id="telefone"
-            name="telefone"
-            type="tel"
-            value={formData.telefone}
-            onChange={handleInputChange}
-            className={`w-full ${errors.telefone ? 'border-red-500' : ''}`}
-            placeholder="(11) 99999-9999"
-            disabled={loading}
-          />
-          {errors.telefone && <p className="mt-1 text-sm text-red-600">{errors.telefone}</p>}
-        </div>
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Campos de cadastro */}
+          {!isLogin && (
+            <>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Nome *
+                  </label>
+                  <input
+                    type="text"
+                    name="nome"
+                    value={formData.nome}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                    placeholder="Seu nome"
+                    required={!isLogin}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Sobrenome *
+                  </label>
+                  <input
+                    type="text"
+                    name="sobrenome"
+                    value={formData.sobrenome}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                    placeholder="Seu sobrenome"
+                    required={!isLogin}
+                  />
+                </div>
+              </div>
 
-        <div>
-          <Label htmlFor="profissao" className="block text-sm font-medium text-gray-700 mb-2">
-            Profissão *
-          </Label>
-          <Input
-            id="profissao"
-            name="profissao"
-            type="text"
-            value={formData.profissao}
-            onChange={handleInputChange}
-            className={`w-full ${errors.profissao ? 'border-red-500' : ''}`}
-            placeholder="Sua profissão"
-            disabled={loading}
-          />
-          {errors.profissao && <p className="mt-1 text-sm text-red-600">{errors.profissao}</p>}
-        </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Telefone *
+                </label>
+                <input
+                  type="tel"
+                  name="telefone"
+                  value={formData.telefone}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                  placeholder="(11) 99999-9999"
+                  required={!isLogin}
+                />
+              </div>
 
-        {errors.submit && (
-          <div className="bg-red-50 border border-red-200 rounded-md p-4">
-            <p className="text-sm text-red-600">{errors.submit}</p>
-          </div>
-        )}
-
-        <Button
-          type="submit"
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-md font-medium"
-          disabled={loading}
-        >
-          {loading ? (
-            <div className="flex items-center justify-center">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-              Criando cadastro...
-            </div>
-          ) : (
-            'Acessar Simulador'
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Profissão *
+                </label>
+                <input
+                  type="text"
+                  name="profissao"
+                  value={formData.profissao}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                  placeholder="Sua profissão"
+                  required={!isLogin}
+                />
+              </div>
+            </>
           )}
-        </Button>
-      </form>
 
-      <div className="mt-6 text-center text-xs text-gray-500">
-        <p>Seus dados são seguros e serão usados apenas para o simulador</p>
-      </div>
+          {/* Campos comuns (email e senha) */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Email *
+            </label>
+            <input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleInputChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+              placeholder="seu@email.com"
+              required
+            />
+          </div>
 
-      <div className="mt-4 text-center">
-        <button
-          onClick={() => {
-            // Criar token temporário para demo
-            const demoToken = 'demo-' + Date.now();
-            localStorage.setItem('access_token', demoToken);
-            localStorage.setItem('lead_data', JSON.stringify({
-              leadId: 'demo-lead',
-              name: 'Usuário Demo',
-              email: 'demo@simulador.com',
-              token: demoToken,
-              timestamp: new Date().toISOString(),
-              source: 'demo_access'
-            }));
-            
-            console.log('🎯 Acesso demo concedido');
-            onAccessGranted(demoToken);
-          }}
-          className="text-sm text-gray-500 hover:text-gray-700 underline"
-        >
-          Pular cadastro e ver simulação
-        </button>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Senha * {!isLogin && <span className="text-gray-500">(min. 6 caracteres)</span>}
+            </label>
+            <input
+              type="password"
+              name="senha"
+              value={formData.senha}
+              onChange={handleInputChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+              placeholder="••••••••"
+              required
+            />
+          </div>
+
+          {/* Error message */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+              <p className="text-red-600 text-sm">{error}</p>
+            </div>
+          )}
+
+          {/* Submit button */}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-gradient-to-r from-primary to-secondary text-white py-3 px-4 rounded-lg font-semibold hover:shadow-lg transition-all duration-300 disabled:opacity-50"
+          >
+            {loading 
+              ? (isLogin ? 'Fazendo login...' : 'Criando conta...') 
+              : (isLogin ? 'Fazer Login' : 'Criar Conta')
+            }
+          </button>
+        </form>
+
+        {/* Switch mode */}
+        <div className="mt-6 text-center">
+          <p className="text-gray-600">
+            {isLogin ? 'Não tem conta? ' : 'Já tem uma conta? '}
+            <button
+              type="button"
+              onClick={toggleMode}
+              className="text-primary font-medium hover:underline"
+            >
+              {isLogin ? 'Cadastre-se' : 'Faça login'}
+            </button>
+          </p>
+        </div>
+
+        {/* Demo access */}
+        <div className="mt-6 pt-6 border-t border-gray-200">
+          <button
+            type="button"
+            onClick={() => {
+              const demoToken = `demo-${Date.now()}`;
+              localStorage.setItem('access_token', demoToken);
+              onAccessGranted(demoToken);
+            }}
+            className="w-full bg-gray-100 text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-gray-200 transition-all"
+          >
+            Pular cadastro e ver simulação
+          </button>
+          <p className="text-xs text-gray-500 mt-2 text-center">
+            Acesso temporário - dados não serão salvos
+          </p>
+        </div>
       </div>
     </div>
   );
