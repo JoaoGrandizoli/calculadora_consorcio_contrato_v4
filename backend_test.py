@@ -5691,6 +5691,159 @@ Administradora                   Consorciado"""
             self.log_test("CRITICAL: Lead Registration Test", False, f"Exception: {str(e)}")
             return False
 
+    def test_criar_lead_endpoint_debug(self):
+        """
+        🔥 CRITICAL DEBUG TEST: Test /api/criar-lead endpoint with detailed debugging
+        
+        USER REQUEST: Test registration with unique email and detailed debugging
+        
+        Test requirements:
+        1. Test registration with unique email (test-debug-{timestamp}@example.com)
+        2. Send exact request structure that frontend sends
+        3. Check backend logs for debug messages starting with "🔍 DEBUG - Recebendo requisição"
+        4. Verify response and registration success
+        5. Analyze any errors in detail
+        """
+        import time
+        timestamp = int(time.time())
+        
+        # Exact request structure as specified
+        test_data = {
+            "nome": "João",
+            "sobrenome": "Silva", 
+            "email": f"test-debug-{timestamp}@example.com",
+            "telefone": "(11) 99999-9999",
+            "profissao": "Teste",
+            "senha": "123456"
+        }
+        
+        print(f"\n🔥 TESTING CRIAR-LEAD ENDPOINT WITH DETAILED DEBUGGING")
+        print(f"   URL: {self.api_url}/criar-lead")
+        print(f"   Method: POST")
+        print(f"   Headers: Content-Type: application/json")
+        print(f"   Body: {json.dumps(test_data, indent=2)}")
+        print(f"   Unique Email: {test_data['email']}")
+        
+        try:
+            # Test the endpoint
+            headers = {"Content-Type": "application/json"}
+            response = requests.post(f"{self.api_url}/criar-lead", 
+                                   json=test_data,
+                                   headers=headers,
+                                   timeout=30)
+            
+            print(f"   Response Status: {response.status_code}")
+            print(f"   Response Headers: {dict(response.headers)}")
+            
+            success = response.status_code in [200, 201]
+            issues = []
+            
+            if success:
+                try:
+                    response_data = response.json()
+                    print(f"   Response Body: {json.dumps(response_data, indent=2)}")
+                    
+                    # Check for success indicators
+                    if "sucesso" in response.text.lower() or "success" in response.text.lower():
+                        details = f"✅ Registration successful - Email: {test_data['email']}, Response: {response_data}"
+                    else:
+                        issues.append(f"Unexpected response format: {response_data}")
+                        
+                except json.JSONDecodeError:
+                    response_text = response.text
+                    print(f"   Response Text: {response_text}")
+                    
+                    if "sucesso" in response_text.lower() or "success" in response_text.lower():
+                        details = f"✅ Registration successful (text response) - Email: {test_data['email']}"
+                    else:
+                        issues.append(f"Non-JSON response: {response_text}")
+                        
+            else:
+                response_text = response.text
+                print(f"   Error Response: {response_text}")
+                
+                # Check for specific error types
+                if response.status_code == 409:
+                    issues.append(f"Email conflict (409): {response_text}")
+                elif response.status_code == 400:
+                    issues.append(f"Bad request (400): {response_text}")
+                elif response.status_code == 500:
+                    issues.append(f"Server error (500): {response_text}")
+                else:
+                    issues.append(f"HTTP {response.status_code}: {response_text}")
+            
+            # Check backend logs for debug messages
+            print(f"   Checking backend logs for debug messages...")
+            try:
+                import subprocess
+                log_result = subprocess.run(['tail', '-n', '100', '/var/log/supervisor/backend.out.log'], 
+                                          capture_output=True, text=True, timeout=5)
+                
+                if log_result.returncode == 0:
+                    log_content = log_result.stdout
+                    debug_lines = [line for line in log_content.split('\n') 
+                                 if '🔍 DEBUG - Recebendo requisição' in line or 
+                                    'criar-lead' in line.lower() or
+                                    test_data['email'] in line]
+                    
+                    if debug_lines:
+                        print(f"   Found {len(debug_lines)} debug messages:")
+                        for line in debug_lines[-5:]:  # Show last 5 entries
+                            print(f"     {line}")
+                    else:
+                        print(f"   No debug messages found for criar-lead endpoint")
+                        # Show recent log entries anyway
+                        recent_lines = log_content.split('\n')[-10:]
+                        print(f"   Recent log entries:")
+                        for line in recent_lines:
+                            if line.strip():
+                                print(f"     {line}")
+                else:
+                    print(f"   Could not read backend logs (return code: {log_result.returncode})")
+                    
+            except Exception as log_error:
+                print(f"   Log check failed: {log_error}")
+            
+            # Also check error logs
+            try:
+                err_log_result = subprocess.run(['tail', '-n', '50', '/var/log/supervisor/backend.err.log'], 
+                                              capture_output=True, text=True, timeout=5)
+                
+                if err_log_result.returncode == 0:
+                    err_content = err_log_result.stdout
+                    if err_content.strip():
+                        error_lines = [line for line in err_content.split('\n') 
+                                     if 'criar-lead' in line.lower() or 
+                                        'error' in line.lower() or
+                                        'exception' in line.lower()]
+                        
+                        if error_lines:
+                            print(f"   Found {len(error_lines)} error messages:")
+                            for line in error_lines[-3:]:  # Show last 3 entries
+                                print(f"     ERROR: {line}")
+                        else:
+                            print(f"   No errors found in error log")
+                    else:
+                        print(f"   Error log is empty")
+                        
+            except Exception as err_log_error:
+                print(f"   Error log check failed: {err_log_error}")
+            
+            # Final assessment
+            if len(issues) == 0:
+                success = True
+                details = f"✅ Criar-lead endpoint working correctly - Email: {test_data['email']}, Status: {response.status_code}"
+            else:
+                success = False
+                details = f"❌ Issues found: {'; '.join(issues)}"
+            
+            self.log_test("CRITICAL: Criar-Lead Endpoint Debug", success, details)
+            return success
+            
+        except Exception as e:
+            self.log_test("CRITICAL: Criar-Lead Endpoint Debug", False, f"Exception: {str(e)}")
+            return False
+
     def run_all_tests(self):
         """Run all backend tests"""
         print(f"\n🚀 Starting Consortium API Tests - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
