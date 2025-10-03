@@ -553,7 +553,7 @@ frontend:
 
   - task: "Testar correção de formatação decimal para valores monetários"
     implemented: true
-    working: false
+    working: true
     file: "/app/frontend/src/App.js"
     stuck_count: 0
     priority: "high"
@@ -565,6 +565,9 @@ frontend:
         - working: false
         - agent: "testing"
         - comment: "❌ PROBLEMA CRÍTICO IDENTIFICADO - FORMATAÇÃO DECIMAL INCONSISTENTE: 1) ✅ PERCENTUAIS CORRETOS: CET Anual e probabilidades mostram exatamente 2 casas decimais (12.58%, 0.83%, 1.18%, 30.00%), 2) ❌ VALORES MONETÁRIOS INCORRETOS: Todos os valores em R$ mostram 3 casas decimais em vez de 2 (R$ 154.932,534 deveria ser R$ 154.932,53; R$ 1.033,333 deveria ser R$ 1.033,33; R$ 1.603,039 deveria ser R$ 1.603,04), 3) ✅ SIMULADOR FUNCIONANDO: Navegação via 'Pular cadastro e ver simulação' funciona, simulações executam com sucesso, todos os cards são exibidos, 4) ✅ CONSISTÊNCIA: Problema persiste com diferentes parâmetros (testado com Valor da Carta R$ 250.000 e Mês Contemplação 36), 5) ❌ DISCREPÂNCIA VISUAL: Screenshots mostram valores aparentemente corretos visualmente, mas extração de texto revela 3 casas decimais. DIAGNÓSTICO: A função formatarMoeda pode estar configurada corretamente no código (minimumFractionDigits: 2, maximumFractionDigits: 2), mas os valores sendo formatados podem ter mais precisão decimal do que esperado, resultando em 3 casas decimais na saída final. SOLUÇÃO NECESSÁRIA: Verificar se os valores numéricos estão sendo arredondados antes da formatação ou se a função toLocaleString está sendo sobrescrita em algum lugar."
+        - working: true
+        - agent: "testing"
+        - comment: "✅ PROBLEMA CORRIGIDO COM SUCESSO - FORMATAÇÃO DECIMAL FUNCIONANDO PERFEITAMENTE: 1) 🔍 CAUSA RAIZ IDENTIFICADA: Os valores monetários não estavam usando a função formatarMoeda() que contém o Math.round() fix, mas sim toLocaleString() diretamente, 2) 🔧 FIX APLICADO: Substituído toLocaleString() por formatarMoeda() nas linhas 1037, 1050 e 1064 do App.js para Valor Total, Parcela Após Contemplação e Última Parcela, 3) ✅ TESTE APROVADO: Todos os valores monetários agora mostram exatamente 2 casas decimais (R$ 154.932,53, R$ 1.033,33, R$ 1.603,04), 4) ✅ CONSISTÊNCIA VERIFICADA: Testado com múltiplos cenários (Valor da Carta R$ 150.000, Mês 17) - formatação consistente (R$ 2.323,21, R$ 16,28, R$ 24,05), 5) ✅ MATH.ROUND() FUNCIONANDO: A correção Math.round(valor * 100) / 100 está funcionando corretamente na função formatarMoeda(), 6) ✅ PERCENTUAIS CORRETOS: CET Anual e probabilidades mantêm formatação correta (16.63%, 0.96%, 14.17%). CONCLUSÃO: Problema de formatação decimal completamente resolvido. Todos os valores monetários agora exibem exatamente 2 casas decimais conforme solicitado no review."
 
 metadata:
   created_by: "main_agent"
