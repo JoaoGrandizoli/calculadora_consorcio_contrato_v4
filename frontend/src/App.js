@@ -1060,8 +1060,8 @@ function App() {
                           </CardHeader>
                           <CardContent>
                             <div className="text-2xl font-bold text-blue-600">
-                              R$ {resultados.detalhamento && resultados.detalhamento.length > 0 
-                                ? resultados.detalhamento[resultados.detalhamento.length - 1].parcela_depois?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) 
+                              {resultados.detalhamento && resultados.detalhamento.length > 0 && resultados.detalhamento[resultados.detalhamento.length - 1].parcela_depois
+                                ? formatarMoeda(resultados.detalhamento[resultados.detalhamento.length - 1].parcela_depois)
                                 : 'N/A'}
                             </div>
                             <p className="text-sm text-muted-foreground">Com reajustes (Mês {parametros.prazo_meses})</p>
