@@ -484,7 +484,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Testar fluxo completo de registro de usuário do frontend ao backend"
+    - "Testar funcionalidade dos botões toggle no formulário de registro"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
