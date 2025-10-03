@@ -105,6 +105,66 @@
 user_problem_statement: URGENT: User login system is failing. User reports they registered today with a simple password but cannot login with correct credentials. Need comprehensive diagnosis of authentication system.
 
 backend:
+  - task: "Investigar sistema de autenticação - Registro de usuário"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+        - agent: "testing"
+        - comment: "🔥 TESTE CRÍTICO SOLICITADO: Usuário reporta que registrou hoje com senha simples mas não consegue fazer login com credenciais corretas. Testando processo de registro POST /api/criar-lead com email único, verificando hash bcrypt e entrada no MongoDB."
+        - working: true
+        - agent: "testing"
+        - comment: "✅ REGISTRO DE USUÁRIO FUNCIONANDO PERFEITAMENTE: 1) ✅ Endpoint /api/criar-lead responde HTTP 200 OK, 2) ✅ Estrutura de resposta correta: success=true, lead_id gerado, access_token gerado, message='Conta criada com sucesso!', 3) ✅ Hash bcrypt funcionando: senha '123456' sendo hasheada e armazenada corretamente com prefixo $2b$, 4) ✅ MongoDB: entrada criada com campo senha_hash correto, 5) ✅ Login subsequente funciona: mesmo email/senha permite login com novo access_token gerado. CONCLUSÃO: Sistema de registro está funcionando corretamente com bcrypt."
+
+  - task: "Investigar sistema de autenticação - Login com usuário conhecido"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+        - agent: "testing"
+        - comment: "🔥 TESTE CRÍTICO SOLICITADO: Usuário reporta não conseguir fazer login com joaograndizoli@gmail.com. Verificando se usuário existe no banco, testando login com senhas comuns, analisando formato senha_hash."
+        - working: true
+        - agent: "testing"
+        - comment: "✅ USUÁRIO CONHECIDO PODE FAZER LOGIN: 1) ✅ Usuário existe no banco: tentativa de registro retorna 409 Conflict conforme esperado, 2) ✅ Login bem-sucedido: email joaograndizoli@gmail.com consegue fazer login com senha '123456', 3) ✅ Hash bcrypt correto: usuário tem senha_hash com prefixo $2b$ (formato correto), 4) ✅ Resposta de login válida: success=true, access_token gerado, message de sucesso. CONCLUSÃO: O usuário joaograndizoli@gmail.com PODE fazer login com senha '123456'."
+
+  - task: "Investigar sistema de autenticação - Análise de hashing de senhas"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+        - agent: "testing"
+        - comment: "🔥 TESTE CRÍTICO SOLICITADO: Verificar processo de verificação de senha bcrypt, formato de hash ($2b$ prefix), problemas de encoding, armazenamento no MongoDB."
+        - working: true
+        - agent: "testing"
+        - comment: "✅ HASHING DE SENHAS FUNCIONANDO CORRETAMENTE: 1) ✅ bcrypt funcionando: registro e login bem-sucedidos com senha TestPassword123, 2) ✅ Senha correta aceita: login retorna HTTP 200 com success=true, 3) ✅ Senha incorreta rejeitada: login retorna HTTP 401 conforme esperado, 4) ✅ Email case-insensitive: login funciona com email em maiúsculas, 5) ✅ Hash format correto: senhas sendo armazenadas com prefixo $2b$ (bcrypt). CONCLUSÃO: Sistema de hashing bcrypt está funcionando perfeitamente sem problemas de encoding."
+
+  - task: "Investigar sistema de autenticação - Análise do banco de dados"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+        - agent: "testing"
+        - comment: "🔥 TESTE CRÍTICO SOLICITADO: Verificar conectividade MongoDB, formato senha_hash armazenado, problemas de encoding, usuário específico joaograndizoli@gmail.com."
+        - working: true
+        - agent: "testing"
+        - comment: "✅ BANCO DE DADOS FUNCIONANDO CORRETAMENTE: 1) ✅ Conectividade MongoDB: endpoint /api/admin/leads retorna dados corretamente, 2) ✅ Usuário João encontrado: joaograndizoli@gmail.com existe no banco, 3) ✅ Hash format correto: usuário tem senha_hash com prefixo $2b$ (bcrypt correto), 4) ✅ Estatísticas: 3 usuários bcrypt, 0 usuários SHA256 legacy, 5) ✅ Preview hash: $2b$12$N.vqij047OdcL... (formato válido). CONCLUSÃO: Banco de dados está correto, todos os usuários têm hashes bcrypt válidos."
+
   - task: "Testar correção de cálculo de probabilidades - TEST 1: lance_livre_perc = 0"
     implemented: true
     working: true
