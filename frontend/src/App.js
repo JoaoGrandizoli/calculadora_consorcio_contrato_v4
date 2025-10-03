@@ -847,7 +847,6 @@ function App() {
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="simulador" className="flex items-center gap-2">
-                <Calculator className="h-4 w-4" />
                 Simulador
               </TabsTrigger>
               <TabsTrigger value="analise-contrato" className="flex items-center gap-2">
