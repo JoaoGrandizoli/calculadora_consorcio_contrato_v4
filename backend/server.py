@@ -1062,6 +1062,7 @@ async def calcular_probabilidades(parametros: ParametrosProbabilidade):
         # 🎯 CORREÇÃO: Retornar apenas curva apropriada baseada no lance_livre_perc
         if parametros.lance_livre_perc == 0:
             # Cliente NÃO dará lance - mostrar apenas probabilidades "sem lance"
+            logger.info(f"🎯 CORREÇÃO APLICADA: lance_livre_perc=0, retornando apenas curva 'sem_lance'")
             return RespostaProbabilidades(
                 erro=False,
                 sem_lance=CurvasProbabilidade(**resultado["sem_lance"]),
