@@ -6123,6 +6123,14 @@ Administradora                   Consorciado"""
         print(f"🌐 Testing API at: {self.api_url}")
         print("=" * 80)
         
+        # 🔥 CRITICAL AUTHENTICATION TESTS (Priority based on review request)
+        print("\n🔥 CRITICAL AUTHENTICATION SYSTEM TESTS - USER LOGIN FAILURE")
+        print("=" * 80)
+        self.test_user_registration_critical()
+        self.test_known_user_login()
+        self.test_password_hashing_analysis()
+        self.test_database_analysis()
+        
         # 🔥 PRIORITY: Test the specific endpoint requested in review
         print("\n🔥 PRIORITY TEST - CRIAR-LEAD ENDPOINT DEBUG")
         self.test_criar_lead_endpoint_debug()
