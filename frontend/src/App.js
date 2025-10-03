@@ -501,7 +501,10 @@ function App() {
   };
 
   const formatarMoeda = (valor) => {
-    return valor.toLocaleString('pt-BR', {
+    // Arredondar para 2 casas decimais antes da formatação
+    const valorArredondado = Math.round(valor * 100) / 100;
+    
+    return valorArredondado.toLocaleString('pt-BR', {
       style: 'currency',
       currency: 'BRL',
       minimumFractionDigits: 2,
