@@ -726,6 +726,11 @@ function App() {
           {/* Header Principal */}
           <div className="flex items-center gap-3 justify-between mb-6">
             <div className="flex items-center gap-3">
+              <img 
+                src="/logo.png" 
+                alt="Logo" 
+                className="h-8 w-8 object-contain" 
+              />
               <Calculator className="h-8 w-8 text-accent-warm" />
               <div>
                 <h1 className="text-2xl font-bold">Portal de Análise de Consórcio</h1>
