@@ -880,10 +880,30 @@ function App() {
                           <Label htmlFor="valorCarta" className="text-sm font-medium">Valor da Carta</Label>
                           <Input
                             id="valorCarta"
-                            type="number"
-                            step="1000"
-                            value={parametros.valor_carta}
-                            onChange={(e) => handleInputChange('valor_carta', parseFloat(e.target.value))}
+                            type="text"
+                            value={valorCartaFormatado}
+                            onChange={(e) => {
+                              const valorDigitado = e.target.value;
+                              const valorFormatado = formatarValorInput(valorDigitado);
+                              const valorNumerico = obterValorNumerico(valorFormatado);
+                              
+                              setValorCartaFormatado(valorFormatado);
+                              handleInputChange('valor_carta', valorNumerico);
+                            }}
+                            onFocus={(e) => {
+                              // Ao focar, se o valor estiver vazio, começar com R$ 0,00
+                              if (!valorCartaFormatado || valorCartaFormatado === 'R$ 0,00') {
+                                setValorCartaFormatado('');
+                              }
+                            }}
+                            onBlur={(e) => {
+                              // Ao sair do foco, se estiver vazio, voltar para o valor atual formatado
+                              if (!e.target.value) {
+                                const valorAtualFormatado = formatarMoeda(parametros.valor_carta);
+                                setValorCartaFormatado(valorAtualFormatado);
+                              }
+                            }}
+                            placeholder="R$ 100.000,00"
                             className="mt-1"
                           />
                         </div>
