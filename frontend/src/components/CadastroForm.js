@@ -88,7 +88,35 @@ const CadastroForm = ({ onAccessGranted }) => {
 
     try {
       const endpoint = isLogin ? '/api/login' : '/api/criar-lead';
-      const response = await axios.post(`${API}${endpoint}`, formData);
+      const fullUrl = `${API}${endpoint}`;
+      
+      // Log detalhado para debug
+      console.log('🔍 DEBUG - Enviando requisição:', {
+        action: isLogin ? 'LOGIN' : 'CADASTRO',
+        url: fullUrl,
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        payload: {
+          ...formData,
+          senha: '[REDACTED]' // Não logar senha real
+        },
+        timestamp: new Date().toISOString()
+      });
+      
+      const response = await axios.post(fullUrl, formData, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      console.log('✅ DEBUG - Resposta recebida:', {
+        status: response.status,
+        statusText: response.statusText,
+        data: response.data,
+        timestamp: new Date().toISOString()
+      });
       
       if (response.data.success) {
         const token = response.data.access_token;
