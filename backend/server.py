@@ -550,9 +550,11 @@ async def simular_consorcio(parametros: ParametrosConsorcio, request: Request):
         if parametros.lance_livre_perc == 0:
             # Cliente NÃO dará lance - apenas 1 contemplado por mês (só sorteio)
             contemplados_mes_ajustado = 1
+            logger.info(f"🎯 CORREÇÃO: lance_livre_perc=0, usando contemplados_por_mes=1 (só sorteio)")
         else:
             # Cliente DARÁ lance - 2 contemplados por mês (sorteio + lance)
             contemplados_mes_ajustado = contemplados_por_mes_padrao
+            logger.info(f"🎯 CORREÇÃO: lance_livre_perc={parametros.lance_livre_perc}, usando contemplados_por_mes=2 (sorteio+lance)")
             
         prob_mes = calcular_probabilidade_mes_especifico(
             mes_contemplacao=parametros.mes_contemplacao,
