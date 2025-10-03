@@ -776,9 +776,8 @@ function App() {
               <img 
                 src="/logo.png" 
                 alt="Logo" 
-                className="h-12 w-12 object-contain" 
+                className="h-16 w-16 object-contain" 
               />
-              <Calculator className="h-8 w-8 text-accent-warm" />
               <div>
                 <h1 className="text-2xl font-bold">Portal de Análise de Consórcio</h1>
                 <p className="text-neutral-light opacity-90">Simulações e análises inteligentes para consórcios</p>
