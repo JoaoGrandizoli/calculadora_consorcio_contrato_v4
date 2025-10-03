@@ -87,7 +87,7 @@ const CadastroForm = ({ onAccessGranted }) => {
     setError('');
 
     try {
-      const endpoint = isLogin ? '/login' : '/criar-lead';
+      const endpoint = isLogin ? '/api/login' : '/api/criar-lead';
       const response = await axios.post(`${API}${endpoint}`, formData);
       
       if (response.data.success) {
