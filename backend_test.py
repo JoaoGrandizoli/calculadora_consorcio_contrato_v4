@@ -6117,6 +6117,496 @@ Administradora                   Consorciado"""
             self.log_test("CRITICAL: Criar-Lead Endpoint Debug", False, f"Exception: {str(e)}")
             return False
 
+    def test_user_registration_critical(self):
+        """
+        🔥 CRITICAL TEST: Test user registration process
+        
+        USER ISSUE: User registered today with simple password but cannot login with correct credentials
+        
+        Test requirements:
+        1. Test POST to /api/criar-lead with new unique email
+        2. Verify password is being hashed and stored correctly with bcrypt
+        3. Check MongoDB entry is created with proper senha_hash field
+        4. Verify response contains success, lead_id, access_token
+        """
+        # Generate unique email for testing
+        timestamp = int(datetime.now().timestamp())
+        test_email = f"test-auth-{timestamp}@example.com"
+        
+        # Test data similar to user report
+        registration_data = {
+            "nome": "João",
+            "sobrenome": "Silva", 
+            "email": test_email,
+            "telefone": "(11) 99999-9999",
+            "profissao": "Desenvolvedor",
+            "senha": "123456"  # Simple password like user reported
+        }
+        
+        print(f"\n🔥 TESTING CRITICAL REGISTRATION ISSUE")
+        print(f"   Test email: {test_email}")
+        print(f"   Password: {registration_data['senha']}")
+        
+        try:
+            # Test 1: Registration
+            print(f"   Test 1: User registration...")
+            response = requests.post(f"{self.api_url}/criar-lead", 
+                                   json=registration_data, 
+                                   timeout=30)
+            
+            success = response.status_code == 200
+            issues = []
+            
+            if success:
+                data = response.json()
+                
+                # Check response structure
+                required_fields = ['success', 'lead_id', 'access_token', 'message']
+                missing_fields = [field for field in required_fields if field not in data]
+                if missing_fields:
+                    issues.append(f"Missing response fields: {missing_fields}")
+                
+                # Check success flag
+                if not data.get('success'):
+                    issues.append(f"Registration not successful: {data}")
+                
+                # Store for login test
+                lead_id = data.get('lead_id')
+                access_token = data.get('access_token')
+                
+                success = len(issues) == 0
+                
+                if success:
+                    details = f"✅ Registration successful - Lead ID: {lead_id[:8]}..., Token: {access_token[:8]}..."
+                else:
+                    details = f"❌ Registration issues: {'; '.join(issues)}"
+            else:
+                details = f"❌ HTTP {response.status_code}: {response.text[:200]}"
+                lead_id = None
+                access_token = None
+            
+            self.log_test("CRITICAL: User Registration", success, details)
+            
+            if not success:
+                return False
+            
+            # Test 2: Login with same credentials
+            print(f"   Test 2: Login with registered credentials...")
+            login_data = {
+                "email": test_email,
+                "senha": registration_data['senha']
+            }
+            
+            response2 = requests.post(f"{self.api_url}/login", 
+                                    json=login_data, 
+                                    timeout=30)
+            
+            success2 = response2.status_code == 200
+            issues2 = []
+            
+            if success2:
+                login_response = response2.json()
+                
+                # Check login response structure
+                required_login_fields = ['success', 'access_token', 'message']
+                missing_login_fields = [field for field in required_login_fields if field not in login_response]
+                if missing_login_fields:
+                    issues2.append(f"Missing login response fields: {missing_login_fields}")
+                
+                # Check success flag
+                if not login_response.get('success'):
+                    issues2.append(f"Login not successful: {login_response}")
+                
+                # Check if new access token is generated
+                new_access_token = login_response.get('access_token')
+                if new_access_token == access_token:
+                    issues2.append("Login should generate new access token")
+                
+                success2 = len(issues2) == 0
+                
+                if success2:
+                    details2 = f"✅ Login successful - New token: {new_access_token[:8]}..."
+                else:
+                    details2 = f"❌ Login issues: {'; '.join(issues2)}"
+            else:
+                details2 = f"❌ HTTP {response2.status_code}: {response2.text[:200]}"
+            
+            self.log_test("CRITICAL: User Login", success2, details2)
+            
+            # Test 3: Check backend logs for debug messages
+            print(f"   Test 3: Checking backend logs for authentication debug messages...")
+            try:
+                import subprocess
+                log_result = subprocess.run(['tail', '-n', '100', '/var/log/supervisor/backend.out.log'], 
+                                          capture_output=True, text=True, timeout=5)
+                
+                if log_result.returncode == 0:
+                    log_content = log_result.stdout
+                    
+                    # Look for debug messages we added
+                    debug_messages = [
+                        "🔍 DEBUG - Recebendo requisição /criar-lead",
+                        "🔍 DEBUG - Recebendo requisição /login",
+                        "✅ Lead salvo no MongoDB",
+                        "✅ Login realizado"
+                    ]
+                    
+                    found_messages = []
+                    for msg in debug_messages:
+                        if msg in log_content:
+                            found_messages.append(msg)
+                    
+                    details3 = f"✅ Found {len(found_messages)}/{len(debug_messages)} debug messages in logs"
+                    if len(found_messages) < len(debug_messages):
+                        details3 += f" - Missing: {set(debug_messages) - set(found_messages)}"
+                else:
+                    details3 = "⚠️ Could not read backend logs"
+                
+                self.log_test("CRITICAL: Backend Debug Logs", True, details3)
+                
+            except Exception as log_error:
+                self.log_test("CRITICAL: Backend Debug Logs", False, f"Log check failed: {log_error}")
+            
+            # Overall result
+            overall_success = success and success2
+            return overall_success
+            
+        except Exception as e:
+            self.log_test("CRITICAL: Authentication Test", False, f"Exception: {str(e)}")
+            return False
+
+    def test_known_user_login(self):
+        """
+        🔥 CRITICAL TEST: Test login with known user from screenshot
+        
+        USER ISSUE: User reports they cannot login with joaograndizoli@gmail.com
+        
+        Test requirements:
+        1. Check if this user exists in database
+        2. Test login with this email and common passwords
+        3. Check the senha_hash format for this user
+        4. Analyze any case sensitivity issues
+        """
+        known_email = "joaograndizoli@gmail.com"
+        
+        print(f"\n🔥 TESTING KNOWN USER LOGIN ISSUE")
+        print(f"   Known email from screenshot: {known_email}")
+        
+        try:
+            # Test 1: Check if user exists by trying to register (should get 409 conflict)
+            print(f"   Test 1: Checking if user exists in database...")
+            test_registration = {
+                "nome": "Test",
+                "sobrenome": "User",
+                "email": known_email,
+                "telefone": "(11) 99999-9999",
+                "profissao": "Test",
+                "senha": "testpassword"
+            }
+            
+            response = requests.post(f"{self.api_url}/criar-lead", 
+                                   json=test_registration, 
+                                   timeout=30)
+            
+            user_exists = response.status_code == 409  # Conflict means user exists
+            
+            if user_exists:
+                details1 = f"✅ User exists in database (got 409 conflict as expected)"
+            else:
+                details1 = f"❌ User might not exist (got {response.status_code} instead of 409)"
+            
+            self.log_test("CRITICAL: Known User Exists Check", user_exists, details1)
+            
+            if not user_exists:
+                return False
+            
+            # Test 2: Try login with common passwords
+            print(f"   Test 2: Testing login with common passwords...")
+            common_passwords = ["123456", "password", "123", "1234", "12345", "senha123", "admin"]
+            
+            login_success = False
+            successful_password = None
+            
+            for password in common_passwords:
+                login_data = {
+                    "email": known_email,
+                    "senha": password
+                }
+                
+                try:
+                    response2 = requests.post(f"{self.api_url}/login", 
+                                            json=login_data, 
+                                            timeout=10)
+                    
+                    if response2.status_code == 200:
+                        login_response = response2.json()
+                        if login_response.get('success'):
+                            login_success = True
+                            successful_password = password
+                            break
+                    elif response2.status_code == 401:
+                        # Expected for wrong password
+                        continue
+                    else:
+                        # Unexpected error
+                        print(f"      Unexpected response for password '{password}': {response2.status_code}")
+                        
+                except Exception as e:
+                    print(f"      Error testing password '{password}': {e}")
+                    continue
+            
+            if login_success:
+                details2 = f"✅ Login successful with password: '{successful_password}'"
+            else:
+                details2 = f"❌ Login failed with all common passwords: {common_passwords}"
+            
+            self.log_test("CRITICAL: Known User Login Test", login_success, details2)
+            
+            # Test 3: Check backend logs for specific login attempts
+            print(f"   Test 3: Checking backend logs for login attempts...")
+            try:
+                import subprocess
+                log_result = subprocess.run(['tail', '-n', '50', '/var/log/supervisor/backend.out.log'], 
+                                          capture_output=True, text=True, timeout=5)
+                
+                if log_result.returncode == 0:
+                    log_content = log_result.stdout
+                    
+                    # Look for login attempts with this email
+                    login_attempts = []
+                    for line in log_content.split('\n'):
+                        if 'login' in line.lower() and known_email in line.lower():
+                            login_attempts.append(line.strip())
+                    
+                    if login_attempts:
+                        details3 = f"✅ Found {len(login_attempts)} login attempts in logs"
+                        print(f"      Recent login attempts:")
+                        for attempt in login_attempts[-3:]:  # Show last 3
+                            print(f"        {attempt}")
+                    else:
+                        details3 = "⚠️ No login attempts found in recent logs"
+                else:
+                    details3 = "⚠️ Could not read backend logs"
+                
+                self.log_test("CRITICAL: Login Attempt Logs", True, details3)
+                
+            except Exception as log_error:
+                self.log_test("CRITICAL: Login Attempt Logs", False, f"Log check failed: {log_error}")
+            
+            return login_success
+            
+        except Exception as e:
+            self.log_test("CRITICAL: Known User Login Test", False, f"Exception: {str(e)}")
+            return False
+
+    def test_password_hashing_analysis(self):
+        """
+        🔥 CRITICAL TEST: Analyze password hashing and storage
+        
+        USER ISSUE: Need to verify bcrypt password verification process
+        
+        Test requirements:
+        1. Create test user and verify bcrypt hash format ($2b$ prefix)
+        2. Test bcrypt verification process
+        3. Check for any encoding issues
+        4. Verify hash storage in MongoDB
+        """
+        # Generate unique email for testing
+        timestamp = int(datetime.now().timestamp())
+        test_email = f"test-hash-{timestamp}@example.com"
+        test_password = "TestPassword123"
+        
+        print(f"\n🔥 TESTING PASSWORD HASHING ANALYSIS")
+        print(f"   Test email: {test_email}")
+        print(f"   Test password: {test_password}")
+        
+        try:
+            # Test 1: Create user and check hash format
+            print(f"   Test 1: Creating user and analyzing hash format...")
+            registration_data = {
+                "nome": "Hash",
+                "sobrenome": "Test",
+                "email": test_email,
+                "telefone": "(11) 99999-9999",
+                "profissao": "Tester",
+                "senha": test_password
+            }
+            
+            response = requests.post(f"{self.api_url}/criar-lead", 
+                                   json=registration_data, 
+                                   timeout=30)
+            
+            success = response.status_code == 200
+            issues = []
+            
+            if success:
+                data = response.json()
+                lead_id = data.get('lead_id')
+                
+                # Test 2: Verify bcrypt hash format by attempting login
+                print(f"   Test 2: Testing bcrypt verification...")
+                login_data = {
+                    "email": test_email,
+                    "senha": test_password
+                }
+                
+                login_response = requests.post(f"{self.api_url}/login", 
+                                             json=login_data, 
+                                             timeout=30)
+                
+                login_success = login_response.status_code == 200
+                if login_success:
+                    login_data_response = login_response.json()
+                    if login_data_response.get('success'):
+                        details = f"✅ bcrypt verification working - Registration and login successful"
+                    else:
+                        issues.append("Login response indicates failure despite 200 status")
+                else:
+                    issues.append(f"Login failed with status {login_response.status_code}: {login_response.text[:100]}")
+                
+                # Test 3: Test with wrong password
+                print(f"   Test 3: Testing with wrong password...")
+                wrong_login_data = {
+                    "email": test_email,
+                    "senha": "WrongPassword123"
+                }
+                
+                wrong_response = requests.post(f"{self.api_url}/login", 
+                                             json=wrong_login_data, 
+                                             timeout=30)
+                
+                wrong_password_rejected = wrong_response.status_code == 401
+                if not wrong_password_rejected:
+                    issues.append(f"Wrong password should be rejected with 401, got {wrong_response.status_code}")
+                
+                # Test 4: Test case sensitivity
+                print(f"   Test 4: Testing email case sensitivity...")
+                case_login_data = {
+                    "email": test_email.upper(),  # Test uppercase email
+                    "senha": test_password
+                }
+                
+                case_response = requests.post(f"{self.api_url}/login", 
+                                            json=case_login_data, 
+                                            timeout=30)
+                
+                case_insensitive_works = case_response.status_code == 200
+                if case_insensitive_works:
+                    case_data = case_response.json()
+                    if not case_data.get('success'):
+                        issues.append("Email case insensitive login should work")
+                else:
+                    issues.append(f"Email case insensitive login failed: {case_response.status_code}")
+                
+                success = len(issues) == 0 and login_success and wrong_password_rejected
+                
+                if success:
+                    details = (f"✅ Password hashing working correctly - "
+                             f"Correct password accepted, wrong password rejected, "
+                             f"case insensitive email: {case_insensitive_works}")
+                else:
+                    details = f"❌ Password hashing issues: {'; '.join(issues)}"
+                    
+            else:
+                details = f"❌ Registration failed: HTTP {response.status_code}: {response.text[:200]}"
+            
+            self.log_test("CRITICAL: Password Hashing Analysis", success, details)
+            return success
+            
+        except Exception as e:
+            self.log_test("CRITICAL: Password Hashing Analysis", False, f"Exception: {str(e)}")
+            return False
+
+    def test_database_analysis(self):
+        """
+        🔥 CRITICAL TEST: Database analysis for authentication issues
+        
+        USER ISSUE: Check what's actually stored in MongoDB for senha_hash
+        
+        Test requirements:
+        1. Check MongoDB connection and leads collection
+        2. Verify bcrypt hash format ($2b$ prefix) in stored data
+        3. Look for any encoding issues
+        4. Check for the specific user joaograndizoli@gmail.com
+        """
+        print(f"\n🔥 TESTING DATABASE ANALYSIS")
+        
+        try:
+            # Test 1: Check admin endpoints to verify database connectivity
+            print(f"   Test 1: Checking database connectivity via admin endpoint...")
+            
+            response = requests.get(f"{self.api_url}/admin/leads", timeout=30)
+            success = response.status_code == 200
+            
+            if success:
+                data = response.json()
+                leads = data.get('leads', [])
+                total_leads = data.get('total', 0)
+                
+                # Look for the specific user from screenshot
+                joao_user = None
+                bcrypt_users = 0
+                sha256_users = 0
+                
+                for lead in leads:
+                    email = lead.get('email', '').lower()
+                    senha_hash = lead.get('senha_hash', '')
+                    
+                    if 'joaograndizoli' in email:
+                        joao_user = lead
+                    
+                    # Count hash types
+                    if senha_hash.startswith('$2b$'):
+                        bcrypt_users += 1
+                    elif len(senha_hash) == 64:  # SHA256 length
+                        sha256_users += 1
+                
+                # Analysis results
+                issues = []
+                
+                if total_leads == 0:
+                    issues.append("No leads found in database")
+                
+                if joao_user:
+                    joao_hash = joao_user.get('senha_hash', '')
+                    joao_email = joao_user.get('email', '')
+                    if joao_hash.startswith('$2b$'):
+                        joao_hash_type = "bcrypt (correct)"
+                    elif len(joao_hash) == 64:
+                        joao_hash_type = "SHA256 (legacy)"
+                    else:
+                        joao_hash_type = f"unknown format (length: {len(joao_hash)})"
+                    
+                    print(f"      Found João user: {joao_email}")
+                    print(f"      Hash type: {joao_hash_type}")
+                    print(f"      Hash preview: {joao_hash[:20]}...")
+                else:
+                    issues.append("João Grandizoli user not found in database")
+                
+                if bcrypt_users == 0 and total_leads > 0:
+                    issues.append(f"No bcrypt hashes found - all {total_leads} users have legacy hashes")
+                
+                success = len(issues) == 0
+                
+                if success:
+                    details = (f"✅ Database analysis complete - "
+                             f"Total leads: {total_leads}, "
+                             f"bcrypt users: {bcrypt_users}, "
+                             f"SHA256 users: {sha256_users}, "
+                             f"João user found: {joao_user is not None}")
+                else:
+                    details = f"❌ Database issues: {'; '.join(issues)}"
+                    
+            else:
+                details = f"❌ Cannot access database via admin endpoint: HTTP {response.status_code}"
+            
+            self.log_test("CRITICAL: Database Analysis", success, details)
+            return success
+            
+        except Exception as e:
+            self.log_test("CRITICAL: Database Analysis", False, f"Exception: {str(e)}")
+            return False
+
     def run_all_tests(self):
         """Run all backend tests"""
         print(f"\n🚀 Starting Consortium API Tests - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
