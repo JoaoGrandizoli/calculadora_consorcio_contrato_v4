@@ -1909,9 +1909,17 @@ async def criar_lead(lead_data: dict, request: Request):
 
 # Endpoint para login
 @api_router.post("/login")
-async def login(credentials: dict):
+async def login(credentials: dict, request: Request):
     """Login com email e senha"""
     try:
+        # Log detalhado para debug
+        logger.info(f"🔍 DEBUG - Recebendo requisição /login:")
+        logger.info(f"  - Headers: {dict(request.headers)}")
+        logger.info(f"  - Method: {request.method}")
+        logger.info(f"  - URL: {request.url}")
+        logger.info(f"  - Client: {request.client}")
+        logger.info(f"  - Body recebido: {{'email': '{credentials.get('email', 'N/A')}', 'senha': '[REDACTED]'}}")
+        logger.info(f"  - Timestamp: {datetime.now(timezone.utc).isoformat()}")
         email = credentials.get("email", "").strip().lower()
         senha = credentials.get("senha", "")
         
