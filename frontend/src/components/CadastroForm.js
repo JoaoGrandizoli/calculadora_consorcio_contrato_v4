@@ -133,7 +133,19 @@ const CadastroForm = ({ onAccessGranted }) => {
         onAccessGranted(token);
       }
     } catch (error) {
-      console.error('Erro:', error);
+      console.error('❌ DEBUG - Erro na requisição:', {
+        message: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        responseData: error.response?.data,
+        config: {
+          url: error.config?.url,
+          method: error.config?.method,
+          headers: error.config?.headers
+        },
+        timestamp: new Date().toISOString()
+      });
+      
       if (error.response?.status === 401) {
         setError('Email ou senha incorretos');
       } else if (error.response?.status === 409) {
