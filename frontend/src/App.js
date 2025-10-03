@@ -873,7 +873,6 @@ function App() {
                   <Card>
                     <CardHeader className="pb-4">
                       <CardTitle className="flex items-center gap-2">
-                        <Calculator className="h-5 w-5" />
                         Parâmetros da Simulação
                       </CardTitle>
                     </CardHeader>
