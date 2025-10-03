@@ -198,7 +198,9 @@ const CadastroForm = ({ onAccessGranted }) => {
         <div className="flex bg-gray-100 rounded-lg p-1 mb-6">
           <button
             type="button"
-            onClick={() => !isLogin && toggleMode()}
+            onClick={() => {
+              if (isLogin) toggleMode(); // Se está no login, muda para cadastro
+            }}
             className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${
               !isLogin
                 ? 'bg-white text-primary-dark shadow-sm'
@@ -209,7 +211,9 @@ const CadastroForm = ({ onAccessGranted }) => {
           </button>
           <button
             type="button"
-            onClick={() => isLogin && toggleMode()}
+            onClick={() => {
+              if (!isLogin) toggleMode(); // Se está no cadastro, muda para login
+            }}
             className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${
               isLogin
                 ? 'bg-white text-primary-dark shadow-sm'
