@@ -95,6 +95,7 @@ function App() {
     lance_livre_perc: 0.10
   });
   const [mostrarDetalheProbabilidades, setMostrarDetalheProbabilidades] = useState(false);
+  const [valorCartaFormatado, setValorCartaFormatado] = useState('R$ 100.000,00');
 
   // Verificar acesso ao carregar a página
   useEffect(() => {
