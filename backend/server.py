@@ -1840,9 +1840,17 @@ notion_service = NotionLeadService()
 
 # Endpoint para criar lead (usado pelo frontend CadastroForm)
 @api_router.post("/criar-lead")
-async def criar_lead(lead_data: dict):
+async def criar_lead(lead_data: dict, request: Request):
     """Criar lead com dados do formulário interno"""
     try:
+        # Log detalhado para debug
+        logger.info(f"🔍 DEBUG - Recebendo requisição /criar-lead:")
+        logger.info(f"  - Headers: {dict(request.headers)}")
+        logger.info(f"  - Method: {request.method}")
+        logger.info(f"  - URL: {request.url}")
+        logger.info(f"  - Client: {request.client}")
+        logger.info(f"  - Body recebido: {lead_data}")
+        logger.info(f"  - Timestamp: {datetime.now(timezone.utc).isoformat()}")
         # Verificar se email já existe
         existing_lead = await db.leads.find_one({"email": lead_data.get("email")})
         if existing_lead:
