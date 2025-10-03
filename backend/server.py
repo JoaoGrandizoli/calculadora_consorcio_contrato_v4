@@ -42,7 +42,7 @@ load_dotenv(ROOT_DIR / '.env')
 
 # MongoDB connection
 client = AsyncIOMotorClient(os.getenv("MONGO_URL"))
-db = client.consorcio_db
+db = client[os.getenv('DB_NAME')]
 
 # Create the main app without a prefix
 app = FastAPI(title="Simulador de Consórcio API", version="1.0.0")
