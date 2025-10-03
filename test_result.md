@@ -551,6 +551,21 @@ frontend:
         - agent: "testing"
         - comment: "✅ MUDANÇAS VISUAIS VERIFICADAS COM SUCESSO TOTAL: 1) ✅ AUMENTO DO LOGO CONFIRMADO: Logo agora usa classes h-16 w-16 (aumentado de h-12 w-12), aparece maior e mais proeminente no header, 2) ✅ ÍCONES DE CALCULADORA COMPLETAMENTE REMOVIDOS: Verificada remoção de todas as localizações especificadas - nenhum ícone de calculadora encontrado na área do header, aba Simulador possui apenas ícone FileText aceitável, nenhum ícone de calculadora próximo ao título 'Simulador de Consórcio', nenhum ícone de calculadora na seção 'Parâmetros da Simulação', aba Análise de Contrato possui apenas ícones FileText e Upload aceitáveis, 3) ✅ INTERFACE MAIS LIMPA: Aparência visual significativamente melhorada sem ícones redundantes de calculadora, interface parece mais profissional e menos poluída, 4) ✅ FUNCIONALIDADE PRESERVADA: Toda funcionalidade do simulador funcionando corretamente após mudanças - formatação de moeda funcionando (R$ 2.500,00), simulação executa com sucesso (CET: 12.58%), resultados exibidos adequadamente, headers de Authorization enviados corretamente, gráficos e tabelas carregando adequadamente, 5) ✅ VERIFICAÇÃO ABRANGENTE: Testadas ambas abas Simulador e Análise de Contrato, confirmado ausência de ícones de calculadora em qualquer localização, todos os ícones existentes são apropriados (FileText, Upload, etc.), logo exibido proeminentemente com tamanho maior. CONCLUSÃO: Ambas as mudanças visuais solicitadas (remover ícones de calculadora + aumentar tamanho do logo) foram implementadas e verificadas com sucesso. Interface está mais limpa e profissional mantendo funcionalidade completa."
 
+  - task: "Testar correção de formatação decimal para valores monetários"
+    implemented: true
+    working: false
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+        - agent: "testing"
+        - comment: "🎯 TESTE SOLICITADO NO REVIEW: Testar correção de formatação decimal para valores monetários. Verificar se função formatarMoeda com minimumFractionDigits: 2, maximumFractionDigits: 2 está funcionando corretamente nos cards financeiros (Valor Total, Última Parcela, CET Anual, Parcela Após Contemplação)."
+        - working: false
+        - agent: "testing"
+        - comment: "❌ PROBLEMA CRÍTICO IDENTIFICADO - FORMATAÇÃO DECIMAL INCONSISTENTE: 1) ✅ PERCENTUAIS CORRETOS: CET Anual e probabilidades mostram exatamente 2 casas decimais (12.58%, 0.83%, 1.18%, 30.00%), 2) ❌ VALORES MONETÁRIOS INCORRETOS: Todos os valores em R$ mostram 3 casas decimais em vez de 2 (R$ 154.932,534 deveria ser R$ 154.932,53; R$ 1.033,333 deveria ser R$ 1.033,33; R$ 1.603,039 deveria ser R$ 1.603,04), 3) ✅ SIMULADOR FUNCIONANDO: Navegação via 'Pular cadastro e ver simulação' funciona, simulações executam com sucesso, todos os cards são exibidos, 4) ✅ CONSISTÊNCIA: Problema persiste com diferentes parâmetros (testado com Valor da Carta R$ 250.000 e Mês Contemplação 36), 5) ❌ DISCREPÂNCIA VISUAL: Screenshots mostram valores aparentemente corretos visualmente, mas extração de texto revela 3 casas decimais. DIAGNÓSTICO: A função formatarMoeda pode estar configurada corretamente no código (minimumFractionDigits: 2, maximumFractionDigits: 2), mas os valores sendo formatados podem ter mais precisão decimal do que esperado, resultando em 3 casas decimais na saída final. SOLUÇÃO NECESSÁRIA: Verificar se os valores numéricos estão sendo arredondados antes da formatação ou se a função toLocaleString está sendo sobrescrita em algum lugar."
+
 metadata:
   created_by: "main_agent"
   version: "1.0"
