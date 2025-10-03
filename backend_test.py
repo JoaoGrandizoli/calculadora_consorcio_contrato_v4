@@ -5691,6 +5691,279 @@ Administradora                   Consorciado"""
             self.log_test("CRITICAL: Lead Registration Test", False, f"Exception: {str(e)}")
             return False
 
+    def test_probability_correction_lance_zero(self):
+        """
+        🎯 TEST 1: lance_livre_perc = 0 (Client will NOT place bids)
+        
+        Expected behavior:
+        - Should return only `sem_lance` curve data
+        - `com_lance` should be `null`
+        - Check logs for "🎯 CORREÇÃO APLICADA: lance_livre_perc=0"
+        """
+        parametros = {
+            "num_participantes": 430,
+            "lance_livre_perc": 0
+        }
+        
+        print(f"\n🎯 TESTING PROBABILITY CORRECTION - Lance Livre = 0%")
+        print(f"   Expected: Only 'sem_lance' curve, 'com_lance' should be null")
+        
+        try:
+            response = requests.post(f"{self.api_url}/calcular-probabilidades", 
+                                   json=parametros, 
+                                   timeout=30)
+            success = response.status_code == 200
+            
+            if success:
+                data = response.json()
+                issues = []
+                
+                if data.get('erro'):
+                    issues.append(f"API error: {data.get('mensagem')}")
+                else:
+                    # 1. Check that 'sem_lance' curve is present
+                    sem_lance = data.get('sem_lance')
+                    if not sem_lance:
+                        issues.append("'sem_lance' curve data missing")
+                    else:
+                        # Validate sem_lance structure
+                        required_fields = ['meses', 'hazard', 'probabilidade_acumulada', 'probabilidade_mes']
+                        missing_fields = [field for field in required_fields if not sem_lance.get(field)]
+                        if missing_fields:
+                            issues.append(f"Missing fields in sem_lance: {missing_fields}")
+                    
+                    # 2. Check that 'com_lance' is null
+                    com_lance = data.get('com_lance')
+                    if com_lance is not None:
+                        issues.append(f"'com_lance' should be null when lance_livre_perc=0, got: {type(com_lance)}")
+                    
+                    # 3. Check parameters
+                    parametros_resp = data.get('parametros', {})
+                    if parametros_resp.get('lance_livre_perc') != 0:
+                        issues.append(f"lance_livre_perc should be 0, got: {parametros_resp.get('lance_livre_perc')}")
+                
+                success = len(issues) == 0
+                
+                if success:
+                    details = f"✅ Correction working: sem_lance curve present, com_lance is null, lance_livre_perc=0"
+                else:
+                    details = f"❌ Issues: {'; '.join(issues)}"
+            else:
+                details = f"HTTP {response.status_code}: {response.text[:200]}"
+            
+            # Check backend logs for correction message
+            try:
+                import subprocess
+                log_result = subprocess.run(['tail', '-n', '20', '/var/log/supervisor/backend.out.log'], 
+                                          capture_output=True, text=True, timeout=5)
+                
+                if log_result.returncode == 0:
+                    log_content = log_result.stdout
+                    correction_found = "🎯 CORREÇÃO APLICADA: lance_livre_perc=0" in log_content
+                    if correction_found:
+                        details += " | Log correction message found"
+                    else:
+                        details += " | Log correction message NOT found"
+                
+            except Exception:
+                details += " | Could not check logs"
+            
+            self.log_test("PROBABILITY CORRECTION: Lance Livre = 0", success, details)
+            return success
+            
+        except Exception as e:
+            self.log_test("PROBABILITY CORRECTION: Lance Livre = 0", False, str(e))
+            return False
+
+    def test_probability_correction_lance_positive(self):
+        """
+        🎯 TEST 2: lance_livre_perc = 0.10 (Client WILL place bids)
+        
+        Expected behavior:
+        - Should return BOTH `sem_lance` AND `com_lance` curve data
+        - Both should have valid probability arrays
+        - Check logs for "contemplados_por_mes=2 (sorteio+lance)"
+        """
+        parametros = {
+            "num_participantes": 430,
+            "lance_livre_perc": 0.10
+        }
+        
+        print(f"\n🎯 TESTING PROBABILITY CORRECTION - Lance Livre = 10%")
+        print(f"   Expected: Both 'sem_lance' and 'com_lance' curves with valid data")
+        
+        try:
+            response = requests.post(f"{self.api_url}/calcular-probabilidades", 
+                                   json=parametros, 
+                                   timeout=30)
+            success = response.status_code == 200
+            
+            if success:
+                data = response.json()
+                issues = []
+                
+                if data.get('erro'):
+                    issues.append(f"API error: {data.get('mensagem')}")
+                else:
+                    # 1. Check that both curves are present
+                    sem_lance = data.get('sem_lance')
+                    com_lance = data.get('com_lance')
+                    
+                    if not sem_lance:
+                        issues.append("'sem_lance' curve data missing")
+                    if not com_lance:
+                        issues.append("'com_lance' curve data missing")
+                    
+                    # 2. Validate both curve structures
+                    required_fields = ['meses', 'hazard', 'probabilidade_acumulada', 'probabilidade_mes']
+                    
+                    if sem_lance:
+                        missing_sem = [field for field in required_fields if not sem_lance.get(field)]
+                        if missing_sem:
+                            issues.append(f"Missing fields in sem_lance: {missing_sem}")
+                        else:
+                            # Check for valid probability arrays
+                            if len(sem_lance['hazard']) == 0:
+                                issues.append("sem_lance hazard array is empty")
+                    
+                    if com_lance:
+                        missing_com = [field for field in required_fields if not com_lance.get(field)]
+                        if missing_com:
+                            issues.append(f"Missing fields in com_lance: {missing_com}")
+                        else:
+                            # Check for valid probability arrays
+                            if len(com_lance['hazard']) == 0:
+                                issues.append("com_lance hazard array is empty")
+                    
+                    # 3. Check parameters
+                    parametros_resp = data.get('parametros', {})
+                    if parametros_resp.get('lance_livre_perc') != 0.10:
+                        issues.append(f"lance_livre_perc should be 0.10, got: {parametros_resp.get('lance_livre_perc')}")
+                
+                success = len(issues) == 0
+                
+                if success:
+                    sem_count = len(sem_lance['meses']) if sem_lance else 0
+                    com_count = len(com_lance['meses']) if com_lance else 0
+                    details = f"✅ Both curves present: sem_lance ({sem_count} months), com_lance ({com_count} months)"
+                else:
+                    details = f"❌ Issues: {'; '.join(issues)}"
+            else:
+                details = f"HTTP {response.status_code}: {response.text[:200]}"
+            
+            # Check backend logs for contemplados message
+            try:
+                import subprocess
+                log_result = subprocess.run(['tail', '-n', '20', '/var/log/supervisor/backend.out.log'], 
+                                          capture_output=True, text=True, timeout=5)
+                
+                if log_result.returncode == 0:
+                    log_content = log_result.stdout
+                    contemplados_found = "contemplados_por_mes=2 (sorteio+lance)" in log_content
+                    if contemplados_found:
+                        details += " | Log contemplados message found"
+                    else:
+                        details += " | Log contemplados message NOT found"
+                
+            except Exception:
+                details += " | Could not check logs"
+            
+            self.log_test("PROBABILITY CORRECTION: Lance Livre = 10%", success, details)
+            return success
+            
+        except Exception as e:
+            self.log_test("PROBABILITY CORRECTION: Lance Livre = 10%", False, str(e))
+            return False
+
+    def test_simulation_with_lance_zero(self):
+        """
+        🎯 TEST 3: Simulation with lance_livre_perc = 0
+        
+        Expected behavior:
+        - Test simulation endpoint `/api/simular` with parameters where `lance_livre_perc = 0`
+        - Check that probability metrics use `contemplados_por_mes = 1`
+        - Verify logs show "usando contemplados_por_mes=1 (só sorteio)"
+        """
+        parametros = {
+            "valor_carta": 100000,
+            "prazo_meses": 120,
+            "taxa_admin": 0.21,
+            "fundo_reserva": 0.03,
+            "mes_contemplacao": 17,
+            "lance_livre_perc": 0.0,  # Zero lance livre
+            "taxa_reajuste_anual": 0.05
+        }
+        
+        print(f"\n🎯 TESTING SIMULATION WITH LANCE LIVRE = 0")
+        print(f"   Expected: contemplados_por_mes=1, logs show 'só sorteio'")
+        
+        try:
+            response = requests.post(f"{self.api_url}/simular", 
+                                   json=parametros, 
+                                   timeout=30)
+            success = response.status_code == 200
+            
+            if success:
+                data = response.json()
+                issues = []
+                
+                if data.get('erro'):
+                    issues.append(f"Simulation error: {data.get('mensagem')}")
+                else:
+                    # Check probability calculations
+                    resumo = data.get('resumo_financeiro', {})
+                    prob_no_mes = resumo.get('prob_contemplacao_no_mes', 0)
+                    participantes_restantes = resumo.get('participantes_restantes_mes', 0)
+                    
+                    # With lance_livre_perc = 0, should use 1 contemplado per month
+                    # Expected participants = 430 - (17-1) * 1 = 414
+                    expected_participantes = 430 - (17 - 1) * 1
+                    expected_prob = 1.0 / expected_participantes if expected_participantes > 0 else 0
+                    
+                    # Check calculations
+                    if abs(participantes_restantes - expected_participantes) > 1:
+                        issues.append(f"Participantes restantes: expected {expected_participantes}, got {participantes_restantes}")
+                    
+                    if abs(prob_no_mes - expected_prob) > 0.001:
+                        issues.append(f"Probability: expected {expected_prob:.4f}, got {prob_no_mes:.4f}")
+                    
+                    # Check for valid values (not NaN)
+                    if str(prob_no_mes) in ['nan', 'inf', '-inf']:
+                        issues.append(f"Invalid probability value: {prob_no_mes}")
+                
+                success = len(issues) == 0
+                
+                if success:
+                    details = f"✅ Simulation with lance=0: prob={prob_no_mes:.4f}, participantes={participantes_restantes}"
+                else:
+                    details = f"❌ Issues: {'; '.join(issues)}"
+            else:
+                details = f"HTTP {response.status_code}: {response.text[:200]}"
+            
+            # Check backend logs for "só sorteio" message
+            try:
+                import subprocess
+                log_result = subprocess.run(['tail', '-n', '20', '/var/log/supervisor/backend.out.log'], 
+                                          capture_output=True, text=True, timeout=5)
+                
+                if log_result.returncode == 0:
+                    log_content = log_result.stdout
+                    sorteio_found = "usando contemplados_por_mes=1 (só sorteio)" in log_content
+                    if sorteio_found:
+                        details += " | Log 'só sorteio' message found"
+                    else:
+                        details += " | Log 'só sorteio' message NOT found"
+                
+            except Exception:
+                details += " | Could not check logs"
+            
+            self.log_test("SIMULATION: Lance Livre = 0 (só sorteio)", success, details)
+            return success
+            
+        except Exception as e:
+            self.log_test("SIMULATION: Lance Livre = 0 (só sorteio)", False, str(e))
+            return False
+
     def test_criar_lead_endpoint_debug(self):
         """
         🔥 CRITICAL DEBUG TEST: Test /api/criar-lead endpoint with detailed debugging
