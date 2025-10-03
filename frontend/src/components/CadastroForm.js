@@ -323,7 +323,7 @@ const CadastroForm = ({ onAccessGranted }) => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-gradient-to-r from-primary to-secondary text-white py-3 px-4 rounded-lg font-semibold hover:shadow-lg transition-all duration-300 disabled:opacity-50"
+            className="w-full bg-gradient-to-b from-gray-300 to-gray-400 text-gray-800 py-3 px-4 rounded-lg font-semibold border border-gray-500 shadow-sm hover:shadow-md transition-all duration-300 disabled:opacity-50"
           >
             {loading 
               ? (isLogin ? 'Fazendo login...' : 'Criando conta...') 
