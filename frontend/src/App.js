@@ -177,12 +177,19 @@ function App() {
       try {
         const response = await axios.get(`${API}/parametros-padrao`);
         setParametros(response.data);
+        // Sincronizar valor formatado com o valor carregado
+        setValorCartaFormatado(formatarMoeda(response.data.valor_carta));
       } catch (error) {
         console.error('Erro ao carregar parâmetros padrão:', error);
       }
     };
     carregarParametrosPadrao();
   }, []);
+
+  // Sincronizar valor formatado quando parametros.valor_carta mudar
+  useEffect(() => {
+    setValorCartaFormatado(formatarMoeda(parametros.valor_carta));
+  }, [parametros.valor_carta]);
 
   const handleAccessGranted = (token) => {
     setAccessToken(token);
