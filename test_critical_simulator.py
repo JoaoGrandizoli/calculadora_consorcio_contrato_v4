@@ -29,7 +29,7 @@ def test_critical_simulator_issue():
     - lance_livre_perc: 0.10
     - taxa_reajuste_anual: 0.05
     """
-    base_url = "https://finance-wizard-27.preview.emergentagent.com"
+    base_url = "https://consortech.preview.emergentagent.com"
     api_url = f"{base_url}/api"
     
     # Exact parameters from user report

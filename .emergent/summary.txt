@@ -1,116 +1,76 @@
 <analysis>
-The trajectory details a complex journey of feature development and bug fixing for a consórcio simulation application. Initially, the AI engineer addressed critical  synchronization issues between the React frontend and FastAPI backend, resolving orphaned simulations by ensuring correct token transmission and persistence. This involved multiple iterations of debugging Typeform webhook configurations, frontend state management, and robust lead fetching. Performance bottlenecks, PDF download failures, and admin panel state persistence were also tackled. A significant security vulnerability regarding admin access without authentication was identified and patched. The work then pivoted from Typeform to an internal lead capture form, integrating with MongoDB and Notion, followed by debugging 404 errors for the new lead creation endpoint. Most recently, a new Análise de Contrato tab with Claude AI integration for PDF contract analysis was added, with current efforts focused on fixing a Claude API authentication error and an improper UI rendering bug for the lead capture form.
+The trajectory documents the iterative development and bug-fixing process of a full-stack consortium simulation application. The work began by addressing foundational issues, such as synchronizing an  between the React frontend and FastAPI backend to link user simulations correctly, fixing PDF download failures, and securing an admin panel.
+
+A significant pivot occurred from using Typeform for lead capture to building an internal form, which required new backend endpoints () and integration with MongoDB and Notion. This transition introduced bugs, including incorrect field mapping with the Notion API, which were diagnosed by creating and running a debug script.
+
+A major feature, Análise de Contrato, was added, leveraging the Claude AI API. This feature underwent multiple refinements based on user feedback, evolving from a generic prompt to a highly specialized, multi-page prompt provided by the user to ensure a detailed, legally-grounded analysis of consortium contracts. Debugging this feature involved fixing a 401 API key error and resolving frontend parsing issues to correctly display the structured results.
+
+Further user feedback led to fixing broken financial calculations on the dashboard, converting data visualizations from graphs to tables (Fluxo de Caixa), extending graph data ranges, and correcting logic bugs in probability calculations.
+
+Most recently, a user authentication system with passwords was implemented, upgrading security from simple SHA256 to . The current, unresolved issue is a persistent Erro ao processar solicitação during new user registration, which needs to be debugged. The user has strictly mandated that all future work be confined to the registration/login system, without altering any of the core calculation or analysis logic.
 </analysis>
 
 <product_requirements>
-The application provides a full-stack consórcio simulation with web interface for CET, cash flow, outstanding balance, PDF reports, and contemplation probability graphs. It needs a responsive design.
+The application is a comprehensive consortium analysis tool designed to help users simulate consortium plans and analyze contracts for abusive clauses.
 
-**Key Requirements & Implementations:**
-*   **Simulation & Reporting:** Calculates CET, cash flow, outstanding balance. Generates PDF reports and interactive probability graphs (hazard graphs for with bid and no bid scenarios, scaled Y-axis, reducing participants monthly). Displays financial tables with 24-month detail and annual summaries.
-*   **Saldo Devedor:** Corrected calculation starting with , annual 5% correction, monthly abatement, reaching zero at term end.
-*   **Lead Capture:** Initially via Typeform (ID ) requiring name, email, phone (mandatory), patrimony, income (optional). Stores data and simulation inputs in MongoDB. Later transitioned to an **internal registration form** mimicking Typeform's questions.
-*   **Admin Panel:** Visualizes captured leads and simulation data. Enhanced with Brasília timezone display (UTC-3), correct user name parsing, and password protection ().
-*   **Data Integration:**
-    *   MongoDB: Stores lead and simulation data.  changed to .
-    *   Notion: **New requirement** to integrate captured lead data into a Notion database (ID: ) via API.
-*   **Simulation Association:** Crucially, ensure all user simulations are correctly linked to their respective leads using a unique  (UUID).
-*   **Performance:** Optimized lead capture flow after form submission to reduce delay.
-*   **PDF Download:** Ensured PDF reports are downloadable from the frontend.
-*   **Navigation:** Fixed admin navigation issues where expanding screen redirected to admin.
-*   **Skip Registration:** Added a button to bypass registration for direct simulator access.
-*   **Contract Analysis:** **New requirement** for an Análise de Contrato tab.
-    *   Initially a text area for contract input.
-    *   **Updated:** To accept PDF upload for contract analysis.
-    *   Uses **Claude AI** (Anthropic) for analysis, providing a structured report (Summary, Financial Analysis, Attention Points, Recommendations, Score).
+**Core Functionality:**
+1.  **Consortium Simulator:** A web interface for users to input parameters (e.g., credit value, term, admin fee) and receive a detailed financial simulation. The output includes CET (Custo Efetivo Total), total amount paid, interactive probability graphs for contemplation (with and without a bid), a detailed cash flow table, and an outstanding balance table. Users can download a PDF report of the simulation.
+2.  **Lead Capture & Management:** The system must capture user leads (Name, Email, Phone, Profession). Initially done via Typeform, this was replaced by an internal registration form. All captured leads are stored in a MongoDB database and synchronized with a Notion database for CRM purposes.
+3.  **User Authentication:** To ensure persistent access across devices, the application requires a user account system. Users must be able to create an account with an email and a secure password and log in to access their data. A skip registration option for demo access must be maintained.
+4.  **AI-Powered Contract Analysis:** A dedicated feature allows users to upload consortium contract PDFs. The system uses the Claude AI API with a highly specialized, user-provided prompt to perform a detailed legal and financial analysis. The analysis identifies potentially abusive clauses, provides recommendations, scores the contract's risk level, and cites relevant Brazilian laws and jurisprudence. The structured results must be displayed clearly in the UI.
 </product_requirements>
 
 <key_technical_concepts>
--   **FastAPI**: Python backend.
--   **React**: Frontend UI.
--   **MongoDB & Motor**: Database.
--   **Pydantic**: Data validation.
--   **ReportLab**: PDF generation.
--   **Chart.js**: Frontend graphing.
--   ****: Typeform integration.
--   **Webhooks**: Real-time data push.
--   ** (UUIDs)**: User session/association.
--   **Anthropic Claude 3.5 Sonnet**: AI for contract analysis.
--   **PyPDF2**: PDF text extraction.
--   **Notion API**: Third-party database integration.
--   **Timezone Handling**: Date/time display.
+- **Backend:** FastAPI (Python)
+- **Frontend:** React.js
+- **Database:** MongoDB (with Motor driver for async operations)
+- **AI Integration:** Anthropic Claude API for contract analysis.
+- **Third-Party Integration:** Notion API for CRM/lead backup.
+- **Authentication:** Password-based system using  for secure hashing.
+- **PDF Handling:**  for generation,  for text extraction.
+- **Data Visualization:** Chart.js for rendering probability graphs.
+- **Session Management:**  (UUIDs) stored in browser .
 </key_technical_concepts>
 
 <code_architecture>
-The application follows a standard full-stack architecture:
+The application is a monorepo with a React frontend and a FastAPI backend.
 
 
 
--   **/app/backend/server.py**:
-    -   **Importance:** Core backend logic, FastAPI endpoints, financial calculations, probability functions, PDF generation, and data handling. Also manages integrations.
-    -   **Changes Made:**
-        -    endpoint added.
-        -   : Multiple iterations for flexibility in data parsing, later adjusted to cross-reference Typeform  fields with  for robust name/profession extraction.
-        -    endpoint: Added detailed logging for  header, made  extraction robust,  model updated with  field, ensures  is saved.
-        -    changed from  to .
-        -   Notion Integration: Implemented  with methods to create pages, new endpoint  to save leads to MongoDB and Notion.
-        -   Claude AI Integration: Configured Anthropic client, implemented , new endpoint  to receive contract text (initially string, then PDF), sends to Claude for analysis.
-        -   PDF Text Extraction: Added  function using .
-        -   Endpoint Registration: Multiple fixes to ensure endpoints are defined *before*  and  is instantiated correctly.
--   **/app/backend/requirements.txt**:
-    -   **Importance:** Python dependencies.
-    -   **Changes Made:** Added , , , , .
--   **/app/backend/.env**:
-    -   **Importance:** Backend environment variables.
-    -   **Changes Made:**  changed to . Added , , .
--   **/app/frontend/src/App.js**:
-    -   **Importance:** Main React component managing UI state, API calls, and rendering logic.
-    -   **Changes Made:**
-        -   : Modified for token expiration (24h) and robust local storage cleanup.
-        -   : Implemented robust synchronization and fallback for .
-        -   PDF Download: Implemented robust download () using Blob creation, validation, and fallback to new window.
-        -   Admin State Persistence: Implemented  to persist , updated  and toggle buttons.
-        -   Admin Authentication: Added  state,  function, and login UI for password protection ().
-        -   : Refined logic to depend on URL hash and separated from  persistence.
-        -   Lead Capture Switch: Replaced  (Typeform) with .
-        -   : Added function to search for leads via URL parameters (email, timestamp).
-        -   Pular cadastro button: Added logic to create demo token and bypass registration.
-        -   Tabbed Interface: Integrated new  and  structure for Simulador and Análise de Contrato, managed  state.
-        -   Conditional Rendering: Corrected rendering logic for  to prevent it from appearing below the main app content.
--   **/app/frontend/src/components/LeadCapture.js**:
-    -   **Importance:** Component for Typeform lead capture (deprecated in favor of ).
-    -   **Changes Made:** Refactored to embed Typeform using , removed fixed 8-second delay, implemented intelligent polling for lead status.
--   **/app/frontend/src/components/AdminPanel.js**:
-    -   **Importance:** UI for visualizing captured lead and simulation data.
-    -   **Changes Made:** Modified  for Brasília timezone. Added Profissão column to leads table.
--   **/app/frontend/src/components/CadastroForm.js**: (New File)
-    -   **Importance:** New internal lead capture form.
-    -   **Changes Made:** Created to capture Name, Last Name, Email, Phone, Profession, replacing Typeform.
--   **/app/frontend/src/components/ContractAnalysis.js**: (New File)
-    -   **Importance:** New component for contract analysis.
-    -   **Changes Made:** Created with a text area for contract input, later modified to include PDF upload () with drag-and-drop, displays file info, and presents analysis results.
--   **/app/frontend/package.json**:
-    -   **Importance:** Frontend dependencies.
-    -   **Changes Made:**  was added, then effectively removed from usage. No new explicit yarn add v1.22.22
-info Visit https://yarnpkg.com/en/docs/cli/add for documentation about this command. commands were shown for new components, but they use standard React/UI libraries.
--   **/app/frontend/.env**:
-    -   **Importance:** Frontend environment variables.
-    -   **Changes Made:**  is critical and changes with new forks.  is present but no longer used for primary lead capture.
+-   ****:
+    -   **Importance:** This is the monolithic backend file containing all FastAPI application logic. It defines all API endpoints, including simulation calculations (), lead creation (), user login (), and contract analysis (). It also handles database interactions with MongoDB and integrations with Notion and Claude AI.
+    -   **Changes Made:** The file was extensively modified to add new endpoints for lead creation and login, integrate  for password hashing, incorporate the detailed Claude AI prompt from , and fix field mapping issues for the Notion API integration.
+
+-   ****:
+    -   **Importance:** Contains the large, multi-page prompt provided by the user for the Claude AI contract analysis. Storing it in a separate file keeps the main  cleaner and makes the prompt easier to manage.
+    -   **Changes Made:** This file was created to store the user-specified prompt, which was later updated with an even more robust version from a user-uploaded PDF.
+
+-   ****:
+    -   **Importance:** The main component of the React application. It manages the global state, including user authentication (, ), simulation results, and conditional rendering of different views (Login/Cadastro, Main Simulator, Admin Panel). It contains the logic for all primary API calls.
+    -   **Changes Made:** The rendering logic was refactored to fix a bug where the registration form appeared incorrectly. It was updated to handle the new login/signup flow, fetch data for various graphs asynchronously after a simulation, and correctly map and display new dashboard metrics requested by the user.
+
+-   ****:
+    -   **Importance:** This component handles the user interface for both new user registration and existing user login. It includes form fields, input validation, and logic to switch between Cadastro and Login modes.
+    -   **Changes Made:** It was created to replace Typeform. Later, it was significantly updated to include a Senha (Password) field and a toggle to switch between login and registration forms. Error messaging was also improved to be more specific (e.g., email already registered).
+
+-   ****:
+    -   **Importance:** Manages the UI for the contract analysis feature, including the PDF file upload component and the display of the analysis results returned by the AI.
+    -   **Changes Made:** The result parsing logic was updated multiple times to correctly render the structured output from the evolving Claude AI prompts. A fallback was added to display the raw text if parsing failed, ensuring the user always sees the result.
 </code_architecture>
 
 <pending_tasks>
--   Resolve the Claude API authentication error (401) when analyzing contracts.
--   Fix the frontend rendering issue where the  component appears below the main application content when it should be conditionally rendered.
--   Update the Notion API key in the backend's  file to a valid one to ensure successful lead saving to Notion.
+-   Resolve the Erro ao processar solicitação that occurs during new user registration, even when using unique data. This appears to be a communication issue between the frontend and backend.
+-   The user has strictly forbidden any changes to the core logic related to financial calculations, statistics, or contract analysis. The focus must remain solely on the registration/login functionality.
 </pending_tasks>
 
 <current_work>
-Immediately before this summary request, the AI engineer was actively addressing two critical bugs reported by the user:
-1.  **Claude AI Authentication Error (401):** The user reported that the contract analysis feature was failing to read the consortium contract, indicating an issue with the Claude AI integration. The AI investigated the  in , confirmed its presence, and made an adjustment to potentially resolve loading/initialization issues.
-2.  **Incorrect Frontend Rendering:** The user pointed out that the  was appearing incorrectly abaixo da tela principal (below the main screen) even when not intended. The AI diagnosed this as a structural error in the conditional rendering logic within  and was in the process of reorganizing the component hierarchy to ensure the  is only displayed when  and .
+The AI engineer is currently debugging a critical bug in the user registration flow. When a new user submits the registration form from the frontend, they receive a generic Erro ao processar solicitação message. This occurs even with completely new and unique user data (e.g., new email address), ruling out the initial hypothesis of a duplicate email conflict.
 
-The last action taken was a code edit to reorganize the frontend rendering structure in  to correctly display the main application content (including the new tabs for Simulator and Contract Analysis) and conditionally render the . The next step is to test these fixes.
+The investigation has shown that direct API calls to the  endpoint from the backend testing environment are successful, and the new user is correctly created in the MongoDB database. This indicates the backend logic, including the  password hashing and database insertion, is likely correct.
+
+Therefore, the problem is suspected to lie in the communication layer between the React frontend and the FastAPI backend. The immediate task is to diagnose why the  call from  is failing when it reaches the server, despite the endpoint itself being functional. The focus is exclusively on this registration issue, with a strict directive from the user not to modify any other part of the application, especially the financial calculation and contract analysis modules.
 </current_work>
 
 <optional_next_step>
-Test the fixes for the Claude API error and the  rendering issue by taking a screenshot of the frontend.
+Investigate the discrepancy between the frontend request and the backend expectation by adding detailed logging to both the frontend's  function in  to log the exact data payload being sent, and to the  endpoint in  to log the exact request body it receives.
 </optional_next_step>
