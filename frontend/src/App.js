@@ -708,7 +708,14 @@ function App() {
           <div>
             <div className="bg-white border-b border-gray-200 px-6 py-4">
               <div className="flex items-center justify-between">
-                <h1 className="text-xl font-semibold text-gray-900">Painel Administrativo</h1>
+                <div className="flex items-center gap-3">
+                  <img 
+                    src="/logo.png" 
+                    alt="Logo" 
+                    className="h-6 w-6 object-contain" 
+                  />
+                  <h1 className="text-xl font-semibold text-gray-900">Painel Administrativo</h1>
+                </div>
                 <button
                   onClick={handleAdminLogout}
                   className="flex items-center gap-2 px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
