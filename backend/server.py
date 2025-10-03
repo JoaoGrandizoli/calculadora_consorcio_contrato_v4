@@ -1051,12 +1051,23 @@ async def calcular_probabilidades(parametros: ParametrosProbabilidade):
                 mensagem="Erro no cálculo de probabilidades"
             )
         
-        return RespostaProbabilidades(
-            erro=False,
-            sem_lance=CurvasProbabilidade(**resultado["sem_lance"]),
-            com_lance=CurvasProbabilidade(**resultado["com_lance"]),
-            parametros=resultado["parametros"]
-        )
+        # 🎯 CORREÇÃO: Retornar apenas curva apropriada baseada no lance_livre_perc
+        if parametros.lance_livre_perc == 0:
+            # Cliente NÃO dará lance - mostrar apenas probabilidades "sem lance"
+            return RespostaProbabilidades(
+                erro=False,
+                sem_lance=CurvasProbabilidade(**resultado["sem_lance"]),
+                com_lance=None,  # ← NÃO retorna curva "com lance"
+                parametros=resultado["parametros"]
+            )
+        else:
+            # Cliente DARÁ lance - mostrar ambas as curvas para comparação
+            return RespostaProbabilidades(
+                erro=False,
+                sem_lance=CurvasProbabilidade(**resultado["sem_lance"]),
+                com_lance=CurvasProbabilidade(**resultado["com_lance"]),
+                parametros=resultado["parametros"]
+            )
         
     except HTTPException:
         raise
