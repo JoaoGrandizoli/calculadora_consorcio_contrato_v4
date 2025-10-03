@@ -503,6 +503,38 @@ function App() {
     return (valor * 100).toFixed(2) + '%';
   };
 
+  // Função para formatar valor monetário durante a digitação
+  const formatarValorInput = (valor) => {
+    // Remove tudo exceto números
+    const apenasNumeros = valor.toString().replace(/\D/g, '');
+    
+    // Se não há números, retorna string vazia
+    if (!apenasNumeros) return '';
+    
+    // Converte para número e divide por 100 para ter centavos
+    const numeroValor = parseInt(apenasNumeros) / 100;
+    
+    // Formata como moeda brasileira
+    return numeroValor.toLocaleString('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    });
+  };
+
+  // Função para obter valor numérico a partir do formato monetário
+  const obterValorNumerico = (valorFormatado) => {
+    if (!valorFormatado) return 0;
+    
+    // Remove R$, pontos e troca vírgula por ponto
+    const numeroString = valorFormatado
+      .replace(/R\$/g, '')
+      .replace(/\./g, '')
+      .replace(/,/g, '.')
+      .trim();
+    
+    return parseFloat(numeroString) || 0;
+  };
+
   const downloadRelatorioPdf = async () => {
     setLoadingPdf(true);
     
