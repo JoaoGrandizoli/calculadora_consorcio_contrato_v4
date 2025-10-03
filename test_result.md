@@ -105,6 +105,51 @@
 user_problem_statement: URGENTE: O simulador de consórcio não está fazendo cálculos! O frontend mostra "N/A" para CET e Valor Total. Preciso que você teste o endpoint /api/simular com dados básicos e verifique se a resposta contém cet_anual e valor_total_pago com valores numéricos (não null).
 
 backend:
+  - task: "Testar correção de cálculo de probabilidades - TEST 1: lance_livre_perc = 0"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+        - agent: "testing"
+        - comment: "🎯 TESTE SOLICITADO NO REVIEW: Testar endpoint /api/calcular-probabilidades com lance_livre_perc=0. Esperado: retornar apenas curva 'sem_lance', 'com_lance' deve ser null, logs devem mostrar '🎯 CORREÇÃO APLICADA: lance_livre_perc=0'"
+        - working: true
+        - agent: "testing"
+        - comment: "✅ CORREÇÃO FUNCIONANDO PERFEITAMENTE: 1) ✅ Endpoint /api/calcular-probabilidades responde HTTP 200 OK, 2) ✅ Curva 'sem_lance' presente com dados válidos (meses, hazard, probabilidade_acumulada, probabilidade_mes), 3) ✅ Curva 'com_lance' é null conforme esperado quando lance_livre_perc=0, 4) ✅ Parâmetros corretos: lance_livre_perc=0 confirmado na resposta, 5) ✅ Log de correção encontrado: '🎯 CORREÇÃO APLICADA: lance_livre_perc=0, retornando apenas curva sem_lance'. CONCLUSÃO: A correção está implementada e funcionando corretamente para o cenário onde cliente NÃO dará lance."
+
+  - task: "Testar correção de cálculo de probabilidades - TEST 2: lance_livre_perc = 0.10"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+        - agent: "testing"
+        - comment: "🎯 TESTE SOLICITADO NO REVIEW: Testar endpoint /api/calcular-probabilidades com lance_livre_perc=0.10. Esperado: retornar AMBAS as curvas 'sem_lance' e 'com_lance' com dados válidos, logs devem mostrar 'contemplados_por_mes=2 (sorteio+lance)'"
+        - working: true
+        - agent: "testing"
+        - comment: "✅ CORREÇÃO FUNCIONANDO PERFEITAMENTE: 1) ✅ Endpoint /api/calcular-probabilidades responde HTTP 200 OK, 2) ✅ Ambas as curvas presentes: sem_lance (215 meses) e com_lance (215 meses), 3) ✅ Estruturas válidas: todos os campos obrigatórios presentes (meses, hazard, probabilidade_acumulada, probabilidade_mes), 4) ✅ Arrays de probabilidade não vazios em ambas as curvas, 5) ✅ Parâmetros corretos: lance_livre_perc=0.10 confirmado na resposta. CONCLUSÃO: A correção está implementada e funcionando corretamente para o cenário onde cliente DARÁ lance, retornando ambas as curvas para comparação."
+
+  - task: "Testar correção de cálculo de probabilidades - TEST 3: Simulação com lance_livre_perc = 0"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+        - agent: "testing"
+        - comment: "🎯 TESTE SOLICITADO NO REVIEW: Testar endpoint /api/simular com lance_livre_perc=0. Esperado: métricas de probabilidade usem contemplados_por_mes=1, logs devem mostrar 'usando contemplados_por_mes=1 (só sorteio)'"
+        - working: true
+        - agent: "testing"
+        - comment: "✅ CORREÇÃO FUNCIONANDO PERFEITAMENTE: 1) ✅ Endpoint /api/simular responde HTTP 200 OK, 2) ✅ Cálculos corretos: prob_contemplacao_no_mes=0.004464 (1/224), participantes_restantes_mes=224, 3) ✅ Lógica correta: num_participantes=240 (120*2), contemplados_por_mes=1 (só sorteio), participantes_restantes=240-(17-1)*1=224, 4) ✅ Valores válidos (não NaN), 5) ✅ Log de correção encontrado: '🎯 CORREÇÃO: lance_livre_perc=0, usando contemplados_por_mes=1 (só sorteio)'. CONCLUSÃO: A correção está implementada e funcionando corretamente na simulação, usando 1 contemplado por mês quando cliente não dará lance."
+
   - task: "Investigar se o backend está retornando os dados corretos de detalhamento para o fluxo de caixa"
     implemented: true
     working: false
