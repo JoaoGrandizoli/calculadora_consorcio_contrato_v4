@@ -514,7 +514,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Testar funcionalidade dos botões toggle no formulário de registro"
+    - "Testar correção de cálculo de probabilidades para dois cenários"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
