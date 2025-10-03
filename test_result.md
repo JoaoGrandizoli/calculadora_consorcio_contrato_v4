@@ -428,6 +428,21 @@ frontend:
         - agent: "main"
         - comment: "Implementado handleTypeformSubmit para processar submissão do formulário e gerar access_token. Adicionado useEffect para verificar token existente no localStorage. Configurado persistência de dados no localStorage."
         
+  - task: "Testar funcionalidade dos botões toggle no formulário de registro"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/components/CadastroForm.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+        - agent: "testing"
+        - comment: "🔥 TESTE COMPLETO DOS BOTÕES TOGGLE SOLICITADO: Testar navegação para página de registro, verificar carregamento correto, testar comportamento dos botões toggle (Cadastro/Login), verificar visibilidade dos campos do formulário, checar feedback visual, confirmar exibição do logo, validar mudanças de título e subtítulo."
+        - working: true
+        - agent: "testing"
+        - comment: "✅ FUNCIONALIDADE DOS BOTÕES TOGGLE FUNCIONANDO PERFEITAMENTE: 10/10 TESTES APROVADOS. RESULTADOS DETALHADOS: 1) ✅ Navegação: Página de registro carrega corretamente, formulário visível e funcional, 2) ✅ Logo: Exibido corretamente (64x64px) com src='/logo.png', bem posicionado no topo, 3) ✅ Estado Inicial: Inicia corretamente no modo 'Cadastro' com título 'Cadastre-se' e subtítulo apropriado, 4) ✅ Botões Toggle: Ambos botões 'Cadastro' e 'Login' presentes e funcionais, botão ativo tem fundo branco (bg-white), botão inativo tem texto cinza (text-gray-600), 5) ✅ Campos no Modo Cadastro: Todos os 6 campos esperados visíveis (Nome, Sobrenome, Telefone, Profissão, Email, Senha), 6) ✅ Mudança para Login: Título muda para 'Faça seu Login', subtítulo atualiza para 'Acesse sua conta para usar o simulador', botão Login fica ativo (fundo branco), botão Cadastro fica inativo (cinza), 7) ✅ Campos no Modo Login: Apenas Email e Senha visíveis, campos Nome/Sobrenome/Telefone/Profissão corretamente ocultos, 8) ✅ Volta para Cadastro: Título volta para 'Cadastre-se', todos os 6 campos visíveis novamente, estados dos botões corretamente revertidos, 9) ✅ Feedback Visual: Mudanças de aparência dos botões funcionam perfeitamente, transições suaves entre modos, 10) ✅ Teste de Alternância Rápida: Múltiplas alternâncias rápidas funcionam sem problemas, sem falhas de UI ou problemas de estado. CONCLUSÃO: Funcionalidade dos botões toggle está funcionando PERFEITAMENTE. Todos os requisitos da solicitação de review foram testados e validados. O fix está funcionando corretamente e usuários podem alternar adequadamente entre modos de registro e login com feedback visual apropriado."
+        
   - task: "Testar fluxo completo Typeform → Simulador"
     implemented: false
     working: "NA"
