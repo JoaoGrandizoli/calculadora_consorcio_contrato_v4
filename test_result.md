@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: URGENTE: O simulador de consórcio não está fazendo cálculos! O frontend mostra "N/A" para CET e Valor Total. Preciso que você teste o endpoint /api/simular com dados básicos e verifique se a resposta contém cet_anual e valor_total_pago com valores numéricos (não null).
+user_problem_statement: URGENT: User login system is failing. User reports they registered today with a simple password but cannot login with correct credentials. Need comprehensive diagnosis of authentication system.
 
 backend:
   - task: "Testar correção de cálculo de probabilidades - TEST 1: lance_livre_perc = 0"
