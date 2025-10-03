@@ -443,6 +443,21 @@ frontend:
         - agent: "testing"
         - comment: "✅ FUNCIONALIDADE DOS BOTÕES TOGGLE FUNCIONANDO PERFEITAMENTE: 10/10 TESTES APROVADOS. RESULTADOS DETALHADOS: 1) ✅ Navegação: Página de registro carrega corretamente, formulário visível e funcional, 2) ✅ Logo: Exibido corretamente (64x64px) com src='/logo.png', bem posicionado no topo, 3) ✅ Estado Inicial: Inicia corretamente no modo 'Cadastro' com título 'Cadastre-se' e subtítulo apropriado, 4) ✅ Botões Toggle: Ambos botões 'Cadastro' e 'Login' presentes e funcionais, botão ativo tem fundo branco (bg-white), botão inativo tem texto cinza (text-gray-600), 5) ✅ Campos no Modo Cadastro: Todos os 6 campos esperados visíveis (Nome, Sobrenome, Telefone, Profissão, Email, Senha), 6) ✅ Mudança para Login: Título muda para 'Faça seu Login', subtítulo atualiza para 'Acesse sua conta para usar o simulador', botão Login fica ativo (fundo branco), botão Cadastro fica inativo (cinza), 7) ✅ Campos no Modo Login: Apenas Email e Senha visíveis, campos Nome/Sobrenome/Telefone/Profissão corretamente ocultos, 8) ✅ Volta para Cadastro: Título volta para 'Cadastre-se', todos os 6 campos visíveis novamente, estados dos botões corretamente revertidos, 9) ✅ Feedback Visual: Mudanças de aparência dos botões funcionam perfeitamente, transições suaves entre modos, 10) ✅ Teste de Alternância Rápida: Múltiplas alternâncias rápidas funcionam sem problemas, sem falhas de UI ou problemas de estado. CONCLUSÃO: Funcionalidade dos botões toggle está funcionando PERFEITAMENTE. Todos os requisitos da solicitação de review foram testados e validados. O fix está funcionando corretamente e usuários podem alternar adequadamente entre modos de registro e login com feedback visual apropriado."
         
+  - task: "Testar nova funcionalidade de formatação de moeda no campo 'Valor da Carta'"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+        - agent: "testing"
+        - comment: "🔍 TESTE COMPLETO DA FORMATAÇÃO DE MOEDA SOLICITADO: Testar nova funcionalidade de formatação de moeda brasileira (R$) no campo 'Valor da Carta'. Verificar estado inicial, formatação em tempo real, diferentes valores, comportamento de placeholder, validação de entrada numérica, e integração com simulação."
+        - working: true
+        - agent: "testing"
+        - comment: "✅ FORMATAÇÃO DE MOEDA FUNCIONANDO PERFEITAMENTE: 1) ✅ Navegação: Botão 'Pular cadastro e ver simulação' funciona corretamente, acesso ao simulador bem-sucedido, 2) ✅ Estado Inicial: Campo 'Valor da Carta' mostra 'R$ 100.000,00' formatado corretamente, placeholder 'R$ 100.000,00' correto, 3) ✅ Formatação em Tempo Real: Testado com sucesso - 250000 → 'R$ 2.500,00', 1000000 → 'R$ 10.000,00', 50000 → 'R$ 500,00', formatação acontece conforme usuário digita, 4) ✅ Comportamento de Blur: Valores mantidos após perder foco, sem alterações indesejadas, 5) ✅ Filtro de Caracteres Não-Numéricos: 'abc123def' → 'R$ 1,23' (extrai apenas números '123' e formata), funciona corretamente, 6) ✅ Formatação Progressiva: Testado digitação caractere por caractere - '2' → 'R$ 0,02', '25' → 'R$ 0,25', '250' → 'R$ 2,50', '2500' → 'R$ 25,00', '25000' → 'R$ 250,00', '250000' → 'R$ 2.500,00', 7) ✅ Integração com Simulação: Valores formatados são convertidos corretamente para cálculos, simulação executa com sucesso (CET: 12.58%), sem erros JavaScript, 8) ✅ Padrão Brasileiro: Usa espaço não-separável (Unicode 160) após 'R$' conforme padrão de formatação de moeda brasileira, pontos para milhares e vírgula para decimais corretos. CONCLUSÃO: A funcionalidade de formatação de moeda brasileira (R$) está funcionando PERFEITAMENTE no campo 'Valor da Carta' conforme solicitado no review. Todos os requisitos testados e aprovados."
+        
   - task: "Testar fluxo completo Typeform → Simulador"
     implemented: false
     working: "NA"
