@@ -860,7 +860,6 @@ function App() {
               {/* Todo o conteúdo do simulador atual */}
               <div className="flex items-center gap-3 justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <Calculator className="h-6 w-6 text-accent-warm" />
                   <div>
                     <h2 className="text-xl font-bold">Simulador de Consórcio</h2>
                     <p className="text-neutral-light opacity-90">Análise completa de lance livre e fluxos de caixa</p>
