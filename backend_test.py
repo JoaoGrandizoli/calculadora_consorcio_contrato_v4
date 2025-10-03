@@ -5907,6 +5907,13 @@ Administradora                   Consorciado"""
         print("\n🔥 CRITICAL LEAD REGISTRATION TEST")
         self.test_criar_lead_critical_issue()
         
+        # 🎯 PROBABILITY CORRECTION TESTS (as requested in review)
+        print("\n🎯 PROBABILITY CORRECTION TESTS - REVIEW REQUEST")
+        print("Testing probability calculation correction for two scenarios")
+        self.test_probability_correction_lance_zero()
+        self.test_probability_correction_lance_positive()
+        self.test_simulation_with_lance_zero()
+        
         # Lance livre functionality tests
         print("\n🎯 LANCE LIVRE FUNCTIONALITY TESTS")
         self.test_lance_livre_zero()
