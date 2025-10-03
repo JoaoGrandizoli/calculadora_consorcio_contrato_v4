@@ -503,7 +503,9 @@ function App() {
   const formatarMoeda = (valor) => {
     return valor.toLocaleString('pt-BR', {
       style: 'currency',
-      currency: 'BRL'
+      currency: 'BRL',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
     });
   };
 
