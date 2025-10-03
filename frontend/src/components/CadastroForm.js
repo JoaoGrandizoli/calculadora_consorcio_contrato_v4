@@ -15,7 +15,7 @@ const CadastroForm = ({ onAccessGranted }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const API = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001/api';
+  const API = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
 
   const formatTelefone = (value) => {
     const numbers = value.replace(/\D/g, '');
