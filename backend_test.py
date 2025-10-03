@@ -5850,6 +5850,10 @@ Administradora                   Consorciado"""
         print(f"🌐 Testing API at: {self.api_url}")
         print("=" * 80)
         
+        # 🔥 PRIORITY: Test the specific endpoint requested in review
+        print("\n🔥 PRIORITY TEST - CRIAR-LEAD ENDPOINT DEBUG")
+        self.test_criar_lead_endpoint_debug()
+        
         # 🔥 CRITICAL INVESTIGATION FIRST - DETALHAMENTO STRUCTURE ISSUE
         print("\n🔥 CRITICAL INVESTIGATION PHASE - DETALHAMENTO STRUCTURE FOR CASH FLOW")
         self.test_detalhamento_structure_critical()
