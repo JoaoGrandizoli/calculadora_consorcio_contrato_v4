@@ -469,7 +469,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Testar completamente a funcionalidade aprimorada de análise de contratos no frontend"
+    - "Testar fluxo completo de registro de usuário do frontend ao backend"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
