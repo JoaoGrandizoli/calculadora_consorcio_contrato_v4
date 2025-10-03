@@ -732,11 +732,11 @@ function App() {
         <div className="container mx-auto px-6 py-6">
           {/* Header Principal */}
           <div className="flex items-center gap-3 justify-between mb-6">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-4">
               <img 
                 src="/logo.png" 
                 alt="Logo" 
-                className="h-8 w-8 object-contain" 
+                className="h-12 w-12 object-contain" 
               />
               <Calculator className="h-8 w-8 text-accent-warm" />
               <div>
