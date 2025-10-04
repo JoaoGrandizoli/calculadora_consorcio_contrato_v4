@@ -7211,6 +7211,11 @@ Administradora                   Consorciado"""
         print("\n🔥 PRIORITY TEST - CRIAR-LEAD ENDPOINT DEBUG")
         self.test_criar_lead_endpoint_debug()
         
+        # 🎯 CRITICAL TEST: Month 120 Probability Correction (from review request)
+        print("\n🎯 CRITICAL TEST - MONTH 120 PROBABILITY CORRECTION")
+        print("=" * 80)
+        self.test_month_120_probability_correction()
+        
         # 🔥 CRITICAL INVESTIGATION FIRST - DETALHAMENTO STRUCTURE ISSUE
         print("\n🔥 CRITICAL INVESTIGATION PHASE - DETALHAMENTO STRUCTURE FOR CASH FLOW")
         self.test_detalhamento_structure_critical()
