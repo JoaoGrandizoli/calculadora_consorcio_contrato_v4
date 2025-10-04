@@ -2381,12 +2381,31 @@ def calcular_probabilidade_mes_especifico(mes_contemplacao: int, lance_livre_per
                 "participantes_restantes": 0
             }
         
-        # NOVA LÓGICA: sempre usa contemplados_por_mes (normalmente 2)
-        prob_no_mes = min(contemplados_por_mes / participantes_restantes, 1.0)
+        # 🎯 CORREÇÃO: Usar fórmulas matemáticas corretas baseadas na documentação
+        # Determinar cenário baseado em contemplados_por_mes ajustado anteriormente
+        if contemplados_por_mes == 1:
+            # SEM LANCE: h_t = 1/(N - 2*t + 1)
+            S_t = num_participantes - 2*mes_contemplacao + 1
+            prob_no_mes = 1.0 / S_t if S_t > 0 else 1.0
+        else:
+            # COM LANCE: h_t = 2/(N - 2*(t-1))  
+            N_t = num_participantes - 2*(mes_contemplacao - 1)
+            prob_no_mes = min(2.0 / N_t, 1.0) if N_t > 0 else 1.0
         
-        # Probabilidade acumulada até o mês (F_t)
-        total_contemplados_ate_mes = min(mes_contemplacao * contemplados_por_mes, num_participantes)
-        prob_ate_mes = min(total_contemplados_ate_mes / num_participantes, 1.0)
+        # Probabilidade acumulada: Usar o método da sobrevivência correto
+        # Simular até o mês desejado usando as fórmulas corretas
+        surv = 1.0
+        for t in range(1, mes_contemplacao + 1):
+            if contemplados_por_mes == 1:
+                S_t_iter = num_participantes - 2*t + 1
+                h_t = 1.0 / S_t_iter if S_t_iter > 0 else 1.0
+            else:
+                N_t_iter = num_participantes - 2*(t - 1)
+                h_t = min(2.0 / N_t_iter, 1.0) if N_t_iter > 0 else 1.0
+            
+            surv *= (1 - h_t)
+        
+        prob_ate_mes = 1.0 - surv
         
         return {
             "prob_no_mes": float(prob_no_mes),
