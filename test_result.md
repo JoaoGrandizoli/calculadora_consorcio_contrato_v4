@@ -410,6 +410,66 @@ backend:
         - agent: "testing"
         - comment: "✅ ENDPOINTS ADMIN FUNCIONANDO: 1) /api/admin/leads retorna lista de leads com total correto, 2) /api/admin/simulations retorna lista de simulações com total correto, 3) Sem problemas de serialização ObjectId (campo _id excluído corretamente), 4) Estrutura de resposta válida com arrays e contadores"
 
+  - task: "Testar fórmulas matemáticas corrigidas de probabilidades - TEST 1: SEM LANCE"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+        - agent: "testing"
+        - comment: "🎯 TESTE SOLICITADO NO REVIEW: Validar fórmulas matemáticas com num_participantes=240, lance_livre_perc=0. Esperado: Duração 120 meses (240/2), SEM LANCE formula h_t = 1/(240 - 2*t + 1), Mês 1: h_1 = 1/239, Mês 120: h_120 = 1.0, Probabilidade final ~100%"
+        - working: true
+        - agent: "testing"
+        - comment: "✅ FÓRMULAS MATEMÁTICAS VALIDADAS COM SUCESSO: 1) ✅ Duração correta: 120 meses (240/2), 2) ✅ Mês 1 hazard: 0.004184 (1/239 = 0.004184), 3) ✅ Mês 120 hazard: 1.000000 (100%), 4) ✅ Probabilidade final: 100.00%, 5) ✅ com_lance é null quando lance_livre_perc=0. CONCLUSÃO: Fórmula SEM LANCE h_t = 1/(240 - 2*t + 1) funcionando perfeitamente conforme especificação matemática."
+
+  - task: "Testar fórmulas matemáticas corrigidas de probabilidades - TEST 2: COM LANCE"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+        - agent: "testing"
+        - comment: "🎯 TESTE SOLICITADO NO REVIEW: Testar cenário COM LANCE com num_participantes=240, lance_livre_perc=0.10. Esperado: Retornar AMBAS as curvas (sem_lance e com_lance), COM LANCE formula h_t = 2/(240 - 2*(t-1)), Mês 1: h_1 = 2/240, Mês 120: h_120 = 2/2 = 1.0, Ambas probabilidades ~100%"
+        - working: true
+        - agent: "testing"
+        - comment: "✅ CENÁRIO COM LANCE VALIDADO COM SUCESSO: 1) ✅ Ambas as curvas presentes (sem_lance e com_lance), 2) ✅ COM LANCE Mês 1 hazard: 0.008333 (2/240 = 0.008333), 3) ✅ COM LANCE Mês 120 hazard: 1.000000 (100%), 4) ✅ Probabilidades finais: SEM=100.0%, COM=100.0%, 5) ✅ Curvas têm comprimentos consistentes. CONCLUSÃO: Fórmula COM LANCE h_t = 2/(240 - 2*(t-1)) funcionando perfeitamente, ambas as curvas atingem 100% conforme esperado."
+
+  - task: "Testar fórmulas matemáticas corrigidas de probabilidades - TEST 3: Debug Logs"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+        - agent: "testing"
+        - comment: "🎯 TESTE SOLICITADO NO REVIEW: Verificar logs de debug mostrando 'Mês 1: S_t=239, N_t=240, h_sem=0.004184, h_com=0.008333', 'P_acum_sem=0.0042, P_acum_com=0.0083', verificar precisão matemática dos primeiros 3 meses"
+        - working: true
+        - agent: "testing"
+        - comment: "✅ DEBUG LOGS VERIFICADOS COM SUCESSO: 1) ✅ Encontrados 7/7 padrões esperados nos logs (Mês 1, S_t=239, N_t=240, h_sem=0.004184, h_com=0.008333, P_acum_sem, P_acum_com), 2) ✅ Precisão matemática: 100% correta para os primeiros 3 meses, 3) ✅ Logs mostram cálculos exatos: Mês 1: S_t=239, N_t=240, h_sem=0.004184, h_com=0.008333; Mês 2: S_t=237, N_t=238, h_sem=0.004219, h_com=0.008403; Mês 3: S_t=235, N_t=236, h_sem=0.004255, h_com=0.008475. CONCLUSÃO: Debug logs confirmam que as fórmulas matemáticas estão sendo aplicadas corretamente com precisão total."
+
+  - task: "Testar fórmulas matemáticas corrigidas de probabilidades - TEST 4: Edge Cases"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+        - agent: "testing"
+        - comment: "🎯 TESTE SOLICITADO NO REVIEW: Testar casos extremos com consórcio pequeno (num_participantes=20), verificar probabilidade atinge 100% no mês final, testar consistência matemática em diferentes tamanhos"
+        - working: true
+        - agent: "testing"
+        - comment: "✅ CASOS EXTREMOS APROVADOS COM SUCESSO: 1) ✅ Consórcio pequeno (20 participantes): 10 meses, SEM=100.0%, COM=100.0%, 2) ✅ Consórcio médio (100 participantes): 50 meses, SEM=100.0%, COM=100.0%, 3) ✅ Consórcio grande (500 participantes): 250 meses, SEM=100.0%, COM=100.0%, 4) ✅ Consistência matemática: Mês 1 hazard correto para todos os tamanhos (20: 0.052632, 100: 0.010101, 500: 0.002004), 5) ✅ Todas as probabilidades finais atingem 100%. CONCLUSÃO: Fórmulas matemáticas funcionam corretamente para qualquer tamanho de consórcio, mantendo consistência e precisão."
+
   - task: "Investigar problema crítico: Leads do Typeform não aparecem no admin"
     implemented: true
     working: true
