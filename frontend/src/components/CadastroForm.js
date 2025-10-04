@@ -14,6 +14,7 @@ const CadastroForm = ({ onAccessGranted }) => {
   const [isLogin, setIsLogin] = useState(false); // Alternar entre cadastro e login
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
 
   const API = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
 
