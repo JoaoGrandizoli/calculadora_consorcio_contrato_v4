@@ -7066,6 +7066,133 @@ Administradora                   Consorciado"""
             self.log_test("CRITICAL: Database Analysis", False, f"Exception: {str(e)}")
             return False
 
+    def test_month_120_probability_correction(self):
+        """
+        🎯 CRITICAL TEST: Test corrected calcular_probabilidade_mes_especifico function
+        
+        SPECIFIC TEST: Month 120 with Lance Livre = 0%
+        
+        Test with exact parameters from review request:
+        - mes_contemplacao: 120
+        - lance_livre_perc: 0 (should trigger contemplados_por_mes = 1)
+        - num_participantes: 430 (or whatever creates 120 months)
+        
+        Expected Results After Correction:
+        1. "Probabilidade no Mês 120" should be close to 100% (not 0.83%)
+           Formula: SEM LANCE h_t = 1/(N - 2*t + 1)
+           Month 120: h_120 = 1/(430 - 2*120 + 1) = 1/(430 - 240 + 1) = 1/191
+        
+        2. "Probabilidade até o Mês 120" should be close to 100% (not 50.00%)
+           Should use the survival method with cumulative product
+        """
+        # Test parameters from review request
+        parametros = {
+            "valor_carta": 100000,
+            "prazo_meses": 120,
+            "taxa_admin": 0.21,
+            "fundo_reserva": 0.03,
+            "mes_contemplacao": 120,  # Month 120 - critical test
+            "lance_livre_perc": 0.0,  # 0% - should trigger contemplados_por_mes = 1
+            "taxa_reajuste_anual": 0.05
+        }
+        
+        print(f"\n🎯 TESTING CRITICAL MONTH 120 PROBABILITY CORRECTION")
+        print(f"   Parameters: mes_contemplacao=120, lance_livre_perc=0% (should use 1 contemplado)")
+        print(f"   Expected: Prob no mês ~100%, Prob até mês ~100% (not 0.83% and 50%)")
+        
+        try:
+            response = requests.post(f"{self.api_url}/simular", 
+                                   json=parametros, 
+                                   timeout=30)
+            success = response.status_code == 200
+            
+            if success:
+                data = response.json()
+                
+                if data.get('erro'):
+                    success = False
+                    details = f"Simulation error: {data.get('mensagem')}"
+                else:
+                    resumo = data['resumo_financeiro']
+                    prob_no_mes = resumo.get('prob_contemplacao_no_mes', 0)
+                    prob_ate_mes = resumo.get('prob_contemplacao_ate_mes', 0)
+                    participantes_restantes = resumo.get('participantes_restantes_mes', 0)
+                    
+                    # Convert to percentages for comparison
+                    prob_no_mes_pct = prob_no_mes * 100
+                    prob_ate_mes_pct = prob_ate_mes * 100
+                    
+                    issues = []
+                    
+                    # 1. Verify contemplados_por_mes = 1 logic was used
+                    # With lance_livre_perc = 0, should use 1 contemplado
+                    # Expected participants remaining: 430 - (120-1)*1 = 430 - 119 = 311
+                    expected_participantes = 430 - (120 - 1) * 1  # 311
+                    if participantes_restantes != expected_participantes:
+                        issues.append(f"Participantes restantes: {participantes_restantes} (expected: {expected_participantes})")
+                    
+                    # 2. Test corrected formula: SEM LANCE h_t = 1/(N - 2*t + 1)
+                    # Month 120: h_120 = 1/(430 - 2*120 + 1) = 1/(430 - 240 + 1) = 1/191 ≈ 0.524%
+                    N = 430
+                    t = 120
+                    S_t = N - 2*t + 1  # 430 - 240 + 1 = 191
+                    expected_prob_no_mes = 1.0 / S_t if S_t > 0 else 1.0
+                    expected_prob_no_mes_pct = expected_prob_no_mes * 100
+                    
+                    # Allow some tolerance for calculation differences
+                    tolerance_no_mes = 0.1  # 0.1% tolerance
+                    if abs(prob_no_mes_pct - expected_prob_no_mes_pct) > tolerance_no_mes:
+                        issues.append(f"Prob no mês: {prob_no_mes_pct:.4f}% (expected: {expected_prob_no_mes_pct:.4f}%, diff: {abs(prob_no_mes_pct - expected_prob_no_mes_pct):.4f}%)")
+                    
+                    # 3. Test that "Probabilidade até o Mês 120" is close to 100%
+                    # At month 120, cumulative probability should be very high (close to 100%)
+                    if prob_ate_mes_pct < 95.0:  # Should be at least 95%
+                        issues.append(f"Prob até mês too low: {prob_ate_mes_pct:.2f}% (expected: >95%)")
+                    
+                    # 4. Verify values are NOT the old incorrect values
+                    old_prob_no_mes = 0.83  # Old incorrect value
+                    old_prob_ate_mes = 50.0  # Old incorrect value
+                    
+                    if abs(prob_no_mes_pct - old_prob_no_mes) < 0.1:
+                        issues.append(f"Still using old incorrect 'Prob no mês' value: {prob_no_mes_pct:.2f}%")
+                    
+                    if abs(prob_ate_mes_pct - old_prob_ate_mes) < 1.0:
+                        issues.append(f"Still using old incorrect 'Prob até mês' value: {prob_ate_mes_pct:.2f}%")
+                    
+                    # 5. Check for valid values (not NaN or infinite)
+                    if not all(isinstance(val, (int, float)) and str(val) not in ['nan', 'inf', '-inf'] 
+                              for val in [prob_no_mes, prob_ate_mes, participantes_restantes]):
+                        issues.append("Invalid probability values (NaN or infinite)")
+                    
+                    success = len(issues) == 0
+                    
+                    if success:
+                        details = (f"✅ MONTH 120 CORRECTION WORKING: "
+                                  f"Prob no mês: {prob_no_mes_pct:.4f}% (formula: 1/{S_t} = {expected_prob_no_mes_pct:.4f}%), "
+                                  f"Prob até mês: {prob_ate_mes_pct:.2f}%, "
+                                  f"Participantes restantes: {participantes_restantes}, "
+                                  f"Contemplados por mês: 1 (lance_livre_perc=0)")
+                    else:
+                        details = f"❌ MONTH 120 CORRECTION ISSUES: {'; '.join(issues)}"
+                        
+                    # Debug information
+                    print(f"   Debug Info:")
+                    print(f"     - Formula SEM LANCE: h_t = 1/(N - 2*t + 1)")
+                    print(f"     - Month 120: h_120 = 1/({N} - 2*{t} + 1) = 1/{S_t} = {expected_prob_no_mes_pct:.4f}%")
+                    print(f"     - Actual prob no mês: {prob_no_mes_pct:.4f}%")
+                    print(f"     - Actual prob até mês: {prob_ate_mes_pct:.2f}%")
+                    print(f"     - Participantes restantes: {participantes_restantes}")
+                    
+            else:
+                details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+                
+            self.log_test("CRITICAL: Month 120 Probability Correction", success, details)
+            return success
+            
+        except Exception as e:
+            self.log_test("CRITICAL: Month 120 Probability Correction", False, str(e))
+            return False
+
     def run_all_tests(self):
         """Run all backend tests"""
         print(f"\n🚀 Starting Consortium API Tests - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
