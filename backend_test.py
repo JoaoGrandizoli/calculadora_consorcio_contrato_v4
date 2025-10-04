@@ -6678,6 +6678,14 @@ Administradora                   Consorciado"""
         print("\n🔥 CRITICAL LEAD REGISTRATION TEST")
         self.test_criar_lead_critical_issue()
         
+        # 🎯 NEW: CORRECTED PROBABILITY CALCULATIONS TESTING (as requested in review)
+        print("\n🎯 CORRECTED PROBABILITY CALCULATIONS TESTING - MATHEMATICAL FORMULAS")
+        print("Testing corrected mathematical formulas with specific test cases from review")
+        self.test_corrected_probability_formulas_test1()
+        self.test_corrected_probability_formulas_test2()
+        self.test_corrected_probability_formulas_test3()
+        self.test_corrected_probability_formulas_test4()
+        
         # 🎯 PROBABILITY CORRECTION TESTS (as requested in review)
         print("\n🎯 PROBABILITY CORRECTION TESTS - REVIEW REQUEST")
         print("Testing probability calculation correction for two scenarios")
