@@ -7126,16 +7126,17 @@ Administradora                   Consorciado"""
                     
                     # 1. Verify contemplados_por_mes = 1 logic was used
                     # With lance_livre_perc = 0, should use 1 contemplado
-                    # Expected participants remaining: 430 - (120-1)*1 = 430 - 119 = 311
-                    expected_participantes = 430 - (120 - 1) * 1  # 311
+                    # num_participantes = prazo_meses * 2 = 120 * 2 = 240
+                    # Expected participants remaining: 240 - (120-1)*1 = 240 - 119 = 121
+                    N = 240  # prazo_meses * 2
+                    expected_participantes = N - (120 - 1) * 1  # 121
                     if participantes_restantes != expected_participantes:
                         issues.append(f"Participantes restantes: {participantes_restantes} (expected: {expected_participantes})")
                     
                     # 2. Test corrected formula: SEM LANCE h_t = 1/(N - 2*t + 1)
-                    # Month 120: h_120 = 1/(430 - 2*120 + 1) = 1/(430 - 240 + 1) = 1/191 ≈ 0.524%
-                    N = 430
+                    # Month 120: h_120 = 1/(240 - 2*120 + 1) = 1/(240 - 240 + 1) = 1/1 = 100%
                     t = 120
-                    S_t = N - 2*t + 1  # 430 - 240 + 1 = 191
+                    S_t = N - 2*t + 1  # 240 - 240 + 1 = 1
                     expected_prob_no_mes = 1.0 / S_t if S_t > 0 else 1.0
                     expected_prob_no_mes_pct = expected_prob_no_mes * 100
                     
