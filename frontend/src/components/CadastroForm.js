@@ -393,6 +393,61 @@ const CadastroForm = ({ onAccessGranted }) => {
           </p>
         </div>
       </div>
+
+      {/* Modal Esqueci Minha Senha */}
+      {showForgotPassword && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="text-center">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">
+                Esqueci Minha Senha
+              </h3>
+              
+              <div className="mb-6">
+                <p className="text-gray-600 mb-4">
+                  Para recuperar sua senha, envie um email para nossa equipe:
+                </p>
+                
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                  <p className="font-semibold text-blue-800">contato@caremfo.com</p>
+                </div>
+                
+                <div className="text-left text-sm text-gray-600 space-y-2">
+                  <p><strong>Assunto:</strong> Recuperar Senha</p>
+                  <p><strong>Informe:</strong></p>
+                  <ul className="list-disc list-inside ml-4 space-y-1">
+                    <li>Seu email cadastrado</li>
+                    <li>Nome completo</li>
+                    <li>Solicitação de reset de senha</li>
+                  </ul>
+                </div>
+                
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mt-4">
+                  <p className="text-yellow-800 text-sm">
+                    <strong>Tempo de resposta:</strong> até 24 horas úteis
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex gap-3">
+                <a
+                  href="mailto:contato@caremfo.com?subject=Recuperar Senha&body=Olá,%0A%0AGostaria de solicitar o reset da minha senha.%0A%0AEmail cadastrado: [SEU EMAIL AQUI]%0ANome: [SEU NOME AQUI]%0A%0AObrigado!"
+                  className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Enviar Email
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setShowForgotPassword(false)}
+                  className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors"
+                >
+                  Fechar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
