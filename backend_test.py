@@ -7183,6 +7183,7 @@ Administradora                   Consorciado"""
                     print(f"     - Actual prob no mês: {prob_no_mes_pct:.4f}%")
                     print(f"     - Actual prob até mês: {prob_ate_mes_pct:.2f}%")
                     print(f"     - Participantes restantes: {participantes_restantes}")
+                    print(f"     - num_participantes used: {N} (prazo_meses * 2 = 120 * 2)")
                     
             else:
                 details = f"Status: {response.status_code}, Response: {response.text[:200]}"
