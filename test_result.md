@@ -629,6 +629,21 @@ frontend:
         - agent: "testing"
         - comment: "✅ PROBLEMA CORRIGIDO COM SUCESSO - FORMATAÇÃO DECIMAL FUNCIONANDO PERFEITAMENTE: 1) 🔍 CAUSA RAIZ IDENTIFICADA: Os valores monetários não estavam usando a função formatarMoeda() que contém o Math.round() fix, mas sim toLocaleString() diretamente, 2) 🔧 FIX APLICADO: Substituído toLocaleString() por formatarMoeda() nas linhas 1037, 1050 e 1064 do App.js para Valor Total, Parcela Após Contemplação e Última Parcela, 3) ✅ TESTE APROVADO: Todos os valores monetários agora mostram exatamente 2 casas decimais (R$ 154.932,53, R$ 1.033,33, R$ 1.603,04), 4) ✅ CONSISTÊNCIA VERIFICADA: Testado com múltiplos cenários (Valor da Carta R$ 150.000, Mês 17) - formatação consistente (R$ 2.323,21, R$ 16,28, R$ 24,05), 5) ✅ MATH.ROUND() FUNCIONANDO: A correção Math.round(valor * 100) / 100 está funcionando corretamente na função formatarMoeda(), 6) ✅ PERCENTUAIS CORRETOS: CET Anual e probabilidades mantêm formatação correta (16.63%, 0.96%, 14.17%). CONCLUSÃO: Problema de formatação decimal completamente resolvido. Todos os valores monetários agora exibem exatamente 2 casas decimais conforme solicitado no review."
 
+  - task: "Testar funcionalidade 'Esqueci minha senha' no formulário de login"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/components/CadastroForm.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+        - agent: "testing"
+        - comment: "🔍 TESTE COMPLETO DA FUNCIONALIDADE 'ESQUECI MINHA SENHA' SOLICITADO: Testar navegação para formulário de registro, alternar para modo login, verificar aparição do link 'Esqueci minha senha' apenas no modo login, testar abertura do modal, verificar conteúdo do modal (título, instruções, email contato@caremfo.com, lista de informações necessárias, tempo de resposta 24h, botões 'Enviar Email' e 'Fechar'), testar funcionalidade dos botões (mailto link e fechamento), verificar que modal não fecha ao clicar fora, confirmar que link não aparece no modo cadastro."
+        - working: true
+        - agent: "testing"
+        - comment: "✅ FUNCIONALIDADE 'ESQUECI MINHA SENHA' FUNCIONANDO PERFEITAMENTE - TODOS OS TESTES APROVADOS: 1) ✅ NAVEGAÇÃO E ESTADO INICIAL: Formulário carrega corretamente no modo 'Cadastro' (botão ativo com bg-white), 2) ✅ LINK OCULTO NO MODO CADASTRO: 'Esqueci minha senha' não aparece no modo registro conforme esperado, 3) ✅ ALTERNÂNCIA PARA LOGIN: Botão 'Login' funciona corretamente, interface muda para modo login (título 'Faça seu Login', subtítulo 'Acesse sua conta para usar o simulador'), 4) ✅ LINK VISÍVEL NO MODO LOGIN: 'Esqueci minha senha' aparece corretamente apenas no modo login, 5) ✅ ABERTURA DO MODAL: Modal abre corretamente ao clicar no link, backdrop escuro visível, 6) ✅ CONTEÚDO DO MODAL COMPLETO: Título 'Esqueci Minha Senha' ✓, Email 'contato@caremfo.com' ✓, Lista de informações necessárias (email cadastrado, nome completo, solicitação de reset) ✓, Tempo de resposta 'até 24 horas úteis' ✓, Botões 'Enviar Email' e 'Fechar' ✓, 7) ✅ BOTÃO 'ENVIAR EMAIL': Funciona como link mailto correto (mailto:contato@caremfo.com?subject=Recuperar Senha...), contém email e assunto corretos, 8) ✅ BOTÃO 'FECHAR': Fecha o modal corretamente, modal removido do DOM, 9) ✅ COMPORTAMENTO CLICK FORA: Modal permanece aberto ao clicar fora (comportamento correto - requer fechamento explícito), 10) ✅ VERIFICAÇÃO FINAL: Link permanece oculto ao voltar para modo cadastro. CONCLUSÃO: Funcionalidade implementada com excelência, todos os requisitos do review atendidos perfeitamente."
+
 metadata:
   created_by: "main_agent"
   version: "1.0"
