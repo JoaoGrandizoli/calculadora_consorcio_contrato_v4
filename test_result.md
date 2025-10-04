@@ -551,6 +551,21 @@ backend:
         - agent: "testing"
         - comment: "✅ TESTE ESPECÍFICO DO REVIEW CONCLUÍDO COM SUCESSO TOTAL: 1) ✅ URL Fix Confirmado: Endpoint https://consortech.preview.emergentagent.com/api/criar-lead respondendo corretamente, 2) ✅ Estrutura de Request Exata: Testado com dados especificados (nome: João, sobrenome: Silva, email: test-debug-{timestamp}@example.com, telefone: (11) 99999-9999, profissao: Teste, senha: 123456), 3) ✅ Debug Messages Encontradas: Backend logs mostram '🔍 DEBUG - Recebendo requisição /criar-lead' conforme solicitado, 4) ✅ Response Válida: HTTP 200 OK com estrutura correta {success: true, lead_id: '78f9e9d8-183a-4a3c-b675-bf8d3ef8298d', access_token: '24d84804-3aae-414b-8656-27cf8b42208b', message: 'Conta criada com sucesso!'}, 5) ✅ Registro Bem-sucedido: Lead criado com email único, token gerado, dados salvos no MongoDB e Notion. CONCLUSÃO: O fix da URL resolveu completamente o problema de comunicação entre frontend e backend. O endpoint /api/criar-lead está funcionando perfeitamente conforme especificado no review."
 
+  - task: "Testar correção crítica da função calcular_probabilidade_mes_especifico para Mês 120"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+        - agent: "testing"
+        - comment: "🎯 TESTE CRÍTICO SOLICITADO NO REVIEW: Testar função calcular_probabilidade_mes_especifico corrigida para Mês 120 com Lance Livre = 0%. Parâmetros específicos: mes_contemplacao=120, lance_livre_perc=0 (deve usar contemplados_por_mes=1), num_participantes=240 (prazo_meses*2). Resultados esperados: Probabilidade no Mês 120 próxima de 100% (não 0.83%), Probabilidade até o Mês 120 próxima de 100% (não 50%), usando fórmula SEM LANCE h_t = 1/(N - 2*t + 1)."
+        - working: true
+        - agent: "testing"
+        - comment: "✅ CORREÇÃO DA FUNÇÃO FUNCIONANDO PERFEITAMENTE: 1) ✅ Fórmula Matemática Correta: SEM LANCE h_t = 1/(N - 2*t + 1), Mês 120: h_120 = 1/(240 - 2*120 + 1) = 1/1 = 100%, 2) ✅ Parâmetros Corretos: num_participantes=240 (prazo_meses*2=120*2), contemplados_por_mes=1 (lance_livre_perc=0), participantes_restantes=121, 3) ✅ Resultados Corretos: Prob no mês: 100.0000% (fórmula: 1/1), Prob até mês: 100.00%, valores significativamente diferentes dos antigos incorretos (0.83% e 50%), 4) ✅ Validação Adicional Mês 60: h_60 = 1/121 = 0.8264%, participantes_restantes=181, fórmula matematicamente correta, 5) ✅ Logs de Correção: '🎯 CORREÇÃO: lance_livre_perc=0, usando contemplados_por_mes=1 (só sorteio)' confirmado. CONCLUSÃO: A correção da função calcular_probabilidade_mes_especifico está funcionando corretamente, usando as fórmulas matemáticas corretas e retornando valores próximos de 100% para o Mês 120 conforme esperado no review."
+
 frontend:
   - task: "Testar fluxo completo de registro de usuário do frontend ao backend"
     implemented: true
