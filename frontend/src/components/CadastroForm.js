@@ -331,6 +331,19 @@ const CadastroForm = ({ onAccessGranted }) => {
             </div>
           )}
 
+          {/* Link Esqueci Minha Senha - Apenas no modo Login */}
+          {isLogin && (
+            <div className="text-center mb-4">
+              <button
+                type="button"
+                onClick={() => setShowForgotPassword(true)}
+                className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+              >
+                Esqueci minha senha
+              </button>
+            </div>
+          )}
+
           {/* Submit button */}
           <button
             type="submit"
