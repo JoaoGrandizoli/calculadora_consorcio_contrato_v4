@@ -5933,12 +5933,13 @@ Administradora                   Consorciado"""
             # Now check the logs for debug messages
             try:
                 import subprocess
-                log_result = subprocess.run(['tail', '-n', '100', '/var/log/supervisor/backend.out.log'], 
+                # Try error log first as that's where the debug messages are
+                log_result = subprocess.run(['tail', '-n', '100', '/var/log/supervisor/backend.err.log'], 
                                           capture_output=True, text=True, timeout=10)
                 
                 if log_result.returncode != 0:
-                    # Try error log if output log fails
-                    log_result = subprocess.run(['tail', '-n', '100', '/var/log/supervisor/backend.err.log'], 
+                    # Try output log if error log fails
+                    log_result = subprocess.run(['tail', '-n', '100', '/var/log/supervisor/backend.out.log'], 
                                               capture_output=True, text=True, timeout=10)
                 
                 if log_result.returncode == 0:
