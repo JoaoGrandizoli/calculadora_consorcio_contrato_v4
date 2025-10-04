@@ -5691,6 +5691,464 @@ Administradora                   Consorciado"""
             self.log_test("CRITICAL: Lead Registration Test", False, f"Exception: {str(e)}")
             return False
 
+    def test_corrected_probability_formulas_test1(self):
+        """
+        🎯 TEST 1: Validate Mathematical Formulas - SEM LANCE scenario
+        
+        Test POST to `/api/calcular-probabilidades` with:
+        - num_participantes: 240
+        - lance_livre_perc: 0
+        
+        Expected behavior:
+        - Duration should be 120 months (240/2)
+        - SEM LANCE formula: h_t = 1/(240 - 2*t + 1)
+        - Month 1: h_1 = 1/(240-2+1) = 1/239
+        - Month 120: h_120 = 1/(240-240+1) = 1/1 = 1.0
+        - Final probability should approach 100%
+        """
+        parametros = {
+            "num_participantes": 240,
+            "lance_livre_perc": 0
+        }
+        
+        print(f"\n🎯 TEST 1: Mathematical Formulas Validation (SEM LANCE)")
+        print(f"   Parameters: {parametros}")
+        
+        try:
+            response = requests.post(f"{self.api_url}/calcular-probabilidades", 
+                                   json=parametros, 
+                                   timeout=30)
+            success = response.status_code == 200
+            
+            if success:
+                data = response.json()
+                
+                if data.get('erro'):
+                    success = False
+                    details = f"API error: {data.get('mensagem')}"
+                else:
+                    issues = []
+                    
+                    # 1. Check duration calculation
+                    sem_lance = data.get('sem_lance')
+                    if not sem_lance:
+                        issues.append("Missing 'sem_lance' curve")
+                    else:
+                        meses = sem_lance.get('meses', [])
+                        expected_duration = 120  # 240/2
+                        actual_duration = len(meses)
+                        
+                        if actual_duration != expected_duration:
+                            issues.append(f"Duration mismatch: expected {expected_duration}, got {actual_duration}")
+                        
+                        # 2. Check mathematical formulas
+                        hazard = sem_lance.get('hazard', [])
+                        if len(hazard) >= 1:
+                            # Month 1: h_1 = 1/(240-2+1) = 1/239 ≈ 0.004184
+                            h1_expected = 1.0 / 239
+                            h1_actual = hazard[0] / 100  # Convert from percentage
+                            
+                            if abs(h1_actual - h1_expected) > 0.0001:
+                                issues.append(f"Month 1 hazard: expected {h1_expected:.6f}, got {h1_actual:.6f}")
+                        
+                        if len(hazard) >= 120:
+                            # Month 120: h_120 = 1/(240-240+1) = 1/1 = 1.0
+                            h120_expected = 1.0
+                            h120_actual = hazard[119] / 100  # Convert from percentage
+                            
+                            if abs(h120_actual - h120_expected) > 0.01:
+                                issues.append(f"Month 120 hazard: expected {h120_expected:.6f}, got {h120_actual:.6f}")
+                        
+                        # 3. Check final probability approaches 100%
+                        prob_acum = sem_lance.get('probabilidade_acumulada', [])
+                        if prob_acum:
+                            final_prob = prob_acum[-1]
+                            if final_prob < 99.0:  # Should be close to 100%
+                                issues.append(f"Final probability too low: {final_prob:.2f}% (expected ~100%)")
+                    
+                    # 4. Check that com_lance is null when lance_livre_perc=0
+                    com_lance = data.get('com_lance')
+                    if com_lance is not None:
+                        issues.append("'com_lance' should be null when lance_livre_perc=0")
+                    
+                    success = len(issues) == 0
+                    
+                    if success:
+                        details = (f"✅ Mathematical formulas validated. "
+                                 f"Duration: {actual_duration} months, "
+                                 f"Month 1 hazard: {h1_actual:.6f}, "
+                                 f"Month 120 hazard: {h120_actual:.6f}, "
+                                 f"Final prob: {final_prob:.2f}%")
+                    else:
+                        details = f"❌ Formula validation issues: {'; '.join(issues)}"
+            else:
+                details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+                
+            self.log_test("TEST 1: Mathematical Formulas (SEM LANCE)", success, details)
+            return success
+            
+        except Exception as e:
+            self.log_test("TEST 1: Mathematical Formulas (SEM LANCE)", False, str(e))
+            return False
+
+    def test_corrected_probability_formulas_test2(self):
+        """
+        🎯 TEST 2: COM LANCE Scenario
+        
+        Test with:
+        - num_participantes: 240
+        - lance_livre_perc: 0.10
+        
+        Expected behavior:
+        - Should return BOTH curves (sem_lance and com_lance)
+        - COM LANCE formula: h_t = 2/(240 - 2*(t-1))
+        - Month 1: h_1 = 2/240 = 1/120
+        - Month 120: h_120 = 2/2 = 1.0
+        - Both probabilities should reach ~100%
+        """
+        parametros = {
+            "num_participantes": 240,
+            "lance_livre_perc": 0.10
+        }
+        
+        print(f"\n🎯 TEST 2: COM LANCE Scenario")
+        print(f"   Parameters: {parametros}")
+        
+        try:
+            response = requests.post(f"{self.api_url}/calcular-probabilidades", 
+                                   json=parametros, 
+                                   timeout=30)
+            success = response.status_code == 200
+            
+            if success:
+                data = response.json()
+                
+                if data.get('erro'):
+                    success = False
+                    details = f"API error: {data.get('mensagem')}"
+                else:
+                    issues = []
+                    
+                    # 1. Check that BOTH curves are present
+                    sem_lance = data.get('sem_lance')
+                    com_lance = data.get('com_lance')
+                    
+                    if not sem_lance:
+                        issues.append("Missing 'sem_lance' curve")
+                    if not com_lance:
+                        issues.append("Missing 'com_lance' curve")
+                    
+                    if sem_lance and com_lance:
+                        # 2. Check COM LANCE mathematical formulas
+                        hazard_com = com_lance.get('hazard', [])
+                        if len(hazard_com) >= 1:
+                            # Month 1: h_1 = 2/240 = 1/120 ≈ 0.008333
+                            h1_expected = 2.0 / 240
+                            h1_actual = hazard_com[0] / 100  # Convert from percentage
+                            
+                            if abs(h1_actual - h1_expected) > 0.0001:
+                                issues.append(f"COM LANCE Month 1 hazard: expected {h1_expected:.6f}, got {h1_actual:.6f}")
+                        
+                        if len(hazard_com) >= 120:
+                            # Month 120: h_120 = 2/2 = 1.0
+                            h120_expected = 1.0
+                            h120_actual = hazard_com[119] / 100  # Convert from percentage
+                            
+                            if abs(h120_actual - h120_expected) > 0.01:
+                                issues.append(f"COM LANCE Month 120 hazard: expected {h120_expected:.6f}, got {h120_actual:.6f}")
+                        
+                        # 3. Check both probabilities reach ~100%
+                        prob_acum_sem = sem_lance.get('probabilidade_acumulada', [])
+                        prob_acum_com = com_lance.get('probabilidade_acumulada', [])
+                        
+                        if prob_acum_sem:
+                            final_prob_sem = prob_acum_sem[-1]
+                            if final_prob_sem < 99.0:
+                                issues.append(f"SEM LANCE final probability too low: {final_prob_sem:.2f}%")
+                        
+                        if prob_acum_com:
+                            final_prob_com = prob_acum_com[-1]
+                            if final_prob_com < 99.0:
+                                issues.append(f"COM LANCE final probability too low: {final_prob_com:.2f}%")
+                        
+                        # 4. Check curve lengths are consistent
+                        meses_sem = len(sem_lance.get('meses', []))
+                        meses_com = len(com_lance.get('meses', []))
+                        
+                        if meses_sem != meses_com:
+                            issues.append(f"Curve length mismatch: sem_lance={meses_sem}, com_lance={meses_com}")
+                    
+                    success = len(issues) == 0
+                    
+                    if success:
+                        details = (f"✅ COM LANCE scenario validated. "
+                                 f"Both curves present, "
+                                 f"COM LANCE Month 1: {h1_actual:.6f}, "
+                                 f"Month 120: {h120_actual:.6f}, "
+                                 f"Final probs: SEM={final_prob_sem:.1f}%, COM={final_prob_com:.1f}%")
+                    else:
+                        details = f"❌ COM LANCE validation issues: {'; '.join(issues)}"
+            else:
+                details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+                
+            self.log_test("TEST 2: COM LANCE Scenario", success, details)
+            return success
+            
+        except Exception as e:
+            self.log_test("TEST 2: COM LANCE Scenario", False, str(e))
+            return False
+
+    def test_corrected_probability_formulas_test3(self):
+        """
+        🎯 TEST 3: Debug Log Verification
+        
+        Check backend logs for the new debug messages showing:
+        - "Mês 1: S_t=239, N_t=240, h_sem=0.004184, h_com=0.008333"
+        - "P_acum_sem=0.0042, P_acum_com=0.0083"
+        - Verify the mathematical accuracy of first 3 months
+        """
+        parametros = {
+            "num_participantes": 240,
+            "lance_livre_perc": 0.10
+        }
+        
+        print(f"\n🎯 TEST 3: Debug Log Verification")
+        print(f"   Parameters: {parametros}")
+        
+        try:
+            # First, trigger the calculation to generate logs
+            response = requests.post(f"{self.api_url}/calcular-probabilidades", 
+                                   json=parametros, 
+                                   timeout=30)
+            
+            if response.status_code != 200:
+                self.log_test("TEST 3: Debug Log Verification", False, f"API call failed: {response.status_code}")
+                return False
+            
+            data = response.json()
+            if data.get('erro'):
+                self.log_test("TEST 3: Debug Log Verification", False, f"API error: {data.get('mensagem')}")
+                return False
+            
+            # Now check the logs for debug messages
+            try:
+                import subprocess
+                log_result = subprocess.run(['tail', '-n', '100', '/var/log/supervisor/backend.out.log'], 
+                                          capture_output=True, text=True, timeout=10)
+                
+                if log_result.returncode != 0:
+                    # Try error log if output log fails
+                    log_result = subprocess.run(['tail', '-n', '100', '/var/log/supervisor/backend.err.log'], 
+                                              capture_output=True, text=True, timeout=10)
+                
+                if log_result.returncode == 0:
+                    log_content = log_result.stdout
+                    issues = []
+                    
+                    # Look for specific debug patterns
+                    debug_patterns = [
+                        "Mês 1:",
+                        "S_t=239",
+                        "N_t=240", 
+                        "h_sem=0.004184",
+                        "h_com=0.008333",
+                        "P_acum_sem=",
+                        "P_acum_com="
+                    ]
+                    
+                    found_patterns = []
+                    for pattern in debug_patterns:
+                        if pattern in log_content:
+                            found_patterns.append(pattern)
+                    
+                    # Verify mathematical accuracy from the data response
+                    sem_lance = data.get('sem_lance', {})
+                    com_lance = data.get('com_lance', {})
+                    
+                    if sem_lance and com_lance:
+                        hazard_sem = sem_lance.get('hazard', [])
+                        hazard_com = com_lance.get('hazard', [])
+                        prob_acum_sem = sem_lance.get('probabilidade_acumulada', [])
+                        prob_acum_com = com_lance.get('probabilidade_acumulada', [])
+                        
+                        # Check first 3 months mathematical accuracy
+                        expected_values = [
+                            {"mes": 1, "h_sem": 1/239, "h_com": 2/240},
+                            {"mes": 2, "h_sem": 1/237, "h_com": 2/238},
+                            {"mes": 3, "h_sem": 1/235, "h_com": 2/236}
+                        ]
+                        
+                        math_accuracy_ok = True
+                        for i, expected in enumerate(expected_values):
+                            if i < len(hazard_sem) and i < len(hazard_com):
+                                h_sem_actual = hazard_sem[i] / 100
+                                h_com_actual = hazard_com[i] / 100
+                                
+                                if abs(h_sem_actual - expected["h_sem"]) > 0.0001:
+                                    issues.append(f"Month {expected['mes']} h_sem: expected {expected['h_sem']:.6f}, got {h_sem_actual:.6f}")
+                                    math_accuracy_ok = False
+                                
+                                if abs(h_com_actual - expected["h_com"]) > 0.0001:
+                                    issues.append(f"Month {expected['mes']} h_com: expected {expected['h_com']:.6f}, got {h_com_actual:.6f}")
+                                    math_accuracy_ok = False
+                    
+                    success = len(found_patterns) >= 4 and math_accuracy_ok  # At least 4 patterns found
+                    
+                    if success:
+                        details = (f"✅ Debug logs verified. "
+                                 f"Found {len(found_patterns)}/{len(debug_patterns)} patterns, "
+                                 f"Mathematical accuracy: {math_accuracy_ok}")
+                    else:
+                        details = (f"❌ Debug verification issues. "
+                                 f"Found patterns: {found_patterns}, "
+                                 f"Math accuracy: {math_accuracy_ok}, "
+                                 f"Issues: {'; '.join(issues) if issues else 'None'}")
+                else:
+                    success = False
+                    details = "❌ Could not read backend logs"
+                
+            except Exception as log_error:
+                success = False
+                details = f"❌ Log check failed: {log_error}"
+            
+            self.log_test("TEST 3: Debug Log Verification", success, details)
+            return success
+            
+        except Exception as e:
+            self.log_test("TEST 3: Debug Log Verification", False, str(e))
+            return False
+
+    def test_corrected_probability_formulas_test4(self):
+        """
+        🎯 TEST 4: Edge Cases
+        
+        - Test with small consortium (num_participantes=20)
+        - Verify probability reaches 100% in final month
+        - Test mathematical consistency across different sizes
+        """
+        test_cases = [
+            {
+                "name": "Small Consortium (20 participants)",
+                "params": {"num_participantes": 20, "lance_livre_perc": 0.10},
+                "expected_duration": 10  # 20/2
+            },
+            {
+                "name": "Medium Consortium (100 participants)",
+                "params": {"num_participantes": 100, "lance_livre_perc": 0.05},
+                "expected_duration": 50  # 100/2
+            },
+            {
+                "name": "Large Consortium (500 participants)",
+                "params": {"num_participantes": 500, "lance_livre_perc": 0.15},
+                "expected_duration": 250  # 500/2
+            }
+        ]
+        
+        print(f"\n🎯 TEST 4: Edge Cases")
+        
+        all_passed = True
+        results = []
+        
+        for case in test_cases:
+            try:
+                response = requests.post(f"{self.api_url}/calcular-probabilidades", 
+                                       json=case["params"], 
+                                       timeout=30)
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    
+                    if not data.get('erro'):
+                        issues = []
+                        
+                        sem_lance = data.get('sem_lance', {})
+                        com_lance = data.get('com_lance', {})
+                        
+                        # 1. Check duration
+                        meses = sem_lance.get('meses', [])
+                        actual_duration = len(meses)
+                        expected_duration = case["expected_duration"]
+                        
+                        if actual_duration != expected_duration:
+                            issues.append(f"Duration: expected {expected_duration}, got {actual_duration}")
+                        
+                        # 2. Check final probability reaches ~100%
+                        prob_acum_sem = sem_lance.get('probabilidade_acumulada', [])
+                        prob_acum_com = com_lance.get('probabilidade_acumulada', []) if com_lance else []
+                        
+                        if prob_acum_sem:
+                            final_prob_sem = prob_acum_sem[-1]
+                            if final_prob_sem < 99.0:
+                                issues.append(f"SEM LANCE final prob: {final_prob_sem:.2f}% (expected ~100%)")
+                        
+                        if prob_acum_com:
+                            final_prob_com = prob_acum_com[-1]
+                            if final_prob_com < 99.0:
+                                issues.append(f"COM LANCE final prob: {final_prob_com:.2f}% (expected ~100%)")
+                        
+                        # 3. Check mathematical consistency (first month hazard)
+                        hazard_sem = sem_lance.get('hazard', [])
+                        if hazard_sem:
+                            h1_expected = 1.0 / (case["params"]["num_participantes"] - 1)
+                            h1_actual = hazard_sem[0] / 100
+                            
+                            if abs(h1_actual - h1_expected) > 0.001:
+                                issues.append(f"Month 1 hazard inconsistent: expected {h1_expected:.6f}, got {h1_actual:.6f}")
+                        
+                        case_success = len(issues) == 0
+                        
+                        results.append({
+                            "name": case["name"],
+                            "success": case_success,
+                            "duration": actual_duration,
+                            "final_prob_sem": final_prob_sem if prob_acum_sem else 0,
+                            "final_prob_com": final_prob_com if prob_acum_com else 0,
+                            "issues": issues
+                        })
+                        
+                        if not case_success:
+                            all_passed = False
+                    else:
+                        results.append({
+                            "name": case["name"],
+                            "success": False,
+                            "error": data.get('mensagem', 'API error')
+                        })
+                        all_passed = False
+                else:
+                    results.append({
+                        "name": case["name"],
+                        "success": False,
+                        "error": f"HTTP {response.status_code}"
+                    })
+                    all_passed = False
+                    
+            except Exception as e:
+                results.append({
+                    "name": case["name"],
+                    "success": False,
+                    "error": str(e)
+                })
+                all_passed = False
+        
+        # Generate summary
+        if all_passed:
+            details = "✅ All edge cases passed: "
+            details += ", ".join([
+                f"{r['name']}: {r['duration']}mo, SEM={r['final_prob_sem']:.1f}%, COM={r['final_prob_com']:.1f}%"
+                for r in results if r['success']
+            ])
+        else:
+            failed_cases = [r for r in results if not r['success']]
+            details = f"❌ {len(failed_cases)} edge cases failed: "
+            details += ", ".join([
+                f"{r['name']}: {r.get('error', 'Issues: ' + '; '.join(r.get('issues', [])))}"
+                for r in failed_cases
+            ])
+        
+        self.log_test("TEST 4: Edge Cases", all_passed, details)
+        return all_passed
+
     def test_probability_correction_lance_zero(self):
         """
         🎯 TEST 1: lance_livre_perc = 0 (Client will NOT place bids)
