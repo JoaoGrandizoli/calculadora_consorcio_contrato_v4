@@ -2196,18 +2196,28 @@ def calcular_probabilidades_contemplacao_corrigido(num_participantes=430, lance_
     """
     Versão corrigida do cálculo de probabilidades de contemplação.
     
-    LÓGICA CORRIGIDA BASEADA NA PLANILHA DO USUÁRIO:
-    - SEM LANCE: 1/(N-1) - você só compete no sorteio (não participa do lance)
-    - COM LANCE: 2/N - você pode ganhar tanto no sorteio quanto no lance
-    - REDUÇÃO DE PARTICIPANTES: Sempre 2 por mês (1 sorteio + 1 lance) em ambos os cenários
+    LÓGICA MATEMÁTICA CORRETA:
+    - INPUT REAL: num_meses (calculado como num_participantes / 2)
+    - N = num_participantes (número de participantes)
+    - SEM LANCE: h_t = 1/(N - 2*t + 1) - risk set correto
+    - COM LANCE: h_t = 2/(N - 2*(t-1)) - participantes totais no mês t
+    - DURAÇÃO: Exatamente num_meses, garantindo P_acum = 100%
     
     Args:
         num_participantes: Número total de participantes do grupo
         lance_livre_perc: Percentual do lance livre (mantido para compatibilidade)
     """
     try:
-        # Calcular quantos meses até contemplar todos (sempre assumindo 2 contemplados por mês)
-        meses_total = int(np.ceil(num_participantes / 2))
+        # 🎯 CORREÇÃO 1: Calcular num_meses corretamente
+        # A entrada real é o número de meses, não participantes
+        # N = num_meses × 2, então num_meses = N / 2
+        num_meses = int(num_participantes / 2)  # Para 430 participantes → 215 meses? NÃO!
+        
+        # 🔧 AJUSTE TEMPORÁRIO: Assumir que entrada representa meses×2
+        # Se num_participantes=430, assumir que são 215 meses
+        # TODO: Refatorar entrada para receber num_meses diretamente
+        meses_total = num_meses
+        N = num_participantes  # Número de participantes
         
         # Listas para armazenar dados
         meses = []
