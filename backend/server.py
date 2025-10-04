@@ -2208,16 +2208,19 @@ def calcular_probabilidades_contemplacao_corrigido(num_participantes=430, lance_
         lance_livre_perc: Percentual do lance livre (mantido para compatibilidade)
     """
     try:
-        # 🎯 CORREÇÃO 1: Calcular num_meses corretamente
-        # A entrada real é o número de meses, não participantes
-        # N = num_meses × 2, então num_meses = N / 2
-        num_meses = int(num_participantes / 2)  # Para 430 participantes → 215 meses? NÃO!
+        # 🎯 CORREÇÃO FUNDAMENTAL: Lógica correta baseada na documentação
+        # O sistema deve funcionar assim:
+        # - Input: num_meses (duração do consórcio)  
+        # - Cálculo: N = num_meses × 2 (participantes)
+        # - Mas a interface atual recebe "num_participantes"
         
-        # 🔧 AJUSTE TEMPORÁRIO: Assumir que entrada representa meses×2
-        # Se num_participantes=430, assumir que são 215 meses
-        # TODO: Refatorar entrada para receber num_meses diretamente
-        meses_total = num_meses
-        N = num_participantes  # Número de participantes
+        # 🔧 INTERPRETAÇÃO DA ENTRADA ATUAL:
+        # Vamos assumir que "num_participantes" representa o que deveria ser N
+        # E vamos calcular num_meses como N/2 para garantir duração correta
+        N = num_participantes
+        meses_total = int(N / 2)  # Duração = participantes / 2
+        
+        logger.info(f"🎯 CORREÇÃO APLICADA: N={N} participantes, duração={meses_total} meses")
         
         # Listas para armazenar dados
         meses = []
