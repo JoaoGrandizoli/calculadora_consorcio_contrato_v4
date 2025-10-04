@@ -2240,29 +2240,38 @@ def calcular_probabilidades_contemplacao_corrigido(num_participantes=430, lance_
         for mes in range(1, meses_total + 1):
             meses.append(mes)
             
-            if participantes_atual > 0:
-                # SEM LANCE: 1/(N-1) - só compete no sorteio
-                # Subtrai 1 porque o lance "tira" uma oportunidade de você ganhar no sorteio
-                prob_mes_sem = 1.0 / max(1, participantes_atual - 1)
-                
-                # COM LANCE: 2/N - pode ganhar no sorteio OU no lance
-                prob_mes_com = min(2.0 / participantes_atual, 1.0)
+            # 🎯 FÓRMULAS CORRIGIDAS baseadas na documentação matemática
+            
+            # SEM LANCE: h_t = 1/(N - 2*t + 1)
+            # Risk set = N - 2*t + 1 (você + outros restantes após lance do mês)
+            S_t = N - 2*mes + 1
+            if S_t > 0:
+                prob_mes_sem = 1.0 / S_t
             else:
-                prob_mes_sem = 0.0
-                prob_mes_com = 0.0
+                prob_mes_sem = 1.0  # Último participante, 100% chance
+            
+            # COM LANCE: h_t = 2/(N - 2*(t-1))  
+            # Participantes totais no início do mês t
+            N_t = N - 2*(mes - 1)
+            if N_t > 0:
+                prob_mes_com = min(2.0 / N_t, 1.0)
+            else:
+                prob_mes_com = 1.0  # Garantir não exceder 100%
             
             prob_sem_lance.append(prob_mes_sem)
             prob_com_lance.append(prob_mes_com)
             
-            # Cálculo das probabilidades acumuladas usando a fórmula de sobrevivência
+            # 🎯 PRODUTÓRIO DA SOBREVIVÊNCIA (já estava correto)
             prob_nao_contemplado_sem *= (1.0 - prob_mes_sem)
             prob_nao_contemplado_com *= (1.0 - prob_mes_com)
             
             prob_acumulada_sem.append(1.0 - prob_nao_contemplado_sem)
             prob_acumulada_com.append(1.0 - prob_nao_contemplado_com)
             
-            # Reduzir 2 participantes para próximo mês (sempre: 1 sorteio + 1 lance)
-            participantes_atual = max(0, participantes_atual - 2)
+            # Log para debug (primeiros 3 meses)
+            if mes <= 3:
+                logger.info(f"Mês {mes}: S_t={S_t}, N_t={N_t}, h_sem={prob_mes_sem:.6f}, h_com={prob_mes_com:.6f}")
+                logger.info(f"  P_acum_sem={prob_acumulada_sem[-1]:.4f}, P_acum_com={prob_acumulada_com[-1]:.4f}")
         
         # Calcular métricas estatísticas corrigidas
         def calcular_metricas_corrigidas(probabilidades_mensais, probabilidades_acumuladas):
