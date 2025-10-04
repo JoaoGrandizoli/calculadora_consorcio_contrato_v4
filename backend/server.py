@@ -2301,12 +2301,20 @@ def calcular_probabilidades_contemplacao_corrigido(num_participantes=430, lance_
         esp_sem, med_sem, p10_sem, p90_sem = calcular_metricas_corrigidas(prob_sem_lance, prob_acumulada_sem)
         esp_com, med_com, p10_com, p90_com = calcular_metricas_corrigidas(prob_com_lance, prob_acumulada_com)
         
+        # Convert hazard values to percentages and probabilities to percentages
+        hazard_sem_percent = [h * 100 for h in prob_sem_lance]
+        hazard_com_percent = [h * 100 for h in prob_com_lance]
+        prob_acum_sem_percent = [p * 100 for p in prob_acumulada_sem]
+        prob_acum_com_percent = [p * 100 for p in prob_acumulada_com]
+        prob_mes_sem_percent = [p * 100 for p in prob_sem_lance]
+        prob_mes_com_percent = [p * 100 for p in prob_com_lance]
+        
         return {
             "sem_lance": {
                 "meses": meses,
-                "hazard": prob_sem_lance,
-                "probabilidade_acumulada": prob_acumulada_sem,
-                "probabilidade_mes": prob_sem_lance,  # Mesmo que hazard para este caso
+                "hazard": hazard_sem_percent,
+                "probabilidade_acumulada": prob_acum_sem_percent,
+                "probabilidade_mes": prob_mes_sem_percent,
                 "esperanca_meses": esp_sem,
                 "mediana_mes": med_sem,
                 "p10_mes": p10_sem,
@@ -2314,9 +2322,9 @@ def calcular_probabilidades_contemplacao_corrigido(num_participantes=430, lance_
             },
             "com_lance": {
                 "meses": meses,
-                "hazard": prob_com_lance,
-                "probabilidade_acumulada": prob_acumulada_com,
-                "probabilidade_mes": prob_com_lance,  # Mesmo que hazard para este caso
+                "hazard": hazard_com_percent,
+                "probabilidade_acumulada": prob_acum_com_percent,
+                "probabilidade_mes": prob_mes_com_percent,
                 "esperanca_meses": esp_com,
                 "mediana_mes": med_com,
                 "p10_mes": p10_com,
